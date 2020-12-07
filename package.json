@@ -1,0 +1,28 @@
+{
+  "name": "oddz-contracts",
+  "version": "1.0.0",
+  "description": "Oddz token contracts",
+  "main": "truffle-config.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oddz-finance/oddz-contracts.git"
+  },
+  "author": "shreedhar888@gmail.com",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/oddz-finance/oddz-contracts/issues"
+  },
+  "homepage": "https://github.com/oddz-finance/oddz-contracts#readme",
+  "devDependencies": {
+    "bignumber.js": "^9.0.1",
+    "bluebird": "^3.7.2",
+    "chai": "^4.2.0",
+    "chai-bignumber": "^3.0.0"
+  },
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.2.0"
+  }
+}
