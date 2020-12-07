@@ -4,7 +4,11 @@
   "description": "Oddz token contracts",
   "main": "truffle-config.js",
   "scripts": {
-    "test": "test"
+    "ganache": "ganache-cli --mnemonic 'sunny coast antique boring prosper wrestle spice bubble stable smoke drill basic' --gasLimit 8000000",
+    "compile": "truffle compile",
+    "test": " truffle test test/*",
+    "deploy": "truffle deploy",
+    "verify": "truffle run verify $npm_package_verify_contracts --network mainnet"
   },
   "repository": {
     "type": "git",
@@ -20,9 +24,24 @@
     "bignumber.js": "^9.0.1",
     "bluebird": "^3.7.2",
     "chai": "^4.2.0",
-    "chai-bignumber": "^3.0.0"
+    "chai-bignumber": "^3.0.0",
+    "eslint": "^7.15.0"
   },
   "dependencies": {
-    "@truffle/hdwallet-provider": "^1.2.0"
+    "@truffle/hdwallet-provider": "^1.2.0",
+    "bip39": "^3.0.3",
+    "eth-decoder": "^0.0.1-beta.2",
+    "eth-gas-reporter": "^0.2.20",
+    "eth-sig-util": "^3.0.0",
+    "ethereumjs-util": "^7.0.7",
+    "ethereumjs-wallet": "^1.0.1",
+    "ganache-cli": "^6.12.1",
+    "openzeppelin-solidity": "^3.3.0",
+    "truffle": "^5.1.56",
+    "truffle-hdwallet-provider": "^1.0.17",
+    "truffle-plugin-verify": "^0.5.2"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
   }
 }
