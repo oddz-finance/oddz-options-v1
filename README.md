@@ -20,7 +20,7 @@ $ yarn install
 ## Run ganache before running tests
 
 ```
-$ yarn testrpc
+$ yarn ganache
 ```
 
 ## Test:
