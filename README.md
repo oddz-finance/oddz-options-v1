@@ -17,7 +17,9 @@ The ODDZ token is a standard ERC20 token implementing the [ERC20](https://eips.e
 $ yarn install
 ```
 
-## Run ganache before running tests
+## Run ganache
+
+##### before running tests in a different tab and keep it running until the tests are complete  
 
 ```
 $ yarn ganache
