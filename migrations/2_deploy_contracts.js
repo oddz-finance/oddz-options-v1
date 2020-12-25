@@ -10,7 +10,6 @@ module.exports = async function(deployer) {
       const totalSupply = web3.utils.toBN(100000000).mul(SCALING_FACTOR);
 
       // Total oddz vesting supply
-      // TODO: Shreedhar: make sure the vesting supply is updated
       const vestingSupply = web3.utils.toBN(88350000).mul(SCALING_FACTOR);
       // Deploy token contract
       await deployer.deploy(
