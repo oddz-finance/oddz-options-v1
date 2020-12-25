@@ -25,11 +25,12 @@
     "bluebird": "^3.7.2",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
-    "eslint": "^7.15.0"
+    "eslint": "^7.16.0"
   },
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.2.0",
     "bip39": "^3.0.3",
+    "eslint-config-react-app": "^6.0.0",
     "eth-decoder": "^0.0.1-beta.2",
     "eth-gas-reporter": "^0.2.20",
     "eth-sig-util": "^3.0.0",

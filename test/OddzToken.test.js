@@ -120,7 +120,6 @@ contract("Oddz Token", async ([owner, user]) => {
         nonce,
         deadline
       );
-      console.log(hash);
       // Note: this is for test only, running this on production is highly not recommended
       const privateKey = "0xf40f4eb50e0ecfa9635d058df9e9b9858af3ea8b04c39b039af3e6ae7a4bc87f"
       const sig = ecsign(toBuffer(hash), toBuffer(privateKey))
