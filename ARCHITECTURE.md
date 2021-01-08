@@ -1,10 +1,9 @@
 # ODDZ Oracle Aggregator On-Chain Smart Contract
+ - Upgradable Smart Contract
 
-[x] - Upgradable Smart Contract
+ - Data Feed is Pulled and/or Notified from Multiple sources every second
 
-[x] - Data Feed is Pulled and/or Notified from Multiple sources every second
-
-[x] - On-Chain Smart Contract data feed sources includes
+ - On-Chain Smart Contract data feed sources includes
 
     - ChainLink Oracle
     - Uniswap Oracle
