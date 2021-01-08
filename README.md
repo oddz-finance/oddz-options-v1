@@ -30,3 +30,4 @@ $ yarn ganache
 ```
 $ yarn truffle:test
 ```
+
