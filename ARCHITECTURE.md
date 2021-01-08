@@ -11,3 +11,7 @@
     - Oddz Off Chain Push [Can contain stale data if service is offline]
     - Each data source will have an auto adjustable weightage based on authenticity, volatility, etc.
     
+    
+
+![alt text](https://user-images.githubusercontent.com/1021966/103983247-c7159c00-5139-11eb-8242-479a85115716.png?raw=true)
+
