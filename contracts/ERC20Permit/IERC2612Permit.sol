@@ -1,5 +1,5 @@
-
-pragma solidity 0.6.2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity ^0.7.0;
 
 /**
  * @dev Interface of the ERC2612 standard as defined in the EIP.
