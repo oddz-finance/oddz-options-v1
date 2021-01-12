@@ -3,7 +3,9 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { Contract, ContractFactory } from "ethers";
+import { BigNumber, Contract, ContractFactory } from "ethers";
+
+const SCALING_FACTOR = BigNumber.from(10 ** 18);
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -11,12 +13,21 @@ async function main(): Promise<void> {
   // to make sure everything is compiled
   // await run("compile");
 
+  // Total oddz supply
+  const totalSupply = BigNumber.from(100000000).mul(SCALING_FACTOR);
+
   // We get the contract to deploy
   const Greeter: ContractFactory = await ethers.getContractFactory("Greeter");
   const greeter: Contract = await Greeter.deploy("Hello, Buidler!");
   await greeter.deployed();
-
   console.log("Greeter deployed to: ", greeter.address);
+
+  const OddzToken: ContractFactory = await ethers.getContractFactory("OddzToken");
+  const oddzToken: Contract = await OddzToken.deploy(OddzToken,
+    "OddzToken",
+    "ODDZ",
+    totalSupply)
+  console.log("OddzToken deployed to: ", oddzToken.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
