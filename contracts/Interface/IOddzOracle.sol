@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
-import '../Util/Ownable.sol';
-
 interface IOddzOracle {
     /**
       * @dev Function to get the price for an asset
