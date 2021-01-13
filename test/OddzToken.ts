@@ -7,9 +7,12 @@ import { Accounts, Signers } from "../types";
 import { OddzToken } from "../typechain/OddzToken";
 import { shouldBehaveLikeOddzToken } from "./behaviors/OddzToken.behavior";
 import { BigNumber } from "ethers";
+import {MockProvider} from 'ethereum-waffle';
 const { deployContract } = waffle;
 
+
 describe("Unit tests", function () {
+  const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
     this.signers = {} as Signers;
@@ -17,13 +20,18 @@ describe("Unit tests", function () {
     const signers: Signer[] = await ethers.getSigners();
     this.signers.admin = signers[0];
     this.accounts.admin = await signers[0].getAddress();
+    this.wallet = wallet;
+    this.walletTo = walletTo;
   });
 
-  describe("Greeter", function () {
+  describe("Oddz token", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(100000000);
       this.oddzToken = (await deployContract(this.signers.admin, OddzTokenArtifact, ["OddzToken",
         "ODDZ",
+        totalSupply])) as OddzToken;
+      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, ["USD coin",
+        "USDC",
         totalSupply])) as OddzToken;
     });
 
@@ -73,33 +81,13 @@ describe("Unit tests", function () {
 //     });
 //   }
 //
-//   // tests for setup
-//   describe("Setup: totalsupply, permit", function() {
-//     beforeEach(setup);
-//     it("Should return the total amount of tokens", async function() {
-//       const total = await token.totalSupply.call();
-//       const balance = await token.balanceOf.call(owner);
-//       assert.equal(total.toString(), initialBalance);
-//       assert.equal(balance.toString(), initialBalance);
-//     });
-//
-//     it("Should return the correct permit hash", async function() {
-//       assert.equal(await token.PERMIT_TYPEHASH(),
-//         bufferToHex(keccakFromString('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'))
-//       );
-//     });
-//   });
+
 //
 //
 //   // tests for Transfer
 //   describe("Transfer: 1 wei, full balance, and failure case", function() {
 //     beforeEach(setup)
-//     it("should successfully transfer 1 wei", async function() {
-//       const amount = toWei("1")
-//       await token.transfer(user, amount)
-//       const destBalance = await token.balanceOf.call(user)
-//       assert.equal(destBalance.toString(), amount.toString())
-//     });
+
 //
 //     it("should successfully transfer full balance", async function() {
 //       await token.transfer(user, initialBalance)
