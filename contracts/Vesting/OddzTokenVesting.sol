@@ -1,9 +1,10 @@
-pragma solidity 0.6.2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity ^0.7.0;
 
-import { Ownable } from "openzeppelin-solidity/contracts/access/Ownable.sol";
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title TokenVesting
@@ -46,36 +47,36 @@ contract OddzTokenVesting is Ownable {
     uint256 SCALING_FACTOR = 10 ** 18;
     uint256 day = 1 days;
     // Add vesting in a batch
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 30 * day, 2140000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 60 * day, 2140000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 90 * day, 6140000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 120 * day, 2140000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 150 * day, 2140000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 180 * day, 11840000  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 210 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 240 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 270 * day, 5396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 300 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 330 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 360 * day, 11096250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 390 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 420 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 450 * day, 3896250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 480 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 510 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 540 * day, 7096250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 570 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 600 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 630 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 660 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 690 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 720 * day, 4596250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 750 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 780 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 810 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 840 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 870 * day, 1396250  * SCALING_FACTOR);
-    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, now + 900 * day, 4596250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 30 * day, 2140000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 60 * day, 2140000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 90 * day, 6140000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 120 * day, 2140000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 150 * day, 2140000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 180 * day, 11840000  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 210 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 240 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 270 * day, 5396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 300 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 330 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 360 * day, 11096250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 390 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 420 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 450 * day, 3896250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 480 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 510 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 540 * day, 7096250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 570 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 600 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 630 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 660 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 690 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 720 * day, 4596250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 750 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 780 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 810 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 840 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 870 * day, 1396250  * SCALING_FACTOR);
+    addVesting(0x59AD7074E468d212bD038573e807D1eDa715C5ec, block.timestamp + 900 * day, 4596250  * SCALING_FACTOR);
   }
 
   /**
@@ -135,7 +136,7 @@ contract OddzTokenVesting is Ownable {
    */
   function addVesting(address _beneficiary, uint256 _releaseTime, uint256 _amount) public onlyOwner {
     require(_beneficiary != address(0x0), INVALID_BENEFICIARY);
-    require(_releaseTime > now, "Invalid release time");
+    require(_releaseTime > block.timestamp, "Invalid release time");
     require(_amount != 0, "Amount must be greater then 0");
     tokensToVest = tokensToVest.add(_amount);
     vestingId = vestingId.add(1);
