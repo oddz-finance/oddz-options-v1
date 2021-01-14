@@ -1,7 +1,8 @@
-pragma solidity 0.6.2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity ^0.7.0;
 
-import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import { Ownable } from "openzeppelin-solidity/contracts/access/Ownable.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { ERC20Permit } from "./ERC20Permit/ERC20Permit.sol";
 
@@ -9,7 +10,7 @@ import { ERC20Permit } from "./ERC20Permit/ERC20Permit.sol";
  * @title Oddz Token
  * @dev Oddz ERC20 Token
  */
-contract OddzToken is ERC20Permit, Ownable {
+contract OddzToken is ERC20, ERC20Permit, Ownable {
     event RescueExcessTokens(address indexed token, address indexed destination, uint256 indexed amount);
     constructor (string memory name, string memory symbol, uint256 totalSupply)
     public

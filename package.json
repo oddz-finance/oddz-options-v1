@@ -30,11 +30,6 @@
   },
   "homepage": "https://github.com/oddz-finance/oddz-contracts#readme",
   "devDependencies": {
-    "bignumber.js": "^9.0.1",
-    "bluebird": "^3.7.2",
-    "chai": "^4.2.0",
-    "chai-bignumber": "^3.0.0",
-    "eslint": "^7.16.0",
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^9.1.2",
     "@ethersproject/abstract-signer": "^5.0.6",
@@ -48,9 +43,14 @@
     "@types/node": "^14.11.8",
     "@typescript-eslint/eslint-plugin": "^3.10.1",
     "@typescript-eslint/parser": "^3.10.1",
+    "bignumber.js": "^9.0.1",
+    "bluebird": "^3.7.2",
+    "chai": "^4.2.0",
+    "chai-bignumber": "^3.0.0",
     "commitizen": "^4.2.1",
     "cz-conventional-changelog": "^3.3.0",
     "dotenv": "^8.2.0",
+    "eslint": "^7.16.0",
     "eslint-config-prettier": "^6.12.0",
     "ethereum-waffle": "^3.2.0",
     "ethers": "^5.0.24",
@@ -72,6 +72,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "3.1.0-solc-0.7",
     "@truffle/hdwallet-provider": "^1.2.0",
     "bip39": "^3.0.3",
     "eslint-config-react-app": "^6.0.0",
@@ -81,7 +82,6 @@
     "ethereumjs-util": "^7.0.7",
     "ethereumjs-wallet": "^1.0.1",
     "ganache-cli": "^6.12.1",
-    "openzeppelin-solidity": "^3.3.0",
     "truffle": "^5.1.56",
     "truffle-hdwallet-provider": "^1.0.17",
     "truffle-plugin-verify": "^0.5.2"

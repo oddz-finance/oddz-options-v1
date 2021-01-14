@@ -1,4 +1,5 @@
-pragma solidity 0.6.2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity ^0.7.0;
 
 contract Migrations {
     address public owner;
