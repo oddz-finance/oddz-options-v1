@@ -2,7 +2,7 @@
 pragma solidity ^0.7.0;
 
 
-interface ILiquidityPool {
+interface IOddzLiquidityPool {
     struct LockedLiquidity { uint amount; uint premium; bool locked; }
 
     event Profit(uint indexed _id, uint _amount);
