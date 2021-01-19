@@ -15,3 +15,7 @@
 
 ![alt text](https://user-images.githubusercontent.com/1021966/103983247-c7159c00-5139-11eb-8242-479a85115716.png?raw=true)
 
+![Oddz option write and burn](https://user-images.githubusercontent.com/1021966/104671954-ab5b4a00-5693-11eb-970b-5be389e3c441.png)
+
+
+
