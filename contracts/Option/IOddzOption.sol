@@ -9,15 +9,15 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @notice Oddz Options Contract
  */
 interface IOddzOption {
-    event Create(
-        uint256 indexed id,
-        address indexed account,
-        uint256 settlementFee,
-        uint256 totalFee
+    event Buy(
+        uint256 indexed _optionId,
+        address indexed _account,
+        uint256 _settlementFee,
+        uint256 _totalFee
     );
 
-    event Exercise(uint256 indexed id, uint256 profit);
-    event Expire(uint256 indexed id, uint256 premium);
+    event Exercise(uint256 indexed _optionId, uint256 _profit);
+    event Expire(uint256 indexed _optionId, uint256 _premium);
     enum State {Active, Exercised, Expired}
     enum OptionType {Put, Call}
 
