@@ -29,6 +29,7 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
+        uint32 underlying;
         OptionType optionType;
     }
 
