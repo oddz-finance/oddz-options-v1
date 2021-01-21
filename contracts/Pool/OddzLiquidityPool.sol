@@ -3,7 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
 
-contract OddzLiquidityPool is Ownable, IOddzLiquidityPool {
+contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     function provide() external override payable returns (uint256 mint) {
 
     }
