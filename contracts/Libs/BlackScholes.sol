@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
-import './ABDKMath64x64.sol';
+import "./ABDKMath64x64.sol";
 
 library BlackScholes {
 
@@ -15,7 +15,8 @@ library BlackScholes {
 	 * @param annualVolatilityPercentage The annual volatility with `percentageDataPrecision`.
 	 * @param annualInterestRate The annual interest rate with `percentageDataPrecision`.
 	 * @param annualDividendYield The annual dividen yield with `percentageDataPrecision`.
-	 * @param percentageDataPrecision The percentage precision, for example it must be 100000 wheter 100000=100%, 25000=25%, 250750=250.75% etc.
+	 * @param percentageDataPrecision The percentage precision,
+     * for example it must be 100000 wheter 100000=100%, 25000=25%, 250750=250.75% etc.
      * @return The calculated option price with `pricePrecision`.
      */
     function getOptionPrice(
@@ -64,7 +65,15 @@ library BlackScholes {
         int128 expiration
     ) private pure returns (int128) {
         int128 dCalculationAux = ABDKMath64x64.mul(volatility, ABDKMath64x64.sqrt(expiration));
-        int128 d1 = _d1Calculation(strikePrice, currentPrice, expiration, volatility, interestRate, dividendYield, dCalculationAux);
+        int128 d1 = _d1Calculation(
+            strikePrice,
+            currentPrice,
+            expiration,
+            volatility,
+            interestRate,
+            dividendYield,
+            dCalculationAux
+        );
         int128 d2 = ABDKMath64x64.sub(d1, dCalculationAux);
         return _priceCalculation(
             isCallOption,
@@ -146,7 +155,10 @@ library BlackScholes {
      */
     function _normalCummulativeDistribution(int128 x) private pure returns (int128) {
         int128 z = ABDKMath64x64.div(x, 0x16a09e667f3bcc908);
-        int128 t = ABDKMath64x64.div(0x10000000000000000, ABDKMath64x64.add(0x10000000000000000, ABDKMath64x64.mul(0x53dd02a4f5ee2e46, ABDKMath64x64.abs(z))));
+        int128 t = ABDKMath64x64.div(
+            0x10000000000000000,
+            ABDKMath64x64.add(0x10000000000000000, ABDKMath64x64.mul(0x53dd02a4f5ee2e46, ABDKMath64x64.abs(z)))
+        );
         int128 erf = _getErf(z, t);
         int128 nerf = erf;
         if (z < 0) {
@@ -162,9 +174,21 @@ library BlackScholes {
      * @return The ERF normalized with `ABDKMath64x64` library.
      */
     function _getErf(int128 z, int128 t) private pure returns (int128) {
-        int128 f = ABDKMath64x64.mul(t, ABDKMath64x64.add(0x16be1c55bae156b65, ABDKMath64x64.mul(t, ABDKMath64x64.add(-0x17401c57014c38f14, ABDKMath64x64.mul(t, 0x10fb844255a12d72e)))));
-        int128 f2 = ABDKMath64x64.add(0x413c831bb169f874, ABDKMath64x64.mul(t, ABDKMath64x64.add(-0x48d4c730f051a5fe, f)));
-        return ABDKMath64x64.sub(0x10000000000000000, ABDKMath64x64.mul(t, ABDKMath64x64.mul(f2, ABDKMath64x64.exp(ABDKMath64x64.mul(ABDKMath64x64.neg(z), z)))));
+        int128 f = ABDKMath64x64.mul(
+            t,
+            ABDKMath64x64.add(
+                0x16be1c55bae156b65,
+                ABDKMath64x64.mul(t,ABDKMath64x64.add(-0x17401c57014c38f14, ABDKMath64x64.mul(t, 0x10fb844255a12d72e)))
+            )
+        );
+        int128 f2 = ABDKMath64x64.add(
+            0x413c831bb169f874,
+            ABDKMath64x64.mul(t, ABDKMath64x64.add(-0x48d4c730f051a5fe, f))
+        );
+        return ABDKMath64x64.sub(
+            0x10000000000000000,
+            ABDKMath64x64.mul(t, ABDKMath64x64.mul(f2, ABDKMath64x64.exp(ABDKMath64x64.mul(ABDKMath64x64.neg(z), z))))
+        );
     }
 
     /**
