@@ -35,6 +35,7 @@ interface IOddzOption {
 
     /**
      * @notice Buy a new option
+     * @param _underlying Underlying asset
      * @param _expiration Option expiration in unix timestamp
      * @param _amount Option amount in wei
      * @param _strike Strike price expressed in wei
@@ -42,6 +43,7 @@ interface IOddzOption {
      * @return optionId Created option ID
      */
     function buy(
+        uint32 _underlying,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
