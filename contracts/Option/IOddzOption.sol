@@ -13,7 +13,8 @@ interface IOddzOption {
         uint256 indexed _optionId,
         address indexed _account,
         uint256 _settlementFee,
-        uint256 _totalFee
+        uint256 _totalFee,
+        uint32 _underlying
     );
 
     event Exercise(uint256 indexed _optionId, uint256 _profit);

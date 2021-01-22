@@ -13,6 +13,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     OddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
     IOddzVolatility public iv;
+    Option[] public options;
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
@@ -82,14 +83,48 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validStrike(_underlying, _strike)
         returns (uint256 optionId)
     {
-        (uint256 optionPremium, uint256 trxFee) = getPremium(
+        (uint256 optionPremium, uint256 settlementFee) = getPremium(
             _underlying,
             _expiration,
             _amount,
             _strike,
             _optionType
         );
-        validateOptionAmount(_amount, optionPremium.add(trxFee));
+
+        uint256 totalFee = optionPremium.add(settlementFee);
+        validateOptionAmount(_amount, totalFee);
+        uint256 _cp = getCurrentPrice(_underlying);
+        uint256 optionOverColl = _optionType == OptionType.Call
+            ? getCallOverColl(_underlying, _cp)
+            : getPutOverColl(_underlying, _cp);
+        optionId = options.length;
+        Option memory option = Option(
+            {
+                state: State.Active,
+                holder: msg.sender,
+                strike: _strike,
+                amount: _amount,
+                lockedAmount: optionOverColl.sub(_strike),
+                premium: totalFee,
+                expiration: _expiration,
+                underlying: _underlying,
+                optionType: _optionType
+            }
+        );
+
+        options.push(option);
+
+        pool.lock {value: option.premium} (optionId, option.lockedAmount);
+
+        emit Buy(
+            {
+                _optionId: optionId,
+                _account: msg.sender,
+                _settlementFee: settlementFee,
+                _totalFee: totalFee,
+                _underlying: _underlying
+            }
+        );
     }
 
     /**
@@ -98,7 +133,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @param _amount Option amount
      * @param _strike Strike price of the option
      * @return optionPremium Premium to be paid
-     * @return trxFee Transaction Fee
+     * @return settlementFee Settlement Fee
      */
     function getPremium(
         uint32 _underlying,
@@ -111,7 +146,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         view
         returns (
             uint256 optionPremium,
-            uint256 trxFee
+            uint256 settlementFee
         )
     {
         optionPremium = BlackScholes.getOptionPrice(
@@ -125,12 +160,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
             0,
             PERCENTAGE_PRECISION
         );
-        trxFee = getTransactionFee(_amount);
+        settlementFee = getSettlementFee(_amount);
     }
 
     function getIV(uint32 _underlying) view private returns (uint256 iv) {}
 
-    function getTransactionFee(uint256 _amount) view private returns (uint256 trxFee) {}
+    function getSettlementFee(uint256 _amount) view private returns (uint256 trxFee) {}
 
     function excercise(uint256 _optionId) external override {}
 }
