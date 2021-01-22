@@ -6,6 +6,8 @@ import "../Oracle/IOddzPriceOracle.sol";
 import "../Oracle/IOddzVolatility.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "../Libs/BlackScholes.sol";
+import "hardhat/console.sol";
+
 
 contract OddzOptionManager is Ownable, IOddzOption {
     using SafeMath for uint256;
@@ -65,6 +67,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     function getCurrentPrice(uint32 _underlying) private view returns (uint256 currentPrice) {
         currentPrice = oracle.getPrice(_underlying);
+        return currentPrice;
     }
 
     function buy(
@@ -114,21 +117,24 @@ contract OddzOptionManager is Ownable, IOddzOption {
             uint256 trxFee
         )
     {
+        require(
+            _optionType == OptionType.Call || _optionType == OptionType.Put,
+            "Given option type is not supported"
+        );
+        (uint256 _iv, uint256 _decimal) = iv.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == OptionType.Call ? true : false,
             _strike,
             getCurrentPrice(_underlying),
             _expiration,
             _underlying,
-            getIV(_underlying),
+            _iv,
             0,
             0,
             PERCENTAGE_PRECISION
         );
         trxFee = getTransactionFee(_amount);
     }
-
-    function getIV(uint32 _underlying) view private returns (uint256 iv) {}
 
     function getTransactionFee(uint256 _amount) view private returns (uint256 trxFee) {}
 
