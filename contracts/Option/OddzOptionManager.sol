@@ -49,6 +49,34 @@ contract OddzOptionManager is Ownable, IOddzOption {
         assets.push(asset);
     }
 
+    function activateAsset(
+        uint32 _assetId
+    )
+        external
+        onlyOwner
+        inactiveAsset(_assetId)
+        returns (bytes32 name, bool status)
+    {
+        Asset storage asset = assetIdMap[_assetId];
+        asset.active = false;
+        status = asset.active;
+        name = asset.name;
+    }
+
+    function deactivateAsset(
+        uint32 _assetId
+    )
+        external
+        onlyOwner
+        validAsset(_assetId)
+        returns (bytes32 name, bool status)
+    {
+        Asset storage asset = assetIdMap[_assetId];
+        asset.active = true;
+        status = asset.active;
+        name = asset.name;
+    }
+
     modifier validOptionType(OptionType _optionType) {
         require(
             _optionType == OptionType.Call || _optionType == OptionType.Put,
@@ -65,6 +93,11 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     modifier validAsset(uint32 _underlying) {
         require(assetIdMap[_underlying].active == true, "Invalid Asset");
+        _;
+    }
+
+    modifier inactiveAsset(uint32 _underlying) {
+        require(assetIdMap[_underlying].active == false, "Asset is active");
         _;
     }
 
