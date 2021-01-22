@@ -28,6 +28,10 @@ async function main(): Promise<void> {
     "ODDZ",
     totalSupply)
   console.log("OddzToken deployed to: ", oddzToken.address);
+
+  const OddzOptionManager: ContractFactory = await ethers.getContractFactory("OddzOptionManager");
+  const oddzOptionManager: Contract = await OddzOptionManager.deploy();
+  console.log("OddzOptionManager deployed to", oddzOptionManager.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
