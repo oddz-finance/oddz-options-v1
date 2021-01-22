@@ -24,6 +24,13 @@ interface IOddzOption {
     event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
 
+    struct Asset {
+        uint32 id;
+        bytes32 name;
+        bool active;
+        uint256 precision;
+    }
+
     struct Option {
         State state;
         address payable holder;
@@ -32,7 +39,7 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
-        uint32 underlying;
+        uint32 assetId;
         OptionType optionType;
     }
 

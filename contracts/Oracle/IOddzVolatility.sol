@@ -10,7 +10,7 @@ import "../Option/IOddzOption.sol";
 interface IOddzVolatility {
     /**
      * @notice Function to calculate the Implied volatility of the underlying asset
-     * @param _underlying underlying asset
+     * @param _asset underlying asset
      * @param _optionType type of the option
      * @param _expiration expiration time in unix timestamp
      * @param _currentPrice current price of the underlying asset
@@ -19,7 +19,7 @@ interface IOddzVolatility {
      * @return decimal implied volatility decimal
      */
     function calculateIv(
-        uint32 _underlying,
+        uint32 _asset,
         IOddzOption.OptionType _optionType,
         uint256 _expiration,
         uint256 _currentPrice,
