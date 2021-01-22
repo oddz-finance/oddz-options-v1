@@ -60,10 +60,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     function getCallOverColl(uint256 _underlying, uint256 _cp) private returns (uint256 oc) {
         // TODO: Fetch Call Over Collateralization using _underlying and _cp
+        oc = 500;
     }
 
     function getPutOverColl(uint256 _underlying, uint256 _cp) private returns (uint256 oc) {
         // TODO: Fetch Put Over Collateralization using _underlying and _cp
+        oc = 150;
     }
 
     function getCurrentPrice(uint32 _underlying) private view returns (uint256 currentPrice) {
@@ -96,9 +98,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 totalFee = optionPremium.add(settlementFee);
         validateOptionAmount(_amount, totalFee);
         uint256 _cp = getCurrentPrice(_underlying);
-        uint256 optionOverColl = _optionType == OptionType.Call
-            ? getCallOverColl(_underlying, _cp)
-            : getPutOverColl(_underlying, _cp);
+        // uint256 optionOverColl = _optionType == OptionType.Call ? getCallOverColl(_underlying, _cp) : getPutOverColl(_underlying, _cp);
+        uint256 optionOverColl = 256;
         optionId = options.length;
         Option memory option = Option(
             {
@@ -145,16 +146,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
         OptionType _optionType
     )
         public
+        validOptionType(_optionType)
         view
         returns (
             uint256 optionPremium,
             uint256 settlementFee
         )
     {
-        require(
-            _optionType == OptionType.Call || _optionType == OptionType.Put,
-            "Given option type is not supported"
-        );
         (uint256 _iv, uint256 _decimal) = iv.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == OptionType.Call ? true : false,
