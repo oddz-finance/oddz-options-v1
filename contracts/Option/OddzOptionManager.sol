@@ -12,7 +12,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     OddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
-    IOddzVolatility public iv;
+    IOddzVolatility public volatility;
     Option[] public options;
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
@@ -25,7 +25,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     constructor(IOddzPriceOracle _oracle, IOddzVolatility _iv, OddzLiquidityPool _pool) {
         pool = _pool;
         oracle = _oracle;
-        iv = _iv;
+        volatility = _iv;
         createdAt = block.timestamp;
     }
 
@@ -43,25 +43,23 @@ contract OddzOptionManager is Ownable, IOddzOption {
         _;
     }
 
-    modifier validStrike(uint32 _underlying, uint256 _strike) {
-        uint256 _cp = getCurrentPrice(_underlying);
+    function validStrike(uint256 _strike, uint256 _cp, uint256 _iv, uint256 _decimal) private pure {
         require(
-            _strike <= getCallOverColl(_underlying, _cp) && _strike >= getPutOverColl(_underlying, _cp),
+            _strike <= getCallOverColl(_cp, _iv, _decimal) && _strike >= getPutOverColl(_cp, _iv, _decimal),
             "Strike out of Range"
         );
-        _;
     }
 
     function validateOptionAmount(uint256 _amount, uint256 premium) private pure {
         require(_amount >= premium, "Premium is low");
     }
 
-    function getCallOverColl(uint256 _underlying, uint256 _cp) private returns (uint256 oc) {
-        // TODO: Fetch Call Over Collateralization using _underlying and _cp
+    function getCallOverColl(uint256 _cp, uint256 _iv, uint256 _decimal) private pure returns (uint256 oc) {
+        return _cp.add(_cp.mul(_iv).div(_decimal));
     }
 
-    function getPutOverColl(uint256 _underlying, uint256 _cp) private returns (uint256 oc) {
-        // TODO: Fetch Put Over Collateralization using _underlying and _cp
+    function getPutOverColl(uint256 _cp, uint256 _iv, uint256 _decimal) private pure returns (uint256 oc) {
+        return _cp.sub(_cp.mul(_iv).div(_decimal));
     }
 
     function getCurrentPrice(uint32 _underlying) private view returns (uint256 currentPrice) {
@@ -80,7 +78,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
         payable
         validOptionType(_optionType)
         validExpiration(_expiration)
-        validStrike(_underlying, _strike)
         returns (uint256 optionId)
     {
         (uint256 optionPremium, uint256 settlementFee) = getPremium(
@@ -94,9 +91,19 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 totalFee = optionPremium.add(settlementFee);
         validateOptionAmount(_amount, totalFee);
         uint256 _cp = getCurrentPrice(_underlying);
-        uint256 optionOverColl = _optionType == OptionType.Call
-            ? getCallOverColl(_underlying, _cp)
-            : getPutOverColl(_underlying, _cp);
+
+        (uint256 _iv, uint256 _decimal) = volatility.calculateIv(
+            _underlying,
+            _optionType,
+            _expiration,
+            _cp,
+            _strike
+        );
+
+        validStrike(_strike, _cp, _iv, _decimal);
+        uint256 optionOverColl = OptionType.Call == _optionType
+            ? getCallOverColl(_cp, _iv, _decimal)
+            : getPutOverColl(_cp, _iv, _decimal);
         optionId = options.length;
         Option memory option = Option(
             {
