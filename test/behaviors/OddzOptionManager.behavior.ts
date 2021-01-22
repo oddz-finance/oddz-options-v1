@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import {BigNumber} from "ethers";
+import {OptionType} from '../../test-utils';
 
-const Call = 1;
-const Put = 2;
 export function shouldBehaveLikeOddzOptionManager(): void {
   it("should return the premium price", async function () {
 
@@ -13,7 +12,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       Date.now(),
       BigNumber.from(100),
       BigNumber.from(1234),
-      Call,
+      OptionType.Call,
     );
     console.log(optionPremium);
   });
