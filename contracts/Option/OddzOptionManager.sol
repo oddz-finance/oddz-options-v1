@@ -129,7 +129,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     /**
      * @notice Used for getting the actual options prices
-     * @param _expiration Option period in seconds (1 days <= period <= 4 weeks)
+     * @param _expiration Option period in unix timestamp
      * @param _amount Option amount
      * @param _strike Strike price of the option
      * @return optionPremium Premium to be paid
@@ -167,5 +167,82 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     function getSettlementFee(uint256 _amount) view private returns (uint256 trxFee) {}
 
-    function excercise(uint256 _optionId) external override {}
+    function excercise(uint256 _optionId) external override {
+        Option storage option = options[_optionId];
+
+        require(option.expiration >= block.timestamp, "Option has expired");
+        require(option.holder == msg.sender, "Wrong msg.sender");
+        require(option.state == State.Active, "Wrong state");
+
+        option.state = State.Exercised;
+        uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+
+        emit Exercise(_optionId, profit, ExcerciseType.Cash);
+    }
+
+
+    function excerciseUA(uint256 _optionId, address payable _uaAddress) external override {
+        Option storage option = options[_optionId];
+
+        require(option.expiration >= block.timestamp, "Option has expired");
+        require(option.holder == msg.sender, "Wrong msg.sender");
+        require(option.state == State.Active, "Wrong state");
+
+        option.state = State.Exercised;
+        uint256 profit = payProfit(_optionId, ExcerciseType.Physical, _uaAddress);
+
+        emit Exercise(_optionId, profit, ExcerciseType.Physical);
+    }
+
+    /**
+     * @notice Sends profits in USD from the USD pool to an option holder's address
+     * @param _optionId ID of the option
+     * @param _type Excercise Type e.g: Cash or Physical
+     * @param _address address of the option holder
+     */
+    function payProfit(uint256 _optionId, ExcerciseType _type, address payable _address)
+        internal
+        returns (uint profit)
+    {
+        Option memory option = options[_optionId];
+        uint256 _cp = getCurrentPrice(option.underlying);
+        if (option.optionType == OptionType.Call) {
+            require(option.strike <= _cp, "Current price is too low");
+            profit = _cp.sub(option.strike).mul(option.amount);
+        } else {
+            require(option.strike >= _cp, "Current price is too high");
+            profit = option.strike.sub(_cp).mul(option.amount);
+        }
+        if (profit > option.lockedAmount)
+            profit = option.lockedAmount;
+
+        if (_type == ExcerciseType.Cash)
+            pool.send(_optionId, _address, profit);
+        else
+            pool.sendUA(_optionId, _address, profit);
+    }
+
+    /**
+     * @notice Unlock funds locked in the expired options
+     * @param _optionId ID of the option
+     */
+    function unlock(uint256 _optionId) public {
+        Option storage option = options[_optionId];
+        require(option.expiration < block.timestamp, "Option has not expired yet");
+        require(option.state == State.Active, "Option is not active");
+        option.state = State.Expired;
+        pool.unlock(_optionId);
+        emit Expire(_optionId, option.premium);
+    }
+
+    /**
+     * @notice Unlocks an array of options
+     * @param _optionIds array of options
+     */
+    function unlockAll(uint256[] calldata _optionIds) external {
+        uint arrayLength = _optionIds.length;
+        for (uint256 i = 0; i < arrayLength; i++) {
+            unlock(_optionIds[i]);
+        }
+    }
 }

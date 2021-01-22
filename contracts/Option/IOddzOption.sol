@@ -9,6 +9,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @notice Oddz Options Contract
  */
 interface IOddzOption {
+    enum State {Active, Exercised, Expired}
+    enum OptionType {Put, Call}
+    enum ExcerciseType {Cash, Physical}
+
     event Buy(
         uint256 indexed _optionId,
         address indexed _account,
@@ -17,10 +21,8 @@ interface IOddzOption {
         uint32 _underlying
     );
 
-    event Exercise(uint256 indexed _optionId, uint256 _profit);
+    event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
-    enum State {Active, Exercised, Expired}
-    enum OptionType {Put, Call}
 
     struct Option {
         State state;
@@ -50,9 +52,17 @@ interface IOddzOption {
         uint256 _strike,
         OptionType _optionType) external payable returns (uint256 optionId);
 
+    
     /**
      * @notice Exercises an active option
      * @param _optionId Option ID
      */
     function excercise(uint256 _optionId) external;
+
+    /**
+     * @notice Exercises an active option in underlying asset
+     * @param _optionId Option ID
+     * @param _uaAddress Underlying asset address
+     */
+    function excerciseUA(uint256 _optionId, address payable _uaAddress) external;
 }

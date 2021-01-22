@@ -19,6 +19,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function send(uint256 _id, address payable _account, uint256 _amount) external onlyOwner override {
 
     }
+    function sendUA(uint256 _id, address payable _account, uint256 _amount) external onlyOwner {
+
+    }
     function availableBalance() public override view returns (uint256 balance) {
 
     }
