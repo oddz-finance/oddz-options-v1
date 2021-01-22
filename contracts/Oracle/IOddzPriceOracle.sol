@@ -13,6 +13,7 @@ interface IOddzPriceOracle {
       * @return uint256 the price in 1e8
     */
     function getPrice(uint256 asset) external view returns (uint256);
+
     /**
       * @notice Function to get the price for an underlying asset
       * @param cToken Underlying Asset
