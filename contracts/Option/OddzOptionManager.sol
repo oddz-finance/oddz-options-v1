@@ -19,6 +19,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
+
+    struct OverCollatirsation {
+        uint32 underlying;
+        uint256 max;
+        uint256 min;
+    }
+
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
@@ -45,11 +52,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         _;
     }
 
-    function validStrike(uint256 _strike, uint256 _cp, uint256 _iv, uint256 _decimal) private pure {
-        require(
-            _strike <= getCallOverColl(_cp, _iv, _decimal) && _strike >= getPutOverColl(_cp, _iv, _decimal),
-            "Strike out of Range"
-        );
+    function validStrike(uint256 _strike, uint256 _minPrice, uint256 _maxPrice) private pure {
+        require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
     function validateOptionAmount(uint256 _amount, uint256 premium) private pure {
@@ -62,6 +66,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     function getPutOverColl(uint256 _cp, uint256 _iv, uint256 _decimal) private pure returns (uint256 oc) {
         return _cp.sub(_cp.mul(_iv).div(_decimal));
+    }
 
     function getCurrentPrice(uint32 _underlying) private view returns (uint256 currentPrice) {
         currentPrice = oracle.getPrice(_underlying);
@@ -81,59 +86,40 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validExpiration(_expiration)
         returns (uint256 optionId)
     {
-        (uint256 optionPremium, uint256 settlementFee) = getPremium(
+        (uint256 optionPremium, uint256 settlementFee, uint256 iv, uint256 decimal, uint256 cp) = getPremium(
             _underlying,
             _expiration,
             _amount,
             _strike,
             _optionType
         );
-
-        uint256 totalFee = optionPremium.add(settlementFee);
-        validateOptionAmount(_amount, totalFee);
-        uint256 _cp = getCurrentPrice(_underlying);
-
-        (uint256 _iv, uint256 _decimal) = volatility.calculateIv(
+        validateOptionAmount(_amount, optionPremium.add(settlementFee));
+        OverCollatirsation memory overColl = OverCollatirsation(
             _underlying,
-            _optionType,
-            _expiration,
-            _cp,
-            _strike
+            getCallOverColl(cp, iv, decimal),
+            getPutOverColl(cp, iv, decimal)
         );
-
-        validStrike(_strike, _cp, _iv, _decimal);
-        uint256 optionOverColl = OptionType.Call == _optionType
-            ? getCallOverColl(_cp, _iv, _decimal)
-            : getPutOverColl(_cp, _iv, _decimal);
+        
+        validStrike(_strike, overColl.max, overColl.min);
 
         optionId = options.length;
         Option memory option = Option(
-            {
-                state: State.Active,
-                holder: msg.sender,
-                strike: _strike,
-                amount: _amount,
-                lockedAmount: optionOverColl.sub(_strike),
-                premium: totalFee,
-                expiration: _expiration,
-                underlying: _underlying,
-                optionType: _optionType
-            }
+            State.Active,
+            msg.sender,
+            _strike,
+            _amount,
+            _optionType == OptionType.Call ? overColl.max : overColl.min,
+            optionPremium,
+            _expiration,
+            overColl.underlying,
+            _optionType
         );
 
         options.push(option);
-
+        
         pool.lock {value: option.premium} (optionId, option.lockedAmount);
 
-        emit Buy(
-            {
-                _optionId: optionId,
-                _account: msg.sender,
-                _settlementFee: settlementFee,
-                _totalFee: totalFee,
-                _underlying: _underlying
-            }
-        );
+        emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.underlying);
     }
 
     /**
@@ -156,17 +142,21 @@ contract OddzOptionManager is Ownable, IOddzOption {
         view
         returns (
             uint256 optionPremium,
-            uint256 settlementFee
+            uint256 settlementFee,
+            uint256 cp,
+            uint256 iv,
+            uint256 decimal
         )
     {
-        (uint256 _iv, uint256 _decimal) = iv.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
+        (iv, decimal) = volatility.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
+        cp = getCurrentPrice(_underlying);
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == OptionType.Call ? true : false,
             _strike,
-            getCurrentPrice(_underlying),
+            cp,
             _expiration,
             _underlying,
-            _iv,
+            iv,
             0,
             0,
             PERCENTAGE_PRECISION
