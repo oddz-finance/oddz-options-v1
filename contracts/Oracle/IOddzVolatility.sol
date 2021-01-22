@@ -4,7 +4,7 @@ pragma solidity ^0.7.0;
 import "../Option/IOddzOption.sol";
 
 /**
- * @title Implied volatility caculation for Oddz options 
+ * @title Implied volatility caculation for Oddz options
  * @notice Oddz options IV
  */
 interface IOddzVolatility {

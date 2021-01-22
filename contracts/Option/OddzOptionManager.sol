@@ -6,6 +6,8 @@ import "../Oracle/IOddzPriceOracle.sol";
 import "../Oracle/IOddzVolatility.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "../Libs/BlackScholes.sol";
+import "hardhat/console.sol";
+
 
 contract OddzOptionManager is Ownable, IOddzOption {
     using SafeMath for uint256;
@@ -60,7 +62,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     function getPutOverColl(uint256 _cp, uint256 _iv, uint256 _decimal) private pure returns (uint256 oc) {
         return _cp.sub(_cp.mul(_iv).div(_decimal));
-    }
 
     function getCurrentPrice(uint32 _underlying) private view returns (uint256 currentPrice) {
         currentPrice = oracle.getPrice(_underlying);
@@ -104,6 +105,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 optionOverColl = OptionType.Call == _optionType
             ? getCallOverColl(_cp, _iv, _decimal)
             : getPutOverColl(_cp, _iv, _decimal);
+
         optionId = options.length;
         Option memory option = Option(
             {
@@ -150,19 +152,21 @@ contract OddzOptionManager is Ownable, IOddzOption {
         OptionType _optionType
     )
         public
+        validOptionType(_optionType)
         view
         returns (
             uint256 optionPremium,
             uint256 settlementFee
         )
     {
+        (uint256 _iv, uint256 _decimal) = iv.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == OptionType.Call ? true : false,
             _strike,
             getCurrentPrice(_underlying),
             _expiration,
             _underlying,
-            getIV(_underlying),
+            _iv,
             0,
             0,
             PERCENTAGE_PRECISION
