@@ -17,6 +17,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     IOddzVolatility public volatility;
     Option[] public options;
     Asset[] public assets;
+    Asset public strikeAsset;
     mapping(bytes32 => Asset) internal assetNameMap;
     mapping(uint32 => Asset) internal assetIdMap;
     uint256 public createdAt;
@@ -124,7 +125,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     function getCurrentPrice(Asset memory _asset) private view returns (uint256 currentPrice) {
-        currentPrice = oracle.getPrice(_asset.id);
+        currentPrice = oracle.getUnderlyingPrice(_asset.id, strikeAsset.id);
     }
 
     function getAssetStrikePriceRange(

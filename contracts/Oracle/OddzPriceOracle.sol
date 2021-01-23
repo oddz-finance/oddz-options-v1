@@ -112,7 +112,7 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
         }
     }
 
-    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public view override returns (uint256 price) {
+    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public view override returns (uint256) {
         return _getAggregatorPrice(_asset, _strikeAsset);
     }
 }

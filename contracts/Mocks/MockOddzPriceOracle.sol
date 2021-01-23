@@ -9,12 +9,7 @@ contract MockOddzPriceOracle is IOddzPriceOracle {
         price = _price;
     }
 
-    function getPrice(uint256 asset) public override view returns (uint256) {
-        // should get the price for given asset
-        return price;
-    }
-
-    function getUnderlyingPrice(uint256 cToken) public override view returns (uint256) {
+    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public override view returns (uint256) {
         return price;
     }
 }
