@@ -23,6 +23,9 @@ interface IOddzOption {
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
+    event NewAsset(uint32 indexed id, bytes32 indexed _name, bool _status);
+    event AssetActivate(uint32 indexed id, bytes32 indexed _name);
+    event AssetDeactivate(uint32 indexed id, bytes32 indexed _name);
 
     struct Asset {
         uint32 id;

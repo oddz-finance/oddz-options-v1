@@ -27,7 +27,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(100000),
     )).to.be.revertedWith("Asset already present");
   });
-  it("should return newly added asset id", async function () {
+  it("should add new asset", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await expect(oddzOptionManager.addAsset(
+      utils.formatBytes32String("ETH"),
+      BigNumber.from(100000),
+    )).to.emit(oddzOptionManager, "NewAsset");
+  });
+  it("should emit new asset event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(
       utils.formatBytes32String("ETH"),

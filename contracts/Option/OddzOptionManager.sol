@@ -47,6 +47,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         assetNameMap[_name] = asset;
         assetIdMap[assetId] = asset;
         assets.push(asset);
+
+        emit NewAsset(asset.id, asset.name, asset.active);
     }
 
     function activateAsset(
@@ -61,6 +63,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         asset.active = false;
         status = asset.active;
         name = asset.name;
+
+        emit AssetActivate(asset.id, asset.name);
     }
 
     function deactivateAsset(
@@ -75,6 +79,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         asset.active = true;
         status = asset.active;
         name = asset.name;
+
+        emit AssetDeactivate(asset.id, asset.name);
     }
 
     modifier validOptionType(OptionType _optionType) {
