@@ -15,10 +15,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       )
     ).to.be.revertedWith("Invalid Asset");
   });
-  it("should fail with message invalid asset", async function () {
+  it("should fail with message Asset already present", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     // call should be optionType.call
-    const assetId = await oddzOptionManager.addAsset(
+    await oddzOptionManager.addAsset(
       utils.formatBytes32String("ETH"),
       BigNumber.from(100000),
     );
@@ -54,13 +54,17 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       utils.formatBytes32String("ETH"),
       BigNumber.from(100000),
     );
-    const optionPremium = await oddzOptionManager.getPremium(
+    const option = await oddzOptionManager.getPremium(
       assetId.value.toNumber(),
       Date.now(),
-      BigNumber.from(100),
+      BigNumber.from(1000), // number of options
       BigNumber.from(1234),
       OptionType.Call,
     );
-    console.log(optionPremium);
+    const {optionPremium, settlementFee, cp, iv} = option;
+    expect(iv.toNumber()).to.equal(1);
+    expect(optionPremium.toNumber()).to.equal(33);
+    expect(settlementFee.toNumber()).to.equal(10); //shouldn't the settlement fee a % of optionPremium?
+    expect(cp.toNumber()).to.equal(1200);
   });
 }
