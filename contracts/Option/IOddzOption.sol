@@ -59,12 +59,12 @@ interface IOddzOption {
         uint256 _strike,
         OptionType _optionType) external payable returns (uint256 optionId);
 
-    
+
     /**
      * @notice Exercises an active option
      * @param _optionId Option ID
      */
-    function excercise(uint256 _optionId) external;
+    function exercise(uint256 _optionId) external;
 
     /**
      * @notice Exercises an active option in underlying asset

@@ -86,8 +86,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     modifier validExpiration(uint256 _expiration) {
-        require(_expiration - block.timestamp <= maxExpiry, "Expiration is too large");
-        require(_expiration - block.timestamp >= minExpiry, "Expiration is too small");
+        require(_expiration <= maxExpiry, "Expiration cannot be more than 30 days");
+        require(_expiration >= minExpiry, "Expiration cannot be less than 1 days");
         _;
     }
 
@@ -193,7 +193,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
 
-        pool.lock {value: option.premium} (optionId, option.lockedAmount);
+        // pool.lock {value: option.premium} (optionId, option.lockedAmount);
 
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
     }
@@ -259,7 +259,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         settlementFee = _amount.div(100);
     }
 
-    function excercise(uint256 _optionId) external override {
+    function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
 
         require(option.expiration >= block.timestamp, "Option has expired");
