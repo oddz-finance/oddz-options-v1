@@ -198,7 +198,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         );
 
         options.push(option);
-        
+
         pool.lock {value: option.premium} (optionId, option.lockedAmount);
 
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
