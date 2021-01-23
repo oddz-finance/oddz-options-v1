@@ -72,6 +72,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.0.12",
     "@openzeppelin/contracts": "3.1.0-solc-0.7",
     "@truffle/hdwallet-provider": "^1.2.0",
     "bip39": "^3.0.3",
