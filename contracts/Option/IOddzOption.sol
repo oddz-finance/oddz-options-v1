@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
+import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
@@ -8,7 +9,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @title Oddz Call and Put Options
  * @notice Oddz Options Contract
  */
-interface IOddzOption {
+interface IOddzOption is IOddzAsset {
     enum State {Active, Exercised, Expired}
     enum OptionType {Put, Call}
     enum ExcerciseType {Cash, Physical}
@@ -23,16 +24,6 @@ interface IOddzOption {
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
-    event NewAsset(uint32 indexed id, bytes32 indexed _name, bool _status);
-    event AssetActivate(uint32 indexed id, bytes32 indexed _name);
-    event AssetDeactivate(uint32 indexed id, bytes32 indexed _name);
-
-    struct Asset {
-        uint32 id;
-        bytes32 name;
-        bool active;
-        uint256 precision;
-    }
 
     struct Option {
         State state;
