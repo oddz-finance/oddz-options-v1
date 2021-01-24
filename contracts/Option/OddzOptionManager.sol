@@ -256,8 +256,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
     /**
      * @notice Used for exercising an option that is not expired
      * @param _optionId Option id
-
-     * @return optionPremium Premium to be paid
      */
     function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
