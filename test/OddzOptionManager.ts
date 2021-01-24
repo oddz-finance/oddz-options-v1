@@ -7,10 +7,10 @@ import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVol
 
 import { Accounts, Signers } from "../types";
 
-import {OddzOptionManager, MockOddzPriceOracle, MockOddzLiquidityPool, MockOddzVolatility} from "../typechain";
-import {shouldBehaveLikeOddzOptionManager} from './behaviors/OddzOptionManager.behavior';
-import {MockProvider} from 'ethereum-waffle';
-import {BigNumber} from "ethers";
+import { OddzOptionManager, MockOddzPriceOracle, MockOddzLiquidityPool, MockOddzVolatility } from "../typechain";
+import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
+import { MockProvider } from "ethereum-waffle";
+import { BigNumber } from "ethers";
 const { deployContract } = waffle;
 
 describe("Oddz Option Manager Unit tests", function () {
@@ -30,16 +30,23 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
-      const oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [BigNumber.from(1200)])) as MockOddzPriceOracle;
-      const oddzVolatility = (await deployContract(this.signers.admin, MockOddzVolatilityArtifact)) as MockOddzLiquidityPool;
-      const oddzLiquidityPool = (await deployContract(this.signers.admin, MockOddzLiquidityPoolArtifact)) as MockOddzVolatility;
+      const oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(1200),
+      ])) as MockOddzPriceOracle;
+      const oddzVolatility = (await deployContract(
+        this.signers.admin,
+        MockOddzVolatilityArtifact,
+      )) as MockOddzLiquidityPool;
+      const oddzLiquidityPool = (await deployContract(
+        this.signers.admin,
+        MockOddzLiquidityPoolArtifact,
+      )) as MockOddzVolatility;
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         oddzPriceOracle.address,
         oddzVolatility.address,
-        oddzLiquidityPool.address
+        oddzLiquidityPool.address,
       ])) as OddzOptionManager;
     });
     shouldBehaveLikeOddzOptionManager();
   });
 });
-

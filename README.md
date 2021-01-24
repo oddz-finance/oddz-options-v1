@@ -6,9 +6,9 @@ World's First multi-chain Options trading Protocol built on Binance chain with b
 
 Token Details:
 
-| Name           | Symbol | Decimals |  Total Supply |
-| -------------- | ------ | -------: | ------------: |
-| Oddz Token | `ODDZ`  |       18 | 100,000,000   |
+| Name       | Symbol | Decimals | Total Supply |
+| ---------- | ------ | -------: | -----------: |
+| Oddz Token | `ODDZ` |       18 |  100,000,000 |
 
 The ODDZ token is a standard ERC20 token implementing the [ERC20](https://eips.ethereum.org/EIPS/eip-20) interface.
 

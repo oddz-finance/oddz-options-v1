@@ -1,4 +1,4 @@
 export const OptionType = {
   Call: 0,
-  Put: 1
-}
+  Put: 1,
+};

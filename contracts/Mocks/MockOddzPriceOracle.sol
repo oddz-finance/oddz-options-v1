@@ -5,11 +5,12 @@ import "../Oracle/IOddzPriceOracle.sol";
 
 contract MockOddzPriceOracle is IOddzPriceOracle {
     uint256 public price;
-    constructor (uint256 _price) {
+
+    constructor(uint256 _price) {
         price = _price;
     }
 
-    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public override view returns (uint256) {
+    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public view override returns (uint256) {
         return price;
     }
 }

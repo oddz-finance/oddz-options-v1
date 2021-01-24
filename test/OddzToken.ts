@@ -7,9 +7,8 @@ import { Accounts, Signers } from "../types";
 import { OddzToken } from "../typechain/OddzToken";
 import { shouldBehaveLikeOddzToken } from "./behaviors/OddzToken.behavior";
 import { BigNumber } from "ethers";
-import {MockProvider} from 'ethereum-waffle';
+import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-
 
 describe("Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
@@ -27,18 +26,21 @@ describe("Unit tests", function () {
   describe("Oddz token", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(100000000);
-      this.oddzToken = (await deployContract(this.signers.admin, OddzTokenArtifact, ["OddzToken",
+      this.oddzToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "OddzToken",
         "ODDZ",
-        totalSupply])) as OddzToken;
-      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, ["USD coin",
+        totalSupply,
+      ])) as OddzToken;
+      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "USD coin",
         "USDC",
-        totalSupply])) as OddzToken;
+        totalSupply,
+      ])) as OddzToken;
     });
 
     shouldBehaveLikeOddzToken();
   });
 });
-
 
 // const OddzToken = artifacts.require("OddzToken");
 // const { bufferToHex, keccakFromString, ecsign, toBuffer } = require('ethereumjs-util');

@@ -23,10 +23,7 @@ async function main(): Promise<void> {
   console.log("Greeter deployed to: ", greeter.address);
 
   const OddzToken: ContractFactory = await ethers.getContractFactory("OddzToken");
-  const oddzToken: Contract = await OddzToken.deploy(OddzToken,
-    "OddzToken",
-    "ODDZ",
-    totalSupply)
+  const oddzToken: Contract = await OddzToken.deploy(OddzToken, "OddzToken", "ODDZ", totalSupply);
   console.log("OddzToken deployed to: ", oddzToken.address);
 
   const OddzOptionManager: ContractFactory = await ethers.getContractFactory("OddzOptionManager");

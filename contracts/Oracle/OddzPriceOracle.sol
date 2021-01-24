@@ -15,7 +15,7 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
      * @dev The percentage precision. (100000 = 100%)
      */
     uint256 internal constant PERCENTAGE_PRECISION = 100000;
-    
+
     /**
      * @dev Struct to store the Oracle aggregator data.
      */
@@ -27,9 +27,9 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
     /**
      * @dev The Oracle aggregators data. (underlying => strikeAsset => AggregatorData)
      */
-    mapping(uint32 => mapping(uint32 => AggregatorData)) public aggregators; 
-	
-	/**
+    mapping(uint32 => mapping(uint32 => AggregatorData)) public aggregators;
+
+    /**
      * @dev The asset precision. (6 decimals = 1000000)
      */
     mapping(uint32 => uint256) public assetPrecision;
@@ -50,23 +50,27 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
 
     /**
      * @notice Function to set the the Oracle aggregator data.
-	 * Only can be called by the admin.
+     * Only can be called by the admin.
      * @param _underlying Id of the underlying.
      * @param _strikeAsset Id of the strike asset.
-	 * @param _aggregator Address of the Oracle aggregator.
+     * @param _aggregator Address of the Oracle aggregator.
      */
-    function setAgreggator(uint32 _underlying, uint32 _strikeAsset, address _aggregator) public onlyOwner {
+    function setAgreggator(
+        uint32 _underlying,
+        uint32 _strikeAsset,
+        address _aggregator
+    ) public onlyOwner {
         require(_underlying != _strikeAsset, "Invalid assets");
         //require("<Validate Underlying>", "Invalid underlying");
         //require("<Validate strikeasset>", "Invalid underlying");
         require(_aggregator.isContract(), "Invalid aggregator");
-        
+
         _setAssetPrecision(_underlying);
         _setAssetPrecision(_strikeAsset);
-        
+
         uint256 aggregatorDecimals = uint256(AggregatorV3Interface(_aggregator).decimals());
         emit SetAggregator(_underlying, _strikeAsset, aggregators[_underlying][_strikeAsset].aggregator, _aggregator);
-        aggregators[_underlying][_strikeAsset] = AggregatorData(_aggregator, (10 ** aggregatorDecimals));
+        aggregators[_underlying][_strikeAsset] = AggregatorData(_aggregator, (10**aggregatorDecimals));
     }
 
     /**
@@ -76,7 +80,7 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
     function _setAssetPrecision(uint32 _asset) internal {
         if (assetPrecision[_asset] == 0) {
             uint256 decimals = _getAssetDecimals(_asset);
-            assetPrecision[_asset] = (10 ** decimals);
+            assetPrecision[_asset] = (10**decimals);
         }
     }
 
@@ -85,7 +89,7 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
      * @param _asset Address of the asset.
      * @return The asset decimals.
      */
-    function _getAssetDecimals(uint32 _asset) internal view returns(uint256) {
+    function _getAssetDecimals(uint32 _asset) internal view returns (uint256) {
         return uint256(18);
     }
 
@@ -93,18 +97,18 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
      * @notice Internal function to get the underlying price on the Oracle aggregator.
      * @param _underlying Id of the underlying.
      * @param _strikeAsset Id of the strike asset.
-	 * @return The underlying price with the strike asset precision.
+     * @return The underlying price with the strike asset precision.
      */
-    function _getAggregatorPrice(uint32 _underlying, uint32 _strikeAsset) internal view returns(uint256) {
+    function _getAggregatorPrice(uint32 _underlying, uint32 _strikeAsset) internal view returns (uint256) {
         AggregatorData storage data = aggregators[_underlying][_strikeAsset];
         address _aggregator = data.aggregator;
         require(_aggregator != address(0), "No aggregator");
-        
-        (,int256 answer,,,) = AggregatorV3Interface(_aggregator).latestRoundData();
-        
+
+        (, int256 answer, , , ) = AggregatorV3Interface(_aggregator).latestRoundData();
+
         uint256 _aggregatorPrecision = data.precision;
         uint256 _assetPrecision = assetPrecision[_strikeAsset];
-        
+
         if (_aggregatorPrecision > _assetPrecision) {
             return uint256(answer).div(_aggregatorPrecision.div(_assetPrecision));
         } else {
