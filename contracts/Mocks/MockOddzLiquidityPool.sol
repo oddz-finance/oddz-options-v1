@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
-import "./IOddzLiquidityPool.sol";
+import "../Pool/IOddzLiquidityPool.sol";
 
-contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
+contract MockOddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "MockoUSD") {
     function provide() external payable override returns (uint256 mint) {}
 
     function withdraw(uint256 _amount) external override returns (uint256 burn) {}
@@ -17,12 +17,6 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         address payable _account,
         uint256 _amount
     ) external override onlyOwner {}
-
-    function sendUA(
-        uint256 _id,
-        address payable _account,
-        uint256 _amount
-    ) external onlyOwner {}
 
     function availableBalance() public view override returns (uint256 balance) {}
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
+import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
@@ -8,18 +9,21 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @title Oddz Call and Put Options
  * @notice Oddz Options Contract
  */
-interface IOddzOption {
+interface IOddzOption is IOddzAsset {
+    enum State { Active, Exercised, Expired }
+    enum OptionType { Put, Call }
+    enum ExcerciseType { Cash, Physical }
+
     event Buy(
         uint256 indexed _optionId,
         address indexed _account,
         uint256 _settlementFee,
-        uint256 _totalFee
+        uint256 _totalFee,
+        uint32 _underlying
     );
 
-    event Exercise(uint256 indexed _optionId, uint256 _profit);
+    event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
-    enum State {Active, Exercised, Expired}
-    enum OptionType {Put, Call}
 
     struct Option {
         State state;
@@ -29,11 +33,13 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
+        uint32 assetId;
         OptionType optionType;
     }
 
     /**
      * @notice Buy a new option
+     * @param _underlying Underlying asset
      * @param _expiration Option expiration in unix timestamp
      * @param _amount Option amount in wei
      * @param _strike Strike price expressed in wei
@@ -41,14 +47,23 @@ interface IOddzOption {
      * @return optionId Created option ID
      */
     function buy(
+        uint32 _underlying,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
-        OptionType _optionType) external payable returns (uint256 optionId);
+        OptionType _optionType
+    ) external payable returns (uint256 optionId);
 
     /**
      * @notice Exercises an active option
      * @param _optionId Option ID
      */
-    function excercise(uint256 _optionId) external;
+    function exercise(uint256 _optionId) external;
+
+    /**
+     * @notice Exercises an active option in underlying asset
+     * @param _optionId Option ID
+     * @param _uaAddress Underlying asset address
+     */
+    function excerciseUA(uint256 _optionId, address payable _uaAddress) external;
 }

@@ -1,7 +1,7 @@
-var HDWalletProvider = require("truffle-hdwallet-provider")
-const MNEMONIC = process.env.MNEMONIC
-const API_KEY = process.env.API_KEY
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
+var HDWalletProvider = require("truffle-hdwallet-provider");
+const MNEMONIC = process.env.MNEMONIC;
+const API_KEY = process.env.API_KEY;
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -10,47 +10,38 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      network_id: "*" // match any network
+      network_id: "*", // match any network
     },
     kovan: {
-      provider: function() {
-        return new HDWalletProvider(
-          MNEMONIC,
-          `https://kovan.infura.io/${API_KEY}`
-        )
+      provider: function () {
+        return new HDWalletProvider(MNEMONIC, `https://kovan.infura.io/${API_KEY}`);
       },
       network_id: 42,
-      gas: 8000000
+      gas: 8000000,
     },
     ropsten: {
-      provider: function() {
-        return new HDWalletProvider(
-          MNEMONIC,
-          `https://ropsten.infura.io/v3/${API_KEY}`
-        )
+      provider: function () {
+        return new HDWalletProvider(MNEMONIC, `https://ropsten.infura.io/v3/${API_KEY}`);
       },
       network_id: 3,
       gas: 7000000,
       gasPrice: 15000000000, // 15 gwei
-      skipDryRun: true
+      skipDryRun: true,
     },
     mainnet: {
-      provider: function() {
-        return new HDWalletProvider(
-          MNEMONIC,
-          `https://mainnet.infura.io/v3/${API_KEY}`
-        )
+      provider: function () {
+        return new HDWalletProvider(MNEMONIC, `https://mainnet.infura.io/v3/${API_KEY}`);
       },
       network_id: 1,
-      gas: 7000000
-    }
+      gas: 7000000,
+    },
   },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
     // timeout: 100000
   },
-  plugins: ['truffle-plugin-verify'],
+  plugins: ["truffle-plugin-verify"],
   compilers: {
     solc: {
       version: "0.6.2", // Fetch exact version from solc-bin (default: truffle's version)
@@ -58,10 +49,10 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: false,
-          runs: 200
-        }
-      }
-    }
+          runs: 200,
+        },
+      },
+    },
   },
 
   mocha: {
@@ -70,13 +61,13 @@ module.exports = {
       currency: "USD",
       gasPrice: 21,
       outputFile: "/dev/null",
-      showTimeSpent: true
-    }
+      showTimeSpent: true,
+    },
   },
   verify: {
-    preamble: 'Oddz Token (ODDZ) contracts'
+    preamble: "Oddz Token (ODDZ) contracts",
   },
   api_keys: {
-    etherscan: ETHERSCAN_API_KEY
-  }
-}
+    etherscan: ETHERSCAN_API_KEY,
+  },
+};
