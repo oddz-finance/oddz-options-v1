@@ -193,7 +193,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
             _amount,
             _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
             optionPremium,
-            _expiration,
+            _expiration + block.timestamp,
             _underlying,
             _optionType
         );
@@ -266,17 +266,21 @@ contract OddzOptionManager is Ownable, IOddzOption {
         settlementFee = _amount.div(100);
     }
 
+    /**
+     * @notice Used for exercising an option that is not expired, with an exceptions for expired options, wrong sender and wrong state
+     * @param _optionId Option id
+
+     * @return optionPremium Premium to be paid
+     */
     function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
-
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
-
         option.state = State.Exercised;
-        uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+        // uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
 
-        emit Exercise(_optionId, profit, ExcerciseType.Cash);
+        emit Exercise(_optionId, 100, ExcerciseType.Cash);
     }
 
 

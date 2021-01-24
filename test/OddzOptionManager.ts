@@ -21,7 +21,9 @@ describe("Oddz Option Manager Unit tests", function () {
 
     const signers: Signer[] = await ethers.getSigners();
     this.signers.admin = signers[0];
+    this.signers.admin1 = signers[1];
     this.accounts.admin = await signers[0].getAddress();
+    this.accounts.admin1 = await signers[1].getAddress();
     this.wallet = wallet;
     this.walletTo = walletTo;
   });

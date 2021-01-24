@@ -1,6 +1,10 @@
 import { expect } from "chai";
-import {BigNumber, utils} from "ethers";
+import {BigNumber, ethers, utils} from "ethers";
 import {OptionType} from '../../test-utils';
+import exp from "constants";
+import {waffle} from 'hardhat';
+
+const provider = waffle.provider;
 
 export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset", async function () {
@@ -127,5 +131,70 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(1200),
       OptionType.Call)
     ).to.emit(oddzOptionManager, 'Buy');
+  });
+
+  it("should excercise option if the asset is supported and emit excercise event", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(
+      utils.formatBytes32String("WBTC"),
+      BigNumber.from(100000),
+    );
+
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(1000),
+      BigNumber.from(1200),
+      OptionType.Call);
+    await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.emit(oddzOptionManager, 'Exercise');
+  });
+
+  it("should throw an error when trying to excercise an option that is expired", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(
+      utils.formatBytes32String("WBTC"),
+      BigNumber.from(100000),
+    );
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(1000),
+      BigNumber.from(1200),
+      OptionType.Call);
+    await provider.send('evm_increaseTime', [24 * 3600 * 2])
+    await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.be.revertedWith("Option has expired");
+  });
+
+  it("should throw an error when trying to excercise an option that is owned by other wallet", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(
+      utils.formatBytes32String("WBTC"),
+      BigNumber.from(100000),
+    );
+    const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(1000),
+      BigNumber.from(1200),
+      OptionType.Call);
+    await expect(oddzOptionManager1.exercise(optionBought.value.toNumber())).to.be.revertedWith("Wrong msg.sender");
+  });
+
+  it("should throw an error when trying excercise an option if the option is not active", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(
+      utils.formatBytes32String("WBTC"),
+      BigNumber.from(100000),
+    );
+
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(1000),
+      BigNumber.from(1200),
+      OptionType.Call);
+    await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.emit(oddzOptionManager, 'Exercise');
+    await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.be.revertedWith("Wrong state");
   });
 }
