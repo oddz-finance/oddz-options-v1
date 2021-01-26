@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, ethers, utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 import { OptionType } from "../../test-utils";
-import exp from "constants";
 import { waffle } from "hardhat";
 
 const provider = waffle.provider;
