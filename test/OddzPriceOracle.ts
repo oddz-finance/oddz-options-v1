@@ -8,7 +8,7 @@ import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
 import { OddzPriceOracle } from "../typechain/OddzPriceOracle";
-import { MockAggregatorV3 } from "../typechain/MockAggregatorV3";
+import {MockOddzPriceOracle} from "../typechain";
 import { shouldBehaveLikeOddzPriceOracle } from "./behaviors/OddzPriceOracle.behavior";
 import { AssetIds } from "../test-utils";
 import { BigNumber, utils } from "ethers";
@@ -34,7 +34,7 @@ describe("Unit tests", function () {
         8,
         utils.formatBytes32String("Mock"),
         8,
-      ])) as MockAggregatorV3;
+      ])) as MockOddzPriceOracle;
       this.oddzPriceOracle = (await deployContract(this.signers.admin, OddzPriceOracleArtifact, [])) as OddzPriceOracle;
     });
 
