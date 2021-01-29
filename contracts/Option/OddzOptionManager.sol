@@ -180,7 +180,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
                 msg.sender,
                 _strike,
                 _amount,
-                _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
+                _optionType == OptionType.Call ? min(maxStrikePrice, _strike) : min(minStrikePrice, _strike),
                 optionPremium,
                 _expiration + block.timestamp,
                 _underlying,
