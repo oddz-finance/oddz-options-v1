@@ -10,6 +10,7 @@ import "hardhat/console.sol";
 
 contract OddzOptionManager is Ownable, IOddzOption {
     using SafeMath for uint256;
+    using Math for uint256;
 
     OddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
@@ -30,8 +31,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     constructor(
         IOddzPriceOracle _oracle,
-        IOddzVolatility _iv,
-        OddzLiquidityPool _pool
+        IOddzVolatility _iv
     ) {
         pool = new OddzLiquidityPool();
         oracle = _oracle;
@@ -114,17 +114,19 @@ contract OddzOptionManager is Ownable, IOddzOption {
     function getCallOverColl(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal
+        uint256 _decimal,
+        uint256 _strike
     ) private pure returns (uint256 oc) {
-        oc = _cp.add(_cp.mul(_iv).div(_decimal));
+        oc = _strike.min(_cp.add(_cp.mul(_iv).div(_decimal)));
     }
 
     function getPutOverColl(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal
+        uint256 _decimal,
+        uint256 _strike
     ) private pure returns (uint256 oc) {
-        oc = _cp.sub(_cp.mul(_iv).div(_decimal));
+        oc = _strike.max(_cp.sub(_cp.mul(_iv).div(_decimal)));
     }
 
     function getCurrentPrice(Asset memory _asset) private view returns (uint256 currentPrice) {
@@ -137,8 +139,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint32 _underlying,
         uint256 _strike
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[_underlying].precision);
-        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[_underlying].precision);
+        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[_underlying].precision, _strike);
+        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[_underlying].precision, _strike);
         validStrike(_strike, maxAssetPrice, minAssetPrice);
     }
 
@@ -180,7 +182,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
                 msg.sender,
                 _strike,
                 _amount,
-                _optionType == OptionType.Call ? min(maxStrikePrice, _strike) : min(minStrikePrice, _strike),
+                _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
                 optionPremium,
                 _expiration + block.timestamp,
                 _underlying,

@@ -4,6 +4,7 @@ pragma solidity ^0.7.0;
 import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 
 /**
  * @title Oddz Call and Put Options
