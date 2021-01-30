@@ -31,8 +31,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     constructor(
         IOddzPriceOracle _oracle,
-        IOddzVolatility _iv,
-        OddzLiquidityPool _pool
+        IOddzVolatility _iv
     ) {
         pool = new OddzLiquidityPool();
         oracle = _oracle;

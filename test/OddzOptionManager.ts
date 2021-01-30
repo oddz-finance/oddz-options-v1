@@ -2,12 +2,11 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
-import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 
 import { Accounts, Signers } from "../types";
 
-import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, OddzLiquidityPool } from "../typechain";
+import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber } from "ethers";
@@ -37,14 +36,9 @@ describe("Oddz Option Manager Unit tests", function () {
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
-      const oddzLiquidityPool = (await deployContract(
-        this.signers.admin,
-        OddzLiquidityPoolArtifact,
-      )) as OddzLiquidityPool;
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         oddzPriceOracle.address,
         oddzVolatility.address,
-        oddzLiquidityPool.address,
       ])) as OddzOptionManager;
     });
     shouldBehaveLikeOddzOptionManager();
