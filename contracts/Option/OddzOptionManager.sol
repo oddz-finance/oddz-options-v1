@@ -33,7 +33,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         IOddzVolatility _iv,
         OddzLiquidityPool _pool
     ) {
-        pool = _pool;
+        pool = new OddzLiquidityPool();
         oracle = _oracle;
         volatility = _iv;
         createdAt = block.timestamp;
@@ -180,7 +180,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
                 msg.sender,
                 _strike,
                 _amount,
-                _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
+                _optionType == OptionType.Call ? min(maxStrikePrice, _strike) : min(minStrikePrice, _strike),
                 optionPremium,
                 _expiration + block.timestamp,
                 _underlying,
@@ -189,7 +189,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
 
-        // pool.lock {value: option.premium} (optionId, option.lockedAmount);
+        pool.lock{ value: option.premium }(optionId, option.lockedAmount);
 
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
     }
@@ -263,9 +263,9 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
         option.state = State.Exercised;
-        // uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+        uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
 
-        emit Exercise(_optionId, 100, ExcerciseType.Cash);
+        emit Exercise(_optionId, profit, ExcerciseType.Cash);
     }
 
     function excerciseUA(uint256 _optionId, address payable _uaAddress) external override {
