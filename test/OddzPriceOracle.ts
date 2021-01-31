@@ -8,7 +8,7 @@ import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
 import { OddzPriceOracle } from "../typechain/OddzPriceOracle";
-import {MockOddzPriceOracle} from "../typechain";
+import { MockOddzPriceOracle } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracle } from "./behaviors/OddzPriceOracle.behavior";
 import { AssetIds } from "../test-utils";
 import { BigNumber, utils } from "ethers";

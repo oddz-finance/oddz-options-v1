@@ -38,21 +38,21 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
     Liquidity[] public liquidityInfo;
 
-    mapping ( uint256 => uint256 ) internal daysActiveLiquidity;
+    mapping(uint256 => uint256) internal daysActiveLiquidity;
 
     /**
      * @dev The Provider aggregators data. (Provider address => epoch (Liquidity date) => Liquidity)
      */
-    mapping (address => mapping ( uint256 => Liquidity )) internal providerLiquidityMap;
+    mapping(address => mapping(uint256 => Liquidity)) internal providerLiquidityMap;
 
-    mapping (address => Liquidity[]) internal providerLiquidityList;
+    mapping(address => Liquidity[]) internal providerLiquidityList;
 
-    mapping (uint256 => Liquidity[]) internal dayLiquidityList;
+    mapping(uint256 => Liquidity[]) internal dayLiquidityList;
 
     /**
      * @dev premiumDayPool unlocked premium per day (date => PremiumPool)
      */
-    mapping ( uint256 => PremiumPool ) internal premiumDayPool;
+    mapping(uint256 => PremiumPool) internal premiumDayPool;
 
     struct LpPremium {
         uint256 date;
@@ -60,11 +60,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         Liquidity liquidity;
     }
 
-    mapping ( address => LpPremium[] ) internal providerDayPremiumEligibiltiy;
+    mapping(address => LpPremium[]) internal providerDayPremiumEligibiltiy;
 
     uint256 public surplus;
 
-    mapping ( uint256 => uint256 ) internal daysExercise;
+    mapping(uint256 => uint256) internal daysExercise;
 
     /**
      * @dev Liquidity Locked for all the active options
@@ -73,12 +73,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
     function provide() external payable override returns (uint256 mint) {
         addLiquidity();
-        uint supply = totalSupply();
-        uint balance = totalBalance();
-        if (supply > 0 && balance > 0)
-            mint = msg.value.mul(supply).div(balance.sub(msg.value));
-        else
-            mint = msg.value.mul(INITIAL_RATE);
+        uint256 supply = totalSupply();
+        uint256 balance = totalBalance();
+        if (supply > 0 && balance > 0) mint = msg.value.mul(supply).div(balance.sub(msg.value));
+        else mint = msg.value.mul(INITIAL_RATE);
 
         require(mint > 0, "Pool: Amount is too small");
 
@@ -142,14 +140,12 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
 
-        uint transferAmount = _amount > ll.amount ? ll.amount : _amount;
+        uint256 transferAmount = _amount > ll.amount ? ll.amount : _amount;
         daysExercise[date].add(transferAmount);
         _account.transfer(transferAmount);
 
-        if (transferAmount <= ll.premium)
-            emit Profit(_id, ll.premium - transferAmount);
-        else
-            emit Loss(_id, transferAmount - ll.premium);
+        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
+        else emit Loss(_id, transferAmount - ll.premium);
     }
 
     function sendUA(
@@ -166,15 +162,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             providerLiquidityMap[msg.sender][date].amount.add(msg.value);
         } else {
             uint256 lid = liquidityInfo.length;
-            Liquidity memory liquidity = Liquidity(
-                {
-                    id: lid,
-                    provider: msg.sender,
-                    date: date,
-                    amount: msg.value,
-                    withdrawn: 0
-                }
-            );
+            Liquidity memory liquidity =
+                Liquidity({ id: lid, provider: msg.sender, date: date, amount: msg.value, withdrawn: 0 });
             liquidityInfo.push(liquidity);
             providerLiquidityMap[msg.sender][date] = liquidity;
             providerLiquidityList[msg.sender].push(liquidity);
@@ -208,7 +197,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         return address(this).balance.sub(lockedPremium);
     }
 
-    function getPresentDayTimestamp() private view returns (uint256 activationDate)  {
+    function getPresentDayTimestamp() private view returns (uint256 activationDate) {
         (uint256 year, uint256 month, uint256 day) = BokkyPooBahsDateTimeLibrary.timestampToDate(block.timestamp);
         activationDate = BokkyPooBahsDateTimeLibrary.timestampFromDate(year, month, day);
     }
@@ -216,8 +205,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function divCeil(uint256 a, uint256 b) internal pure returns (uint256) {
         require(b > 0, "Invalid Denominator");
         uint256 c = a / b;
-        if (a % b != 0)
-            c = c + 1;
+        if (a % b != 0) c = c + 1;
         return c;
     }
 }

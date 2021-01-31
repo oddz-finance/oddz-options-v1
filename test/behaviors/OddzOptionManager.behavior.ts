@@ -103,7 +103,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should buy option if the asset is supported and emit buy event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     await expect(
       oddzOptionManager.buy(
@@ -121,7 +121,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
 
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
@@ -137,7 +137,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -154,7 +154,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -169,7 +169,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -185,7 +185,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.provide({value: 100000000});
+    await oddzLiquidityPool.provide({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -194,6 +194,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await provider.send("evm_increaseTime", [24 * 3600 * 2]);
-    await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, 'Expire');
+    await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Expire");
   });
 }

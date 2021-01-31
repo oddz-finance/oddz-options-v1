@@ -3,7 +3,7 @@ import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
 import { OddzLiquidityPool } from "../typechain";
-import { shouldBehaveLikeOddzLiquidityPool } from './behaviors/OddzLiquidityPool.behavior';
+import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 
 const { deployContract } = waffle;
@@ -25,9 +25,11 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Liquidity Pool", function () {
     beforeEach(async function () {
-
-      this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
-      ])) as OddzLiquidityPool;
+      this.oddzLiquidityPool = (await deployContract(
+        this.signers.admin,
+        OddzLiquidityPoolArtifact,
+        [],
+      )) as OddzLiquidityPool;
     });
     shouldBehaveLikeOddzLiquidityPool();
   });

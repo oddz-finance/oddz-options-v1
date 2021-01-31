@@ -6,7 +6,7 @@ import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVol
 
 import { Accounts, Signers } from "../types";
 
-import {OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, OddzLiquidityPool} from "../typechain";
+import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, OddzLiquidityPool } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber } from "ethers";

@@ -29,10 +29,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      */
     uint256 internal constant PERCENTAGE_PRECISION = 100000;
 
-    constructor(
-        IOddzPriceOracle _oracle,
-        IOddzVolatility _iv
-    ) {
+    constructor(IOddzPriceOracle _oracle, IOddzVolatility _iv) {
         pool = new OddzLiquidityPool();
         oracle = _oracle;
         volatility = _iv;
