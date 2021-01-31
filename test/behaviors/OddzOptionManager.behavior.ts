@@ -50,14 +50,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const option = await oddzOptionManager.getPremium(
       asset.id,
       Date.now(),
-      BigNumber.from(1000), // number of options
-      BigNumber.from(1234),
+      BigNumber.from(1), // number of options
+      BigNumber.from(1341),
       OptionType.Call,
     );
     const { optionPremium, settlementFee, cp, iv } = option;
-    expect(iv.toNumber()).to.equal(1);
-    expect(optionPremium.toNumber()).to.equal(33);
-    expect(settlementFee.toNumber()).to.equal(10); //shouldn't the settlement fee a % of optionPremium?
+    expect(iv.toNumber()).to.equal(10);
+    expect(optionPremium.toNumber()).to.equal(141);
+    expect(settlementFee.toNumber()).to.equal(5); //shouldn't the settlement fee a % of optionPremium?
     expect(cp.toNumber()).to.equal(1200);
   });
 

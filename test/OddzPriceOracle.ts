@@ -11,7 +11,7 @@ import { OddzPriceOracle } from "../typechain/OddzPriceOracle";
 import { MockOddzPriceOracle } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracle } from "./behaviors/OddzPriceOracle.behavior";
 import { AssetIds } from "../test-utils";
-import { BigNumber, utils } from "ethers";
+import { utils } from "ethers";
 
 describe("Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();

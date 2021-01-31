@@ -23,7 +23,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
-
+    uint256 public protocolTransactionFee = 5;
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
@@ -165,7 +165,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 _expiration,
         uint32 _underlying,
         OptionType _optionType
-    ) internal returns (uint256 optionId) {
+    ) private returns (uint256 optionId) {
         (uint256 optionPremium, uint256 settlementFee, uint256 cp, uint256 iv) =
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
         validateOptionAmount(_amount, optionPremium.add(settlementFee));
@@ -223,7 +223,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         (optionPremium, cp) = getPremiumBlackScholes(_underlying, _expiration, _strike, _optionType, iv);
 
-        settlementFee = getSettlementFee(_amount);
+        settlementFee = getSettlementFee(optionPremium);
     }
 
     function getPremiumBlackScholes(
@@ -249,7 +249,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     function getSettlementFee(uint256 _amount) private pure returns (uint256 settlementFee) {
-        settlementFee = _amount.div(100);
+        settlementFee = _amount.div(100).mul(5);
     }
 
     /**
