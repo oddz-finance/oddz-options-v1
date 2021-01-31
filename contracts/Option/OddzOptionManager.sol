@@ -188,7 +188,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
 
-        pool.lock{ value: option.premium }(optionId, option.lockedAmount);
+        pool.lockLiquidity { value: option.premium }(optionId, option.lockedAmount);
 
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
     }
@@ -315,7 +315,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.expiration < block.timestamp, "Option has not expired yet");
         require(option.state == State.Active, "Option is not active");
         option.state = State.Expired;
-        pool.unlock(_optionId);
+        pool.unlockLiquidity(_optionId);
         emit Expire(_optionId, option.premium);
     }
 

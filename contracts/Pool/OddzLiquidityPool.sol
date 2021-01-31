@@ -222,4 +222,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         if (_numerator.mod(_denominator) != 0) result = result + 1;
         return result;
     }
+
+    function sendUA(
+        uint256 _id,
+        address payable _account,
+        uint256 _amount
+    ) external onlyOwner {}
 }
