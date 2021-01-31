@@ -168,7 +168,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 _expiration,
         uint32 _underlying,
         OptionType _optionType
-    ) private returns (uint256 optionId) {
+    ) internal returns (uint256 optionId) {
         (uint256 optionPremium, uint256 settlementFee, uint256 cp, uint256 iv) =
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
         validateOptionAmount(_amount, optionPremium.add(settlementFee));

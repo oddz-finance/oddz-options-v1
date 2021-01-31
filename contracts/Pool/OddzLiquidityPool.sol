@@ -3,6 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
+import "hardhat/console.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;

@@ -6,10 +6,12 @@ import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVol
 
 import { Accounts, Signers } from "../types";
 
-import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility } from "../typechain";
+import {OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, OddzLiquidityPool} from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber } from "ethers";
+import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
+
 const { deployContract } = waffle;
 
 describe("Oddz Option Manager Unit tests", function () {
@@ -36,10 +38,13 @@ describe("Oddz Option Manager Unit tests", function () {
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
+
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         oddzPriceOracle.address,
         oddzVolatility.address,
       ])) as OddzOptionManager;
+      const address = await this.oddzOptionManager.pool();
+      this.oddzLiquidityPool = new ethers.Contract(address, OddzLiquidityPoolArtifact.abi, this.signers.admin);
     });
     shouldBehaveLikeOddzOptionManager();
   });

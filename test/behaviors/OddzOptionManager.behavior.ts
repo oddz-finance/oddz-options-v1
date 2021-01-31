@@ -102,6 +102,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
   it("should buy option if the asset is supported and emit buy event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     await expect(
       oddzOptionManager.buy(
@@ -118,6 +120,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
 
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
+
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -131,6 +136,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error when trying to excercise an option that is expired", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -146,6 +153,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -159,7 +168,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error when trying excercise an option if the option is not active", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
-
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
       BigNumber.from(24 * 3600 * 1),
@@ -169,5 +179,21 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Exercise");
     await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.be.revertedWith("Wrong state");
+  });
+
+  it("should unlock the collateral locked if the option is expired and active", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.provide({value: 100000000});
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(1000),
+      BigNumber.from(1200),
+      OptionType.Call,
+    );
+    await provider.send("evm_increaseTime", [24 * 3600 * 2]);
+    await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, 'Expire');
   });
 }
