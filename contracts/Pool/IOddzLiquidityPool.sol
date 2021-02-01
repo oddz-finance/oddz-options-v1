@@ -19,6 +19,8 @@ interface IOddzLiquidityPool {
     event Loss(uint256 indexed _id, uint256 _amount);
     event AddLiquidity(address indexed _account, uint256 _amount, uint256 _writeAmount);
     event RemoveLiquidity(address indexed _account, uint256 _amount, uint256 _writeAmount);
+    event PremiumCollected(address indexed _accoint, uint256 _amount);
+    event PremiumForfeited(address indexed _accoint, uint256 _amount);
 
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens

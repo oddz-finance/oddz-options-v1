@@ -5,6 +5,7 @@ import exp from "constants";
 import { waffle } from "hardhat";
 
 const provider = waffle.provider;
+const date = Date.parse(new Date().toISOString().slice(0, 10))/1000;
 
 export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should return available balance and total balance. Both of them should be set to 0", async function () {
@@ -23,6 +24,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
     const newavailableBalance = await liquidityManager.availableBalance();
     expect(newavailableBalance.toNumber()).to.equal(depositAmount + depositAmount);
+    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(2000);
   });
 
   it("should not allow withdraw when the pool does not have sufficient balance", async function () {
@@ -45,11 +47,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
   });
 
-  it("should allow withdraw when the pool not have sufficient balance", async function () {
+  it("should allow withdraw when the pool has sufficient balance", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
     const withdrawalAmount = 1000;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(liquidityManager, "RemoveLiquidity");
+    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(0);
   });
 }
