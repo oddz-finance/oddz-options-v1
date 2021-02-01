@@ -18,6 +18,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      */
     uint8 public reqBalance = 8;
 
+    /**
+     * @dev Liquidity specific data definitions
+     */
+    enum TransactionType { ADD, REMOVE }
     struct Liquidity {
         uint256 id;
         address provider;
@@ -25,53 +29,30 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 amount;
         uint256 withdrawn;
     }
-
-    struct PremiumPool {
-        uint256 amount;
-        bool distributed;
-    }
-
-    Liquidity[] public liquidityInfo;
-
-    mapping(uint256 => uint256) public daysActiveLiquidity;
-
-    /**
-     * @dev The Provider aggregators data. (Provider address => epoch (Liquidity date) => Liquidity)
-     */
-    mapping(address => mapping(uint256 => Liquidity)) internal providerLiquidityMap;
-
-    mapping(address => Liquidity[]) internal providerLiquidityList;
-
-    mapping(uint256 => Liquidity[]) internal dayLiquidityList;
-
-    /**
-     * @dev premiumDayPool unlocked premium per day (date => PremiumPool)
-     */
-    mapping(uint256 => PremiumPool) internal premiumDayPool;
-
-    uint256 public surplus;
-
-    mapping(uint256 => uint256) internal daysExercise;
-
-    mapping ( address => LPBalance[]) internal lpBalanceMap;
-
-    enum TransactionType { ADD, REMOVE }
-
     struct LPBalance {
         uint256 currentBalance;
         TransactionType transactionType;
         uint256 transactionValue;
         uint256 transactionDate;
     }
-
-    mapping ( address => uint256 ) public latestLiquidityDate;
-
-    mapping ( address => uint256 ) public lpPremium;
+    mapping ( uint256 => uint256 ) public daysActiveLiquidity;
+    mapping ( address => LPBalance[] ) internal lpBalanceMap;
+    mapping ( address => uint256 ) public latestLiquidityDateMap;
+    LockedLiquidity[] public lockedLiquidity;
 
     /**
-     * @dev Liquidity Locked for all the active options
+     * @dev Premium specific data definitions
      */
-    LockedLiquidity[] public lockedLiquidity;
+    struct PremiumPool {
+        uint256 collected;
+        uint256 eligible;
+        uint256 distributed;
+    }
+    mapping ( uint256 => PremiumPool ) internal premiumDayPool;
+    uint256 public surplus;
+    mapping ( uint256 => uint256 ) internal daysExercise;
+    mapping ( address => uint256 ) public lpPremium;
+    mapping ( address => mapping ( uint256 => uint256 ) ) public lpPremiumDistributionMap;
 
     function addLiquidity() external payable override returns (uint256 mint) {
         uint256 supply = totalSupply();
@@ -83,8 +64,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 date = getPresentDayTimestamp();
         daysActiveLiquidity[date] = daysActiveLiquidity[date].add(msg.value);
         updateLpBalance(TransactionType.ADD, date);
-        sendEligiblePremiumAdd(latestLiquidityDate[msg.sender], date);
-        latestLiquidityDate[msg.sender] = date;
+        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
+        latestLiquidityDateMap[msg.sender] = date;
 
         _mint(msg.sender, mint);
         emit AddLiquidity(msg.sender, msg.value, mint);
@@ -104,7 +85,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 date = getPresentDayTimestamp();
         daysActiveLiquidity[date] = daysActiveLiquidity[date].sub(_amount);
         updateLpBalance(TransactionType.REMOVE, date);
-        sendEligiblePremiumRemove(latestLiquidityDate[msg.sender], _amount, date);
+        sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
 
         _burn(msg.sender, burn);
         emit RemoveLiquidity(msg.sender, _amount, burn);
@@ -130,7 +111,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
-        premiumDayPool[getPresentDayTimestamp()].amount.add(ll.premium);
+        premiumDayPool[getPresentDayTimestamp()].collected.add(ll.premium);
 
         emit Profit(_id, ll.premium);
     }
@@ -146,7 +127,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         ll.locked = false;
         uint256 date = getPresentDayTimestamp();
-        premiumDayPool[date].amount.add(ll.premium);
+        premiumDayPool[date].collected.add(ll.premium);
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
 
@@ -178,22 +159,43 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         ));
     }
 
-    function updatePremiumEligibility(uint256 date) external onlyOwner {
-        require(date < getPresentDayTimestamp(), "Invalid Date");
-        PremiumPool storage premium = premiumDayPool[date];
-        require(premium.distributed == false, "Premium already distrbution for this date");
-        premium.distributed = true;
-        uint256 premiumProfit = premium.amount + surplus - daysExercise[date];
-        if (premiumProfit > 0) {
-            distributePremium(premiumProfit, date);
+    function updatePremiumEligibility(uint256 _date) public onlyOwner {
+        require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
+        PremiumPool storage premium = premiumDayPool[_date];
+        require(premium.collected > premium.distributed, "LP: Premium already distrbution for this date");
+        premium.eligible = premium.collected.add(surplus).sub(daysExercise[_date]);
+        surplus = 0;
+    }
+
+    function distributePremiumPerLP(uint256 _date, address _lp) private {
+        LPBalance[] storage lpBalance = lpBalanceMap[_lp];
+        uint256 len = lpBalance.length;
+        require(len > 0, "LP: Invalid liquidity provider");
+        require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP: Premium already distributed for the provider");
+        while (len > 0 && lpBalance[len - 1].transactionDate <= _date) {
+            len --;
+        }
+        uint256 lpEligible = premiumDayPool[_date].eligible.mul(
+            lpBalance[len - 1].currentBalance.div(daysActiveLiquidity[_date])
+        );
+        lpPremiumDistributionMap[_lp][_date] = lpEligible;
+        lpPremium[_lp] = lpPremium[_lp].add(lpEligible);
+        premiumDayPool[_date].eligible = premiumDayPool[_date].eligible.sub(lpEligible);
+    }
+
+    function distributePremium(uint256 _date, address[] calldata _lps) external onlyOwner {
+        require(_date < getPresentDayTimestamp(), "Invalid Date");
+        if (premiumDayPool[_date].eligible == 0) {
+            updatePremiumEligibility(_date);
+        }
+        for (uint256 lpid=0; lpid < _lps.length; lpid++) {
+            distributePremiumPerLP(_date, _lps[lpid]);
         }
     }
 
-    function distributePremium(uint256 _premiumProfit, uint256 _date) private {}
-
     function sendEligiblePremium(address payable _lpProvider) public onlyOwner {
         require(
-            getPresentDayTimestamp().sub(latestLiquidityDate[_lpProvider]) > premiumLockupDuration,
+            getPresentDayTimestamp().sub(latestLiquidityDateMap[_lpProvider]) > premiumLockupDuration,
             "LP: Address not eligible for premium collection"
         );
         uint256 premium = lpPremium[_lpProvider];
