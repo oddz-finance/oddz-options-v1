@@ -22,7 +22,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     mapping(uint32 => Asset) internal assetIdMap;
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
-    uint256 public minExpiry = 1 days;
+    uint256 public minExpiry = 0 days;
     uint256 public protocolTransactionFee = 5;
     /**
      * @dev The percentage precision. (100000 = 100%)
@@ -81,8 +81,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     modifier validExpiration(uint256 _expiration) {
-        require(_expiration <= maxExpiry, "Expiration cannot be more than 30 days");
-        require(_expiration >= minExpiry, "Expiration cannot be less than 1 days");
+        require(_expiration <= block.timestamp.add(maxExpiry), "Expiration cannot be more than 30 days");
+        require(_expiration >= block.timestamp.add(minExpiry), "Expiration cannot be less than 1 days");
         _;
     }
 
@@ -328,5 +328,21 @@ contract OddzOptionManager is Ownable, IOddzOption {
         for (uint256 i = 0; i < arrayLength; i++) {
             unlock(_optionIds[i]);
         }
+    }
+
+    /**
+     * @notice Distribute Premium for the LPs
+     * @param _date Date of the premium to be distributed
+     * @param _lps list of active liquidity providers
+     */
+    function distributePremium(uint256 _date, address[] calldata _lps) external {
+        pool.distributePremium(_date, _lps);
+    }
+
+    /**
+     * @notice Withdraw collected Premium
+     */
+    function withdrawPremium() external {
+        pool.sendEligiblePremium(msg.sender);
     }
 }

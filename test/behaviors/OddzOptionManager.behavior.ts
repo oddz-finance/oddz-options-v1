@@ -72,7 +72,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
-        BigNumber.from(24 * 3600 * 0),
+        addDaysAndGetSeconds(-1),
         BigNumber.from(100),
         BigNumber.from(1234),
         OptionType.Call,
@@ -85,7 +85,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
-        BigNumber.from(24 * 3600 * 31),
+        addDaysAndGetSeconds(31),
         BigNumber.from(100),
         BigNumber.from(1234),
         OptionType.Call,
@@ -98,7 +98,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
-        BigNumber.from(24 * 3600 * 1),
+        addDaysAndGetSeconds(1),
         BigNumber.from(100),
         BigNumber.from(1234),
         OptionType.Call,
@@ -114,7 +114,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         assetId.value.toNumber(),
-        BigNumber.from(24 * 3600 * 1),
+        addDaysAndGetSeconds(1),
         BigNumber.from(1000),
         BigNumber.from(1200),
         OptionType.Call,
@@ -131,7 +131,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      addDaysAndGetSeconds(1),
       BigNumber.from(1000),
       BigNumber.from(1200),
       OptionType.Call,
@@ -146,12 +146,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      addDaysAndGetSeconds(1),
       BigNumber.from(1000),
       BigNumber.from(1200),
       OptionType.Call,
     );
-    await provider.send("evm_increaseTime", [24 * 3600 * 2]);
+    await provider.send("evm_increaseTime", [addDaysAndGetSeconds(2)]);
     await expect(oddzOptionManager.exercise(optionBought.value.toNumber())).to.be.revertedWith("Option has expired");
   });
 
@@ -163,7 +163,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      addDaysAndGetSeconds(1),
       BigNumber.from(1000),
       BigNumber.from(1200),
       OptionType.Call,
@@ -178,7 +178,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      addDaysAndGetSeconds(1),
       BigNumber.from(1000),
       BigNumber.from(1200),
       OptionType.Call,
@@ -194,32 +194,32 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     const optionBought = await oddzOptionManager.buy(
       assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      addDaysAndGetSeconds(1),
       BigNumber.from(1000),
       BigNumber.from(1200),
       OptionType.Call,
     );
-    await provider.send("evm_increaseTime", [24 * 3600 * 2]);
+    await provider.send("evm_increaseTime", [addDaysAndGetSeconds(2)]);
     await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Expire");
   });
 
   it("should distribute liquidity", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
+    await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
+    const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 1000000 });
     const optionBought = await oddzOptionManager.buy(
-      assetId.value.toNumber(),
-      BigNumber.from(24 * 3600 * 1),
+      asset.id,
+      addDaysAndGetSeconds(1),
       BigNumber.from(10),
       BigNumber.from(1200),
       OptionType.Call,
     );
-
     await provider.send("evm_increaseTime", [addDaysAndGetSeconds(2)]);
+    console.log(await oddzOptionManager.options(optionBought.value.toNumber()));
     await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Expire");
-    const pool = await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(1));
-    console.log(pool);
-    await expect(oddzLiquidityPool.updatePremiumEligibility( addDaysAndGetSeconds(1))).to.be.revertedWith("LP: Premium already distrbution for this date");
+    console.log(await oddzLiquidityPool.lockedPremium());
+    await expect(oddzLiquidityPool.distributePremium( addDaysAndGetSeconds(1), [this.signers.admin] )).to.be.revertedWith("LP: Premium eligibilty already updated for the date");
   });
 }
