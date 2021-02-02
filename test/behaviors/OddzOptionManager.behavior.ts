@@ -5,6 +5,12 @@ import { waffle } from "hardhat";
 
 const provider = waffle.provider;
 
+const addDaysAndGetSeconds = (days = 0) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days)
+  return Date.parse(date.toISOString().slice(0, 10))/1000;
+}
+
 export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
@@ -195,5 +201,25 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await provider.send("evm_increaseTime", [24 * 3600 * 2]);
     await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Expire");
+  });
+
+  it("should distribute liquidity", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const assetId = await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 1000000 });
+    const optionBought = await oddzOptionManager.buy(
+      assetId.value.toNumber(),
+      BigNumber.from(24 * 3600 * 1),
+      BigNumber.from(10),
+      BigNumber.from(1200),
+      OptionType.Call,
+    );
+
+    await provider.send("evm_increaseTime", [addDaysAndGetSeconds(2)]);
+    await expect(oddzOptionManager.unlock(optionBought.value.toNumber())).to.emit(oddzOptionManager, "Expire");
+    const pool = await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(1));
+    console.log(pool);
+    await expect(oddzLiquidityPool.updatePremiumEligibility( addDaysAndGetSeconds(1))).to.be.revertedWith("LP: Premium already distrbution for this date");
   });
 }

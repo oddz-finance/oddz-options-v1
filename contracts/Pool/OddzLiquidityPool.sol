@@ -48,7 +48,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 eligible;
         uint256 distributed;
     }
-    mapping ( uint256 => PremiumPool ) internal premiumDayPool;
+    mapping ( uint256 => PremiumPool ) public premiumDayPool;
     uint256 public surplus;
     mapping ( uint256 => uint256 ) internal daysExercise;
     mapping ( address => uint256 ) public lpPremium;
@@ -108,11 +108,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(ll.locked, "LockedLiquidity with given id has already been unlocked");
         ll.locked = false;
-
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
-        premiumDayPool[getPresentDayTimestamp()].collected.add(ll.premium);
-
+        PremiumPool storage premiumDay = premiumDayPool[getPresentDayTimestamp()];
+        premiumDay.collected = premiumDay.collected.add(ll.premium);
         emit Profit(_id, ll.premium);
     }
 

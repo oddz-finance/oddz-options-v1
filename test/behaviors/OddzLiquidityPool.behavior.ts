@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, ethers, utils } from "ethers";
 import { OptionType } from "../../test-utils";
-import exp from "constants";
 import { waffle } from "hardhat";
 
 const provider = waffle.provider;
@@ -54,5 +53,20 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const withdrawalAmount = 1000;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(liquidityManager, "RemoveLiquidity");
     expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(0);
+  });
+
+  it("Should not update premium eligibility if the date is less than the current date", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const depositAmount = 1000;
+    await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.updatePremiumEligibility( Math.round(Date.now()/1000))).to.be.revertedWith("LP: Invalid Date");
+  });
+
+  //TODO: @krupa not sure if this condition makes sense
+  it("Should not update premium eligibility if the premium collected is less than distributed", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const depositAmount = 1000;
+    await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.updatePremiumEligibility( Math.round(Date.now()/1000) - 24 * 3600 * 1)).to.be.revertedWith("LP: Premium already distrbution for this date");
   });
 }
