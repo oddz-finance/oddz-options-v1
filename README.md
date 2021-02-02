@@ -1,3 +1,4 @@
+![Build Status](https://github.com/oddz-finance/oddz-contracts/workflows/build/badge.svg?branch=master)
 # Oddz finance
 
 World's First multi-chain Options trading Protocol built on Binance chain with built-in oracle
