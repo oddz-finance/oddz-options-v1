@@ -39,9 +39,10 @@ interface IOddzLiquidityPool {
      * @notice called by Oddz call options to lock the funds
      * @param _id Id of the LockedLiquidity same as option Id
      * @param _amount Amount of funds that should be locked in an option
+     * @param _premium Premium that should be locked in an option
      */
 
-    function lockLiquidity(uint256 _id, uint256 _amount) external payable;
+    function lockLiquidity(uint256 _id, uint256 _amount, uint256 _premium) external;
 
     /**
      * @notice called by Oddz option to unlock the funds

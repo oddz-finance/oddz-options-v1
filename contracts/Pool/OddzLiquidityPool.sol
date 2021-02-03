@@ -92,15 +92,14 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         msg.sender.transfer(_amount);
     }
 
-    function lockLiquidity(uint256 _id, uint256 _amount) external payable override onlyOwner {
+    function lockLiquidity(uint256 _id, uint256 _amount, uint _premium) external override onlyOwner {
         require(_id == lockedLiquidity.length, "LP: Invalid id");
         require(
-            lockedAmount.add(_amount).mul(10) <= totalBalance().sub(msg.value).mul(reqBalance),
+            lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
             "LP Error: Amount is too large."
         );
-
-        lockedLiquidity.push(LockedLiquidity(_amount, msg.value, true));
-        lockedPremium = lockedPremium.add(msg.value);
+        lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
+        lockedPremium = lockedPremium.add(_premium);
         lockedAmount = lockedAmount.add(_amount);
     }
 
@@ -184,13 +183,13 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
     function distributePremium(uint256 _date, address[] memory _lps) public onlyOwner {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
-        require(
-            premiumDayPool[_date].eligible > premiumDayPool[_date].distributed,
-            "LP: Premium already distrbution for this date"
-        );
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
         }
+        require(
+            premiumDayPool[_date].eligible > premiumDayPool[_date].distributed,
+            "LP: Premium already distributed for this date"
+        );
         for (uint256 lpid=0; lpid < _lps.length; lpid++) {
             distributePremiumPerLP(_date, _lps[lpid]);
         }
@@ -250,7 +249,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         return address(this).balance.sub(lockedPremium);
     }
 
-    function getPresentDayTimestamp() private view returns (uint256 activationDate) {
+    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
         (uint256 year, uint256 month, uint256 day) = BokkyPooBahsDateTimeLibrary.timestampToDate(block.timestamp);
         activationDate = BokkyPooBahsDateTimeLibrary.timestampFromDate(year, month, day);
     }

@@ -8,7 +8,7 @@ contract MockOddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD L
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {}
 
-    function lockLiquidity(uint256 _id, uint256 _amount) external payable override onlyOwner {}
+    function lockLiquidity(uint256 _id, uint256 _amount, uint256 _premium) external override onlyOwner {}
 
     function unlockLiquidity(uint256 _id) external override onlyOwner {}
 

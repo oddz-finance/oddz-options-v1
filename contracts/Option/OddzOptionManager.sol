@@ -22,8 +22,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
     mapping(uint32 => Asset) internal assetIdMap;
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
-    uint256 public minExpiry = 0 days;
-    uint256 public protocolTransactionFee = 5;
+    uint256 public minExpiry = 1 days;
+    uint256 public settlementFeePerc = 5;
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
@@ -81,8 +81,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     modifier validExpiration(uint256 _expiration) {
-        require(_expiration <= block.timestamp.add(maxExpiry), "Expiration cannot be more than 30 days");
-        require(_expiration >= block.timestamp.add(minExpiry), "Expiration cannot be less than 1 days");
+        require(_expiration <= maxExpiry, "Expiration cannot be more than 30 days");
+        require(_expiration >= minExpiry, "Expiration cannot be less than 1 days");
         _;
     }
 
@@ -104,8 +104,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
-    function validateOptionAmount(uint256 _amount, uint256 premium) private pure {
-        require(_amount >= premium, "Premium is low");
+    function validateOptionAmount(uint256 _value, uint256 _premium, uint256 _currentPrice) private pure {
+        require(_value >= _premium.mul(1 ether).div(_currentPrice), "Premium is low");
     }
 
     function getCallOverColl(
@@ -168,7 +168,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     ) private returns (uint256 optionId) {
         (uint256 optionPremium, uint256 settlementFee, uint256 cp, uint256 iv) =
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
-        validateOptionAmount(_amount, optionPremium.add(settlementFee));
+        validateOptionAmount(msg.value, optionPremium.add(settlementFee), cp);
 
         (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _underlying, _strike);
 
@@ -181,14 +181,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
                 _amount,
                 _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
                 optionPremium,
-                _expiration + block.timestamp,
+                _expiration,
                 _underlying,
                 _optionType
             );
 
         options.push(option);
-
-        pool.lockLiquidity { value: option.premium }(optionId, option.lockedAmount);
+        pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
 
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
     }
@@ -211,6 +210,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         public
         view
         validOptionType(_optionType)
+        validExpiration(_expiration)
         validAsset(_underlying)
         returns (
             uint256 optionPremium,
@@ -221,7 +221,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     {
         (iv, ) = volatility.calculateIv(_underlying, _optionType, _expiration, _amount, _strike);
 
-        (optionPremium, cp) = getPremiumBlackScholes(_underlying, _expiration, _strike, _optionType, iv);
+        (optionPremium, cp) = getPremiumBlackScholes(_underlying, _expiration, _strike, _optionType, iv, _amount);
 
         settlementFee = getSettlementFee(optionPremium);
     }
@@ -231,7 +231,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 _expiration,
         uint256 _strike,
         OptionType _optionType,
-        uint256 iv
+        uint256 iv,
+        uint256 _amount
     ) private view returns (uint256 optionPremium, uint256 cp) {
         Asset memory asset = assetIdMap[_underlying];
         cp = getCurrentPrice(asset);
@@ -246,10 +247,11 @@ contract OddzOptionManager is Ownable, IOddzOption {
             0,
             asset.precision
         );
+        optionPremium = optionPremium.mul(_amount);
     }
 
-    function getSettlementFee(uint256 _amount) private pure returns (uint256 settlementFee) {
-        settlementFee = _amount.div(100).mul(5);
+    function getSettlementFee(uint256 _amount) private view returns (uint256 settlementFee) {
+        settlementFee = _amount.mul(settlementFeePerc).div(100);
     }
 
     /**
@@ -316,6 +318,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Option is not active");
         option.state = State.Expired;
         pool.unlockLiquidity(_optionId);
+
         emit Expire(_optionId, option.premium);
     }
 

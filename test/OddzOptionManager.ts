@@ -43,8 +43,8 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzPriceOracle.address,
         oddzVolatility.address,
       ])) as OddzOptionManager;
-      const address = await this.oddzOptionManager.pool();
-      this.oddzLiquidityPool = new ethers.Contract(address, OddzLiquidityPoolArtifact.abi, this.signers.admin);
+      const poolAddress = await this.oddzOptionManager.pool();
+      this.oddzLiquidityPool = new ethers.Contract(poolAddress, OddzLiquidityPoolArtifact.abi, this.signers.admin);
     });
     shouldBehaveLikeOddzOptionManager();
   });
