@@ -181,7 +181,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
                 _amount,
                 _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
                 optionPremium,
-                _expiration,
+                _expiration.add(block.timestamp),
                 _underlying,
                 _optionType
             );
