@@ -14,6 +14,6 @@ contract MockOddzVolatility is IOddzVolatility {
         uint256 _currentPrice,
         uint256 _strikePrice
     ) public view override returns (uint256, uint256) {
-        return (10, 10);
+        return (180000, 100000);
     }
 }

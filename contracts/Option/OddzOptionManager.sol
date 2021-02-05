@@ -111,19 +111,17 @@ contract OddzOptionManager is Ownable, IOddzOption {
     function getCallOverColl(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal,
-        uint256 _strike
+        uint256 _decimal
     ) private pure returns (uint256 oc) {
-        oc = _strike.min(_cp.add(_cp.mul(_iv).div(_decimal)));
+        oc = _cp.add(_cp.mul(_iv).div(_decimal));
     }
 
     function getPutOverColl(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal,
-        uint256 _strike
+        uint256 _decimal
     ) private pure returns (uint256 oc) {
-        oc = _strike.max(_cp.sub(_cp.mul(_iv).div(_decimal)));
+        oc = (_cp.mul(_iv).div(_decimal)).sub(_cp);
     }
 
     function getCurrentPrice(Asset memory _asset) private view returns (uint256 currentPrice) {
@@ -136,9 +134,9 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint32 _underlying,
         uint256 _strike
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[_underlying].precision, _strike);
-        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[_underlying].precision, _strike);
-        validStrike(_strike, maxAssetPrice, minAssetPrice);
+        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[_underlying].precision);
+        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[_underlying].precision);
+        validStrike(_strike, minAssetPrice, maxAssetPrice);
     }
 
     function buy(
@@ -171,6 +169,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validateOptionAmount(msg.value, optionPremium.add(settlementFee), cp);
 
         (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _underlying, _strike);
+        maxStrikePrice = maxStrikePrice.min(cp.add(cp));
 
         optionId = options.length;
         Option memory option =

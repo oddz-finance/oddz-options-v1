@@ -66,8 +66,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     const { optionPremium, settlementFee, cp, iv } = option;
-    expect(iv.toNumber()).to.equal(10);
-    expect(optionPremium.toNumber()).to.equal(141);
+    expect(iv.toNumber()).to.equal(180000);
+    expect(optionPremium.toNumber()).to.equal(147);
     expect(settlementFee.toNumber()).to.equal(7); //shouldn't the settlement fee a % of optionPremium?
     expect(cp.toNumber()).to.equal(1200);
   });
@@ -118,7 +118,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(100000));
     const asset = await oddzOptionManager.assets(0);
     let overrides = {
-      value: utils.parseEther("0.1")     // ether in this case MUST be a string
+      value: utils.parseEther("1")     // ether in this case MUST be a string
     };
     await expect(
       oddzOptionManager.buy(
@@ -160,7 +160,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     let overrides = {
-      value: utils.parseEther("0.1")     // ether in this case MUST be a string
+      value: utils.parseEther("1")     // ether in this case MUST be a string
     };
     await oddzOptionManager.buy(
       asset.id,
@@ -180,7 +180,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     let overrides = {
-      value: utils.parseEther("0.1")     // ether in this case MUST be a string
+      value: utils.parseEther("1")     // ether in this case MUST be a string
     };
     await oddzOptionManager.buy(
       asset.id,
@@ -202,7 +202,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     let overrides = {
-      value: utils.parseEther("0.1")     // ether in this case MUST be a string
+      value: utils.parseEther("1")     // ether in this case MUST be a string
     };
     await oddzOptionManager.buy(
       asset.id,
@@ -222,7 +222,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 100000000 });
     let overrides = {
-      value: utils.parseEther("0.1")     // ether in this case MUST be a string
+      value: utils.parseEther("1")     // ether in this case MUST be a string
     };
     await oddzOptionManager.buy(
       asset.id,
@@ -269,18 +269,30 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.buy(
       asset.id,
       getExpiry(1),
-      BigNumber.from(10),
+      BigNumber.from(1),
       BigNumber.from(1250),
       OptionType.Call,
       overrides,
     );
-    console.log(await oddzOptionManager.options(0));
+    const op0 = await oddzOptionManager.options(0);
+    console.log("SP 1250, Expiry: 1 Day", op0.premium.toNumber());
 
-    await provider.send("evm_increaseTime", [getExpiry(2)]);
-    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
-    console.log(await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2)));
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(10),
+      BigNumber.from(1),
+      BigNumber.from(1250),
+      OptionType.Call,
+      overrides,
+    );
+    const op1 = await oddzOptionManager.options(1);
+    console.log("SP 1250, Expiry: 10 Days", op1.premium.toNumber());
+
+    // await provider.send("evm_increaseTime", [getExpiry(2)]);
+    // await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+    // console.log(await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2)));
     // increment evm time by one more day at this point
-    await oddzOptionManager.distributePremium( addDaysAndGetSeconds(2), [this.signers.admin.getAddress()] );
+    // await oddzOptionManager.distributePremium( addDaysAndGetSeconds(2), [this.signers.admin.getAddress()] );
     // check for lpPremium of admin address should be same as premium
     // also check premiumDayPool distributed increased same as premium
   });
