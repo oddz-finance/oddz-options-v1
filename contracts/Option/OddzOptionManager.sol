@@ -138,6 +138,11 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validStrike(_strike, minAssetPrice, maxAssetPrice);
     }
 
+    function setSettlementFeePerc(uint256 _feePerc) external onlyOwner {
+        require(_feePerc >= 1 && _feePerc <= 10, "Invalid settlement fee");
+        settlementFeePerc = _feePerc;
+    }
+
     function buy(
         uint32 _underlying,
         uint256 _expiration,
