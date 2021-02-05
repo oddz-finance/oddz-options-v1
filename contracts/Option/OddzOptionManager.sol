@@ -131,11 +131,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
     function getAssetStrikePriceRange(
         uint256 _cp,
         uint256 _iv,
-        uint32 _underlying,
         uint256 _strike
-    ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[_underlying].precision);
-        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[_underlying].precision);
+    ) private pure returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
+        minAssetPrice = getPutOverColl(_cp, _iv, PERCENTAGE_PRECISION);
+        maxAssetPrice = getCallOverColl(_cp, _iv, PERCENTAGE_PRECISION);
         validStrike(_strike, minAssetPrice, maxAssetPrice);
     }
 
@@ -168,7 +167,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
         validateOptionAmount(msg.value, optionPremium.add(settlementFee), cp);
 
-        (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _underlying, _strike);
+        (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike);
         maxStrikePrice = maxStrikePrice.min(cp.add(cp));
 
         optionId = options.length;
@@ -239,14 +238,14 @@ contract OddzOptionManager is Ownable, IOddzOption {
             _optionType == OptionType.Call ? true : false,
             _strike,
             cp,
-            asset.precision,
+            PERCENTAGE_PRECISION,
             _expiration,
             iv,
             0,
             0,
-            asset.precision
+            PERCENTAGE_PRECISION
         );
-        optionPremium = optionPremium.mul(_amount);
+        optionPremium = optionPremium.mul(_amount).div(1e18);
     }
 
     function getSettlementFee(uint256 _amount) private view returns (uint256 settlementFee) {

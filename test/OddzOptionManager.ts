@@ -32,7 +32,7 @@ describe("Oddz Option Manager Unit tests", function () {
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
       const oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
-        BigNumber.from(1200),
+        BigNumber.from(120000000000),
       ])) as MockOddzPriceOracle;
       const oddzVolatility = (await deployContract(
         this.signers.admin,
