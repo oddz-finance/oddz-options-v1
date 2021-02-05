@@ -296,4 +296,28 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // check for lpPremium of admin address should be same as premium
     // also check premiumDayPool distributed increased same as premium
   });
+
+  it("should throw an error when settlement fee updated", async function() {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await expect(oddzOptionManager.setSettlementFeePerc(0)).to.be.revertedWith("Invalid settlement fee");
+    await expect(oddzOptionManager.setSettlementFeePerc(11)).to.be.revertedWith("Invalid settlement fee");
+  });
+
+  it("should update settlement percentage and option settlement fee", async function() {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzOptionManager.setSettlementFeePerc(2);
+    expect(await oddzOptionManager.settlementFeePerc()).to.equal(2);
+    const option = await oddzOptionManager.getPremium(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(134100000000),
+      OptionType.Call,
+    );
+    expect(option.settlementFee.toNumber()).to.equal(295983985); //shouldn't the settlement fee a % of optionPremium?
+  });
 }
