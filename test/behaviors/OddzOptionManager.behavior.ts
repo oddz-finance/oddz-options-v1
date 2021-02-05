@@ -236,7 +236,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Wrong state");
   });
 
-  it("should unlock the collateral locked if the option is expired and active", async function () {
+  it("should unlock the collateral locked if the option is expired", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
@@ -255,6 +255,39 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+  });
+
+  it("should unlock the collateral locked once the options are expired", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("WBTC"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    let overrides = {
+      value: utils.parseEther("1")     // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("10")), // number of options
+      BigNumber.from(130000000000),
+      OptionType.Call,
+      overrides,
+    );
+    const op0 = await oddzOptionManager.options(0);
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("10")), // number of options
+      BigNumber.from(120000000000),
+      OptionType.Call,
+      overrides,
+    );
+    const op1 = await oddzOptionManager.options(1);
+    const premiums = op1.premium.toNumber() + op0.premium.toNumber();
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlockAll([0, 1])).to.emit(oddzOptionManager, "Expire");
+    expect(premiums).to.equal((await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).collected.toNumber());
   });
 
   it("should distribute liquidity", async function () {
