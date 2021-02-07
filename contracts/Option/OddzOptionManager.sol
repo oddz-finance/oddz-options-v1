@@ -314,15 +314,14 @@ contract OddzOptionManager is Ownable, IOddzOption {
         Option memory option = options[_optionId];
         uint256 _cp = getCurrentPrice(assetIdMap[option.assetId]);
         if (option.optionType == OptionType.Call) {
-            require(option.strike <= _cp, "Option: Current price is too low");
+            require(option.strike <= _cp, "Call option: Current price is too low");
             profit = _cp.sub(option.strike).mul(option.amount);
         } else {
-            require(option.strike >= _cp, "Current price is too high");
+            require(option.strike >= _cp, "Put option: Current price is too high");
             profit = option.strike.sub(_cp).mul(option.amount);
         }
         profit = profit.div(1 ether);
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-
         if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
         else pool.sendUA(_optionId, _address, profit);
     }

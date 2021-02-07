@@ -215,10 +215,34 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
       overrides,
     );
-    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Option: Current price is too low");
+    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await expect(oddzOptionManager.exercise(0)).to.emit(oddzOptionManager, "Exercise").withArgs(0, 25000000000, ExcerciseType.Cash)
       .to.emit(oddzLiquidityPool, "Profit").withArgs(0, 428186620);
+  });
+
+  it("Put option - excercise flow", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1")     // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(2),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(150000000000),
+      OptionType.Put,
+      overrides,
+    );
+    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Put option: Current price is too high");
+    await oddzPriceOracle.setUnderlyingPrice(145000000000);
+    await expect(oddzOptionManager.exercise(0)).to.emit(oddzOptionManager, "Exercise").withArgs(0, 25000000000, ExcerciseType.Cash)
+      .to.emit(oddzLiquidityPool, "Loss").withArgs(0, 5794690220);
   });
 
   // it("should throw an error when trying to excercise an option that is expired", async function () {
