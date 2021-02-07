@@ -43,6 +43,32 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const asset = await oddzOptionManager.assets(0);
     expect(asset.id).to.be.equal(0);
   });
+
+  it("should return premium price only if the asset is active", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    await expect(oddzOptionManager.deactivateAsset(asset.id)).to.emit(oddzOptionManager, "AssetDeactivate").withArgs(0, "0x4554480000000000000000000000000000000000000000000000000000000000");;
+    await expect(oddzOptionManager.getPremium(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(160000000000),
+      OptionType.Call,
+    )).to.be.revertedWith("revert Invalid Asset");
+    await expect(oddzOptionManager.activateAsset(asset.id)).to.emit(oddzOptionManager, "AssetActivate").withArgs(0, "0x4554480000000000000000000000000000000000000000000000000000000000");
+    const option = await oddzOptionManager.getPremium(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(160000000000),
+      OptionType.Call,
+    );
+    const { optionPremium, settlementFee } = option;
+    await expect(optionPremium.toNumber()).to.equal(6653168625);
+    await expect(settlementFee.toNumber()).to.equal(332658431);
+  });
+
   it("should return newly added asset ids for multiple assets", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));

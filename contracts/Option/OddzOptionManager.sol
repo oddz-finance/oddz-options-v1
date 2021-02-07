@@ -36,6 +36,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
         createdAt = block.timestamp;
     }
 
+    /**
+     * @notice Used for adding the new asset
+     * @param _name Name for the underlying asset
+     * @param _precision Precision for the underlying asset
+     * @return assetId Asset id
+     */
     function addAsset(bytes32 _name, uint256 _precision) external onlyOwner returns (uint32 assetId) {
         require(assetNameMap[_name].active == false, "Asset already present");
         assetId = uint32(assets.length);
@@ -47,6 +53,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
         emit NewAsset(asset.id, asset.name, asset.active);
     }
 
+    /**
+     * @notice Used for activating the asset
+     * @param _assetId Id for the underlying asset
+     * @return name of the underlying asset
+     * @return status of the underlying asset
+     */
     function activateAsset(uint32 _assetId)
         external
         onlyOwner
@@ -54,13 +66,19 @@ contract OddzOptionManager is Ownable, IOddzOption {
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = false;
+        asset.active = true;
         status = asset.active;
         name = asset.name;
 
         emit AssetActivate(asset.id, asset.name);
     }
 
+    /**
+     * @notice Used for deactivating the asset
+     * @param _assetId Id for the underlying asset
+     * @return name of the underlying asset
+     * @return status of the underlying asset
+     */
     function deactivateAsset(uint32 _assetId)
         external
         onlyOwner
@@ -68,10 +86,9 @@ contract OddzOptionManager is Ownable, IOddzOption {
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = true;
+        asset.active = false;
         status = asset.active;
         name = asset.name;
-
         emit AssetDeactivate(asset.id, asset.name);
     }
 
