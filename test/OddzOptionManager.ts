@@ -31,8 +31,8 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
-      const oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
-        BigNumber.from(120000000000),
+      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
       const oddzVolatility = (await deployContract(
         this.signers.admin,
@@ -40,7 +40,7 @@ describe("Oddz Option Manager Unit tests", function () {
       )) as MockOddzVolatility;
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
-        oddzPriceOracle.address,
+        this.oddzPriceOracle.address,
         oddzVolatility.address,
       ])) as OddzOptionManager;
       const poolAddress = await this.oddzOptionManager.pool();

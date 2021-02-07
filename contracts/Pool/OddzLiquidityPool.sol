@@ -131,7 +131,6 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 transferAmount = _amount > ll.amount ? ll.amount : _amount;
         daysExercise[date].add(transferAmount);
         _account.transfer(transferAmount);
-
         if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
         else emit Loss(_id, transferAmount - ll.premium);
     }
@@ -170,7 +169,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 len = lpBalance.length;
         require(len > 0, "LP: Invalid liquidity provider");
         require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP: Premium already distributed for the provider");
-        while (len > 0 && lpBalance[len - 1].transactionDate <= _date) {
+        while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len --;
         }
         uint256 lpEligible = premiumDayPool[_date].eligible.mul(
@@ -181,7 +180,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed.add(lpEligible);
     }
 
-    function distributePremium(uint256 _date, address[] memory _lps) public onlyOwner {
+    function distributePremium(uint256 _date, address[] memory _lps) external onlyOwner {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);

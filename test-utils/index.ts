@@ -8,3 +8,8 @@ export const AssetIds = {
   BTC: 1,
   USDT: 2,
 };
+
+export const ExcerciseType = {
+  Cash: 0,
+  Physical: 1
+}

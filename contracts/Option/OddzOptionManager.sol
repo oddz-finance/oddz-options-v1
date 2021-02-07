@@ -191,7 +191,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
         pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
-
         emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
     }
 
@@ -268,7 +267,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Wrong state");
         option.state = State.Exercised;
         uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
-
         emit Exercise(_optionId, profit, ExcerciseType.Cash);
     }
 
@@ -299,12 +297,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
         Option memory option = options[_optionId];
         uint256 _cp = getCurrentPrice(assetIdMap[option.assetId]);
         if (option.optionType == OptionType.Call) {
-            require(option.strike <= _cp, "Current price is too low");
+            require(option.strike <= _cp, "Option: Current price is too low");
             profit = _cp.sub(option.strike).mul(option.amount);
         } else {
             require(option.strike >= _cp, "Current price is too high");
             profit = option.strike.sub(_cp).mul(option.amount);
         }
+        profit = profit.div(1 ether);
         if (profit > option.lockedAmount) profit = option.lockedAmount;
 
         if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
@@ -343,6 +342,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
      */
     function distributePremium(uint256 _date, address[] calldata _lps) external {
         pool.distributePremium(_date, _lps);
+    }
+    /**
+     * @notice update premium eligibility for the LPs
+     * @param _date Date of the premium to be distributed
+     */
+    function updatePremiumEligibility(uint256 _date) external {
+        pool.updatePremiumEligibility(_date);
     }
 
     /**

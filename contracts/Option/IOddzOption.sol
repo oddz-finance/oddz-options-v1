@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/math/Math.sol";
  */
 interface IOddzOption is IOddzAsset {
     enum State { Active, Exercised, Expired }
-    enum OptionType { Put, Call }
+    enum OptionType { Call, Put }
     enum ExcerciseType { Cash, Physical }
 
     event Buy(
