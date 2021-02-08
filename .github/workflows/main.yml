@@ -28,10 +28,13 @@ jobs:
     - name: Create .env file
       uses: SpicyPizza/create-envfile@v1.0
       with:
-        envkey_INFURA_API_KEY: false
+        envkey_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
         envkey_MNEMONIC: ${{ secrets.MNEMONIC }}
         directory: <directory_name>
         file_name: .env
+    - name: Create compiled json artifacts
+      run: |
+        - yarn compile
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
       env:
