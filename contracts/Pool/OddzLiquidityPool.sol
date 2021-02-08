@@ -27,7 +27,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 transactionDate;
     }
     mapping(uint256 => uint256) public daysActiveLiquidity;
-    mapping(address => LPBalance[]) internal lpBalanceMap;
+    mapping(address => LPBalance[]) public lpBalanceMap;
     mapping(address => uint256) public latestLiquidityDateMap;
     LockedLiquidity[] public lockedLiquidity;
     uint256 public latestLiquidityEvent;
@@ -63,9 +63,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         require(mint > 0, "LP: Amount is too small");
         uint256 date = getPresentDayTimestamp();
+        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
         updateLiquidity(date, msg.value, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date);
-        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
         latestLiquidityDateMap[msg.sender] = date;
 
         _mint(msg.sender, mint);
@@ -84,9 +84,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(burn > 0, "LP: Amount is too small");
 
         uint256 date = getPresentDayTimestamp();
+        sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date);
-        sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
 
         _burn(msg.sender, burn);
         emit RemoveLiquidity(msg.sender, _amount, burn);
@@ -147,16 +147,13 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      */
     function updateLpBalance(TransactionType _type, uint256 _date) private {
         LPBalance[] storage lpBalanceList = lpBalanceMap[msg.sender];
-
         uint256 currentBalance = msg.value;
-
         if (lpBalanceList.length > 0) {
             if (_type == TransactionType.ADD)
                 currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.add(currentBalance);
             else currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.sub(currentBalance);
         }
-
-        lpBalanceList.push(LPBalance(currentBalance, TransactionType.ADD, msg.value, _date));
+        lpBalanceList.push(LPBalance(currentBalance, _type, msg.value, _date));
     }
 
     /**
@@ -183,7 +180,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(len > 0, "LP: Invalid liquidity provider");
         require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP: Premium already distributed for the provider");
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
-            len--;
+            len = len.sub(1);
         }
         uint256 lpEligible =
             premiumDayPool[_date].eligible.mul(lpBalance[len - 1].currentBalance.div(getDaysActiveLiquidity(_date)));
@@ -202,6 +199,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
         }
+        require(premiumDayPool[_date].eligible > 0, "LP: No premium collected for the date");
         require(
             premiumDayPool[_date].eligible > premiumDayPool[_date].distributed,
             "LP: Premium already distributed for this date"
@@ -260,10 +258,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             return;
         }
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
-            LPBalance[] memory lpBalance = lpBalanceMap[msg.sender];
-            uint256 lostPremium = premium.sub(_amount.div(lpBalanceMap[msg.sender][lpBalance.length].currentBalance));
+            LPBalance[] storage lpBalance = lpBalanceMap[msg.sender];
+            uint256 lostPremium =
+                premium.mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
             lpPremium[msg.sender] = premium.sub(lostPremium);
-            surplus.add(lostPremium);
+            surplus = surplus.add(lostPremium);
 
             emit PremiumForfeited(msg.sender, lostPremium);
         } else {

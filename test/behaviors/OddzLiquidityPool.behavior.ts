@@ -15,12 +15,15 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
+    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 0)).transactionValue.toNumber()).to.equal(depositAmount);
     const availableBalance = await liquidityManager.availableBalance();
     expect(availableBalance.toNumber()).to.equal(depositAmount);
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
+    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 1)).transactionValue.toNumber()).to.equal(depositAmount);
     const newavailableBalance = await liquidityManager.availableBalance();
     expect(newavailableBalance.toNumber()).to.equal(depositAmount + depositAmount);
     expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(2000);
+    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 1)).currentBalance.toNumber()).to.equal(depositAmount*2);
   });
 
   it("should not allow withdraw when the pool does not have sufficient balance", async function () {
