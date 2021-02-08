@@ -26,9 +26,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 transactionValue;
         uint256 transactionDate;
     }
-    mapping ( uint256 => uint256 ) public daysActiveLiquidity;
-    mapping ( address => LPBalance[] ) internal lpBalanceMap;
-    mapping ( address => uint256 ) public latestLiquidityDateMap;
+    mapping(uint256 => uint256) public daysActiveLiquidity;
+    mapping(address => LPBalance[]) internal lpBalanceMap;
+    mapping(address => uint256) public latestLiquidityDateMap;
     LockedLiquidity[] public lockedLiquidity;
     uint256 public latestLiquidityEvent;
 
@@ -43,11 +43,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 distributed;
         bool enabled;
     }
-    mapping ( uint256 => PremiumPool ) public premiumDayPool;
+    mapping(uint256 => PremiumPool) public premiumDayPool;
     uint256 public surplus;
-    mapping ( uint256 => uint256 ) internal daysExercise;
-    mapping ( address => uint256 ) public lpPremium;
-    mapping ( address => mapping ( uint256 => uint256 ) ) public lpPremiumDistributionMap;
+    mapping(uint256 => uint256) internal daysExercise;
+    mapping(address => uint256) public lpPremium;
+    mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
@@ -93,7 +93,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         msg.sender.transfer(_amount);
     }
 
-    function lockLiquidity(uint256 _id, uint256 _amount, uint _premium) public override onlyOwner {
+    function lockLiquidity(
+        uint256 _id,
+        uint256 _amount,
+        uint256 _premium
+    ) public override onlyOwner {
         require(_id == lockedLiquidity.length, "LP: Invalid id");
         require(
             lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
@@ -149,16 +153,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         if (lpBalanceList.length > 0) {
             if (_type == TransactionType.ADD)
                 currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.add(currentBalance);
-            else
-                currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.sub(currentBalance);
+            else currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.sub(currentBalance);
         }
 
-        lpBalanceList.push(LPBalance(
-            currentBalance,
-            TransactionType.ADD,
-            msg.value,
-            _date
-        ));
+        lpBalanceList.push(LPBalance(currentBalance, TransactionType.ADD, msg.value, _date));
     }
 
     /**
@@ -185,11 +183,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(len > 0, "LP: Invalid liquidity provider");
         require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP: Premium already distributed for the provider");
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
-            len --;
+            len--;
         }
-        uint256 lpEligible = premiumDayPool[_date].eligible.mul(
-            lpBalance[len - 1].currentBalance.div(getDaysActiveLiquidity(_date))
-        );
+        uint256 lpEligible =
+            premiumDayPool[_date].eligible.mul(lpBalance[len - 1].currentBalance.div(getDaysActiveLiquidity(_date)));
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp].add(lpEligible);
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed.add(lpEligible);
@@ -209,13 +206,13 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             premiumDayPool[_date].eligible > premiumDayPool[_date].distributed,
             "LP: Premium already distributed for this date"
         );
-        for (uint256 lpid=0; lpid < _lps.length; lpid++) {
+        for (uint256 lpid = 0; lpid < _lps.length; lpid++) {
             distributePremiumPerLP(_date, _lps[lpid]);
         }
     }
 
     /**
-     * @notice sends the eligible premium for the provider address 
+     * @notice sends the eligible premium for the provider address
      * @param _lp Liquidity provider
      */
     function sendEligiblePremium(address payable _lp) public onlyOwner {
@@ -253,16 +250,18 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @param _amount amount of liquidity removed
      * @param _date liquidity date
      */
-    function sendEligiblePremiumRemove(uint256 _latestLiquidityDate, uint256 _amount, uint256 _date) private {
+    function sendEligiblePremiumRemove(
+        uint256 _latestLiquidityDate,
+        uint256 _amount,
+        uint256 _date
+    ) private {
         uint256 premium = lpPremium[msg.sender];
         if (premium <= 0) {
             return;
         }
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
             LPBalance[] memory lpBalance = lpBalanceMap[msg.sender];
-            uint256 lostPremium = premium.sub(
-                _amount.div(lpBalanceMap[msg.sender][lpBalance.length].currentBalance)
-            );
+            uint256 lostPremium = premium.sub(_amount.div(lpBalanceMap[msg.sender][lpBalance.length].currentBalance));
             lpPremium[msg.sender] = premium.sub(lostPremium);
             surplus.add(lostPremium);
 
@@ -281,7 +280,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @param _amount amount of liquidity added/removed
      * @param _type transaction type
      */
-    function updateLiquidity(uint256 _date, uint256 _amount, TransactionType _type) private {
+    function updateLiquidity(
+        uint256 _date,
+        uint256 _amount,
+        TransactionType _type
+    ) private {
         if (_type == TransactionType.ADD) {
             daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date).add(_amount);
         } else {
