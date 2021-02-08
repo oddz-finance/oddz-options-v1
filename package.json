@@ -2,7 +2,6 @@
   "name": "oddz-contracts",
   "version": "1.0.0",
   "description": "Oddz token contracts",
-  "main": "truffle-config.js",
   "scripts": {
     "ganache": "ganache-cli --mnemonic 'sunny coast antique boring prosper wrestle spice bubble stable smoke drill basic' --gasLimit 8000000",
     "deploy": "truffle deploy",
@@ -12,7 +11,7 @@
     "compile": "hardhat compile",
     "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"./test/**/*.ts\"",
     "lint": "yarn run lint:sol && yarn run lint:ts && yarn run prettier:list-different",
-    "lint:sol": "solhint --config ./.solhint.json --max-warnings 0 \"contracts/**/*.sol\"",
+    "lint:sol": "solhint --config ./.solhint.json \"contracts/**/*.sol\"",
     "lint:ts": "eslint --config ./.eslintrc.yaml --ignore-path ./.eslintignore --ext .js,.ts .",
     "prettier": "prettier --config .prettierrc --write \"**/*.{js,json,md,sol,ts}\"",
     "prettier:list-different": "prettier --config .prettierrc --list-different \"**/*.{js,json,md,sol,ts}\"",

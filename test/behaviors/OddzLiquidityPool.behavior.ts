@@ -1,10 +1,7 @@
 import { expect } from "chai";
-import { BigNumber, ethers, utils } from "ethers";
-import { OptionType } from "../../test-utils";
-import { waffle } from "hardhat";
+import { BigNumber } from "ethers";
 
-const provider = waffle.provider;
-const date = Date.parse(new Date().toISOString().slice(0, 10))/1000;
+const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
 
 export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should return available balance and total balance. Both of them should be set to 0", async function () {
@@ -51,7 +48,10 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
     const withdrawalAmount = 1000;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(liquidityManager, "RemoveLiquidity");
+    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(
+      liquidityManager,
+      "RemoveLiquidity",
+    );
     expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(0);
   });
 
@@ -59,6 +59,8 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
-    await expect(liquidityManager.updatePremiumEligibility( Math.round(Date.now()/1000))).to.be.revertedWith("LP: Invalid Date");
+    await expect(liquidityManager.updatePremiumEligibility(Math.round(Date.now() / 1000))).to.be.revertedWith(
+      "LP: Invalid Date",
+    );
   });
 }

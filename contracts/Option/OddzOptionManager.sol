@@ -132,7 +132,11 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @param _premium option premium
      * @param _cp current price of the underlying asset
      */
-    function validateOptionAmount(uint256 _value, uint256 _premium, uint256 _cp) private pure {
+    function validateOptionAmount(
+        uint256 _value,
+        uint256 _premium,
+        uint256 _cp
+    ) private pure {
         require(_value >= _premium.mul(1 ether).div(_cp), "Premium is low");
     }
 
@@ -339,7 +343,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @notice Settlement fee calculation for the option premium
      * @param _amount Option premium
      * @return settlementFee Settlement Fee
-    */
+     */
     function getSettlementFee(uint256 _amount) private view returns (uint256 settlementFee) {
         settlementFee = _amount.mul(settlementFeePerc).div(100);
     }
@@ -434,6 +438,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     function distributePremium(uint256 _date, address[] calldata _lps) external {
         pool.distributePremium(_date, _lps);
     }
+
     /**
      * @notice update premium eligibility for the LPs
      * @param _date Date of the premium to be distributed
