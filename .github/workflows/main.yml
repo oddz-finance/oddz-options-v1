@@ -21,6 +21,7 @@ jobs:
       run: |
         yarn install
         yarn run lint
+        yarn compile
       env:
         CI: true
         NODE_ENV: development
@@ -35,9 +36,6 @@ jobs:
       uses: paambaati/codeclimate-action@v2.6.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
-      run: |
-        yarn compile
-        yarn test
       with:
         coverageCommand: yarn test
         debug: true
