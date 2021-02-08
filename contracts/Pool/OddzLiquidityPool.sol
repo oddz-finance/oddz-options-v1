@@ -74,7 +74,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
         require(
-            _amount <= availableBalance(),
+            _amount <= availableBalance().sub(lpPremium[msg.sender]),
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
 
@@ -89,8 +89,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         updateLpBalance(TransactionType.REMOVE, date);
 
         _burn(msg.sender, burn);
-        emit RemoveLiquidity(msg.sender, _amount, burn);
         msg.sender.transfer(_amount);
+
+        emit RemoveLiquidity(msg.sender, _amount, burn);
     }
 
     function lockLiquidity(
