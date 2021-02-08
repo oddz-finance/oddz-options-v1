@@ -33,7 +33,7 @@ jobs:
         file_name: .env
     - name: Create compiled json artifacts
       run: |
-        - yarn compile
+        - yarn run compile
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
       env:
