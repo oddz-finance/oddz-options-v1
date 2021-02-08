@@ -180,7 +180,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed.add(lpEligible);
     }
 
-    function distributePremium(uint256 _date, address[] memory _lps) external onlyOwner {
+    function distributePremium(uint256 _date, address[] memory _lps) public onlyOwner {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
