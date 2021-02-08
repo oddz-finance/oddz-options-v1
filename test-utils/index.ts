@@ -11,5 +11,5 @@ export const AssetIds = {
 
 export const ExcerciseType = {
   Cash: 0,
-  Physical: 1
-}
+  Physical: 1,
+};
