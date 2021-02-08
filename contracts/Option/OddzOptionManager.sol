@@ -69,7 +69,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
         asset.active = true;
         status = asset.active;
         name = asset.name;
-
         emit AssetActivate(asset.id, asset.name);
     }
 

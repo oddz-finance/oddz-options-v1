@@ -417,4 +417,34 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     expect(option.settlementFee.toNumber()).to.equal(544659190);
   });
+
+  it("should update premium eligibilty correctly", async function() {
+    //TODO: @krupa, for some reason surplus is not updating. we should fix this
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    console.log(await oddzLiquidityPool.latestLiquidityDateMap(this.accounts.admin));
+    const overrides = {
+      value: utils.parseEther("1")     // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(2),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
+    await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    await expect(oddzOptionManager.exercise(0)).to.emit(oddzOptionManager, "Exercise").withArgs(0, 25000000000, ExcerciseType.Cash)
+      .to.emit(oddzLiquidityPool, "Profit").withArgs(0, 428186620);
+    await oddzLiquidityPool.removeLiquidity(10000000000000); // 1612742400
+    console.log(await oddzLiquidityPool.latestLiquidityDateMap(this.accounts.admin));
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    await expect((await oddzLiquidityPool.surplus()).toNumber()).to.equal(0);
+  });
 }
