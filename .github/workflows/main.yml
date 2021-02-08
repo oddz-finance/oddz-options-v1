@@ -36,5 +36,5 @@ jobs:
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
       with:
-        coverageCommand: yarn compile && yarn test
+        coverageCommand: yarn compile & yarn test
         debug: true
