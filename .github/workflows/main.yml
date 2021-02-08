@@ -17,27 +17,25 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Create .env file
+      uses: SpicyPizza/create-envfile@v1.0
+      with:
+        envkey_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+        envkey_MNEMONIC: ${{ secrets.MNEMONIC }}
+        directory: <directory_name>
+        file_name: .env
     - name: npm install & build
       run: |
         yarn install
         yarn run lint
+        yarn run compile
       env:
         CI: true
         NODE_ENV: development
-    - name: Create .env file
-      uses: SpicyPizza/create-envfile@v1.0
-      with:
-        envkey_INFURA_API_KEY: false
-        envkey_MNEMONIC: ${{ secrets.MNEMONIC }}
-        directory: <directory_name>
-        file_name: .env
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
-      run: |
-        yarn compile
-        yarn test
       with:
         coverageCommand: yarn test
         debug: true
