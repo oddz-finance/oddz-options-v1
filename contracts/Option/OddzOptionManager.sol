@@ -112,6 +112,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
         _;
     }
 
+    /**
+     * @notice validate strike price
+     * @param _strike strike price provided by the option buyer
+     * @param _minPrice minumum allowed strike price
+     * @param _maxPrice maximum allowed strike price
+     */
     function validStrike(
         uint256 _strike,
         uint256 _minPrice,
@@ -120,10 +126,23 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
-    function validateOptionAmount(uint256 _value, uint256 _premium, uint256 _currentPrice) private pure {
-        require(_value >= _premium.mul(1 ether).div(_currentPrice), "Premium is low");
+    /**
+     * @notice validate option premium
+     * @param _value user paid amount
+     * @param _premium option premium
+     * @param _cp current price of the underlying asset
+     */
+    function validateOptionAmount(uint256 _value, uint256 _premium, uint256 _cp) private pure {
+        require(_value >= _premium.mul(1 ether).div(_cp), "Premium is low");
     }
 
+    /**
+     * @notice get over collateralization for call option
+     * @param _cp current price of the underlying asset
+     * @param _iv implied volatility of the underlying asset
+     * @param _decimal underlying asset decimal precision
+     * @return oc - over collateralization
+     */
     function getCallOverColl(
         uint256 _cp,
         uint256 _iv,
@@ -132,6 +151,13 @@ contract OddzOptionManager is Ownable, IOddzOption {
         oc = _cp.add(_cp.mul(_iv).div(_decimal));
     }
 
+    /**
+     * @notice get over collateralization for put option
+     * @param _cp current price of the underlying asset
+     * @param _iv implied volatility of the underlying asset
+     * @param _decimal underlying asset decimal precision
+     * @return oc - over collateralization
+     */
     function getPutOverColl(
         uint256 _cp,
         uint256 _iv,
@@ -140,10 +166,23 @@ contract OddzOptionManager is Ownable, IOddzOption {
         oc = (_cp.mul(_iv).div(_decimal)).sub(_cp);
     }
 
-    function getCurrentPrice(Asset memory _asset) private view returns (uint256 currentPrice) {
-        currentPrice = oracle.getUnderlyingPrice(_asset.id, strikeAsset.id);
+    /**
+     * @notice get current price of the given asset
+     * @param _asset current price of the underlying asset
+     * @return cp - current price of the underlying asset
+     */
+    function getCurrentPrice(Asset memory _asset) private view returns (uint256 cp) {
+        cp = oracle.getUnderlyingPrice(_asset.id, strikeAsset.id);
     }
 
+    /**
+     * @notice get underlying assets valid strike price range
+     * @param _cp current price of the underlying asset
+     * @param _iv implied volatility of the underlying asset
+     * @param _strike strike price provided by the option buyer
+     * @return minAssetPrice - minimum allowed strike price for the underlying asset
+     * @return maxAssetPrice - maxium allowed strike price for the underlying asset
+     */
     function getAssetStrikePriceRange(
         uint256 _cp,
         uint256 _iv,
@@ -154,6 +193,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validStrike(_strike, minAssetPrice, maxAssetPrice);
     }
 
+    /**
+     * @notice set settlement fee percentage
+     * @param _feePerc settlement fee percentage valid range (1, 10)
+     */
     function setSettlementFeePerc(uint256 _feePerc) external onlyOwner {
         require(_feePerc >= 1 && _feePerc <= 10, "Invalid settlement fee");
         settlementFeePerc = _feePerc;
@@ -177,6 +220,15 @@ contract OddzOptionManager is Ownable, IOddzOption {
         optionId = createOption(_strike, _amount, _expiration, _underlying, _optionType);
     }
 
+    /**
+     * @notice Create option
+     * @param _strike Strike price of the option
+     * @param _amount Option amount
+     * @param _expiration Option period in unix timestamp
+     * @param _underlying Underyling asset id
+     * @param _optionType Option Type (Call/Put)
+     * @return optionId newly created Option Id
+     */
     function createOption(
         uint256 _strike,
         uint256 _amount,
@@ -212,11 +264,15 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
     /**
      * @notice Used for getting the actual options prices
+     * @param _underlying Underyling asset id
      * @param _expiration Option period in unix timestamp
      * @param _amount Option amount
      * @param _strike Strike price of the option
+     * @param _optionType Option Type (Call/Put)
      * @return optionPremium Premium to be paid
      * @return settlementFee Settlement Fee
+     * @return cp Current price of the underlying asset
+     * @return iv implied volatility of the underlying asset
      */
     function getPremium(
         uint32 _underlying,
@@ -244,12 +300,23 @@ contract OddzOptionManager is Ownable, IOddzOption {
         settlementFee = getSettlementFee(optionPremium);
     }
 
+    /**
+     * @notice Provides black scholes premium price
+     * @param _underlying Underyling asset id
+     * @param _expiration Option period in unix timestamp
+     * @param _strike Strike price of the option
+     * @param _optionType Option Type (Call/Put)
+     * @param _iv implied volatility of the underlying asset
+     * @param _amount Option amount
+     * @return optionPremium Premium to be paid
+     * @return cp Current price of the underlying asset
+     */
     function getPremiumBlackScholes(
         uint32 _underlying,
         uint256 _expiration,
         uint256 _strike,
         OptionType _optionType,
-        uint256 iv,
+        uint256 _iv,
         uint256 _amount
     ) private view returns (uint256 optionPremium, uint256 cp) {
         Asset memory asset = assetIdMap[_underlying];
@@ -260,7 +327,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
             cp,
             PERCENTAGE_PRECISION,
             _expiration,
-            iv,
+            _iv,
             0,
             0,
             PERCENTAGE_PRECISION
@@ -268,12 +335,17 @@ contract OddzOptionManager is Ownable, IOddzOption {
         optionPremium = optionPremium.mul(_amount).div(1e18);
     }
 
+    /**
+     * @notice Settlement fee calculation for the option premium
+     * @param _amount Option premium
+     * @return settlementFee Settlement Fee
+    */
     function getSettlementFee(uint256 _amount) private view returns (uint256 settlementFee) {
         settlementFee = _amount.mul(settlementFeePerc).div(100);
     }
 
     /**
-     * @notice Used for exercising an option that is not expired
+     * @notice Used for cash settlement excerise for an active option
      * @param _optionId Option id
      */
     function exercise(uint256 _optionId) external override {
@@ -286,6 +358,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
         emit Exercise(_optionId, profit, ExcerciseType.Cash);
     }
 
+    /**
+     * @notice Used for physical settlement excerise for an active option
+     * @param _optionId Option id
+     */
     function excerciseUA(uint256 _optionId, address payable _uaAddress) external override {
         Option storage option = options[_optionId];
 
