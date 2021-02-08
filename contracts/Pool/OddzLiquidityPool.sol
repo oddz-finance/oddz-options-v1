@@ -30,6 +30,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping ( address => LPBalance[] ) internal lpBalanceMap;
     mapping ( address => uint256 ) public latestLiquidityDateMap;
     LockedLiquidity[] public lockedLiquidity;
+    uint256 public latestLiquidityEvent;
 
     /**
      * @dev Premium specific data definitions
@@ -62,7 +63,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         require(mint > 0, "LP: Amount is too small");
         uint256 date = getPresentDayTimestamp();
-        daysActiveLiquidity[date] = daysActiveLiquidity[date].add(msg.value);
+        updateLiquidity(date, msg.value, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date);
         sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
         latestLiquidityDateMap[msg.sender] = date;
@@ -83,7 +84,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(burn > 0, "LP: Amount is too small");
 
         uint256 date = getPresentDayTimestamp();
-        daysActiveLiquidity[date] = daysActiveLiquidity[date].sub(_amount);
+        updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date);
         sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
 
@@ -92,7 +93,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         msg.sender.transfer(_amount);
     }
 
-    function lockLiquidity(uint256 _id, uint256 _amount, uint _premium) external override onlyOwner {
+    function lockLiquidity(uint256 _id, uint256 _amount, uint _premium) public override onlyOwner {
         require(_id == lockedLiquidity.length, "LP: Invalid id");
         require(
             lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
@@ -103,7 +104,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         lockedAmount = lockedAmount.add(_amount);
     }
 
-    function unlockLiquidity(uint256 _id) external override onlyOwner validLiquidty(_id) {
+    function unlockLiquidity(uint256 _id) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         ll.locked = false;
         lockedPremium = lockedPremium.sub(ll.premium);
@@ -118,7 +119,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         address payable _account,
         uint256 _amount
-    ) external override onlyOwner validLiquidty(_id) {
+    ) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(_account != address(0), "Invalid address");
 
@@ -173,7 +174,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             len --;
         }
         uint256 lpEligible = premiumDayPool[_date].eligible.mul(
-            lpBalance[len - 1].currentBalance.div(daysActiveLiquidity[_date])
+            lpBalance[len - 1].currentBalance.div(getDaysActiveLiquidity(_date))
         );
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp].add(lpEligible);
@@ -238,6 +239,27 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
             emit PremiumCollected(msg.sender, premium);
         }
+    }
+
+    function updateLiquidity(uint256 _date, uint256 _amount, TransactionType _type) private {
+        if (_type == TransactionType.ADD) {
+            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date).add(_amount);
+        } else {
+            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date).sub(_amount);
+        }
+        latestLiquidityEvent = _date;
+    }
+
+    function getDaysActiveLiquidity(uint256 _date) private returns (uint256 _liquidity) {
+        // Skip for the first time liqiduity
+        if (daysActiveLiquidity[_date] == 0 && latestLiquidityEvent != 0) {
+            uint256 stDate = latestLiquidityEvent;
+            while (stDate <= _date) {
+                daysActiveLiquidity[stDate] = daysActiveLiquidity[latestLiquidityEvent];
+                stDate = stDate.add(1 days);
+            }
+        }
+        _liquidity = daysActiveLiquidity[_date];
     }
 
     function availableBalance() public view override returns (uint256 balance) {
