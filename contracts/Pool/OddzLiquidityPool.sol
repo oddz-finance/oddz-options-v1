@@ -136,6 +136,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         else emit Loss(_id, transferAmount - ll.premium);
     }
 
+    /**
+     * @notice Updates liquidity provider balance
+     * @param _type Transaction type
+     * @param _date Epoch time for 00:00:00 hours of the date
+     */
     function updateLpBalance(TransactionType _type, uint256 _date) private {
         LPBalance[] storage lpBalanceList = lpBalanceMap[msg.sender];
 
@@ -156,6 +161,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         ));
     }
 
+    /**
+     * @notice Updates Premium Eligibility for the given date
+     * @param _date Epoch time for 00:00:00 hours of the date
+     */
     function updatePremiumEligibility(uint256 _date) public onlyOwner {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
@@ -165,6 +174,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         surplus = 0;
     }
 
+    /**
+     * @notice Distributes the Premium for the Liquidity Provider for the given date
+     * @param _date Epoch time for 00:00:00 hours of the date
+     * @param _lp active liquidity provider address
+     */
     function distributePremiumPerLP(uint256 _date, address _lp) private {
         LPBalance[] storage lpBalance = lpBalanceMap[_lp];
         uint256 len = lpBalance.length;
@@ -181,6 +195,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed.add(lpEligible);
     }
 
+    /**
+     * @notice Distributes the Premium for the Liquidity Providers for the given date
+     * @param _date Epoch time for 00:00:00 hours of the date
+     * @param _lps List of the active liquidity provider addresses
+     */
     function distributePremium(uint256 _date, address[] memory _lps) public onlyOwner {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
@@ -195,19 +214,28 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         }
     }
 
-    function sendEligiblePremium(address payable _lpProvider) public onlyOwner {
-        require(lpPremium[_lpProvider] > 0, "LP: Not eligible for premium");
+    /**
+     * @notice sends the eligible premium for the provider address 
+     * @param _lp Liquidity provider
+     */
+    function sendEligiblePremium(address payable _lp) public onlyOwner {
+        require(lpPremium[_lp] > 0, "LP: Not eligible for premium");
         require(
-            getPresentDayTimestamp().sub(latestLiquidityDateMap[_lpProvider]) > premiumLockupDuration,
+            getPresentDayTimestamp().sub(latestLiquidityDateMap[_lp]) > premiumLockupDuration,
             "LP: Address not eligible for premium collection"
         );
-        uint256 premium = lpPremium[_lpProvider];
-        lpPremium[_lpProvider] = 0;
-        _lpProvider.transfer(premium);
+        uint256 premium = lpPremium[_lp];
+        lpPremium[_lp] = 0;
+        _lp.transfer(premium);
 
-        emit PremiumCollected(_lpProvider, premium);
+        emit PremiumCollected(_lp, premium);
     }
 
+    /**
+     * @notice sends the eligible premium for the provider address while add liquidity
+     * @param _latestLiquidityDate Latest liquidity by the provider
+     * @param _date liquidity date
+     */
     function sendEligiblePremiumAdd(uint256 _latestLiquidityDate, uint256 _date) private {
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
             return;
@@ -219,6 +247,12 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         emit PremiumCollected(msg.sender, premium);
     }
 
+    /**
+     * @notice sends the eligible premium for the provider address while remove liquidity
+     * @param _latestLiquidityDate Latest liquidity by the provider
+     * @param _amount amount of liquidity removed
+     * @param _date liquidity date
+     */
     function sendEligiblePremiumRemove(uint256 _latestLiquidityDate, uint256 _amount, uint256 _date) private {
         uint256 premium = lpPremium[msg.sender];
         if (premium <= 0) {
@@ -241,6 +275,12 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         }
     }
 
+    /**
+     * @notice Updates liquidity for a given date
+     * @param _date liquidity date
+     * @param _amount amount of liquidity added/removed
+     * @param _type transaction type
+     */
     function updateLiquidity(uint256 _date, uint256 _amount, TransactionType _type) private {
         if (_type == TransactionType.ADD) {
             daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date).add(_amount);
@@ -250,6 +290,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         latestLiquidityEvent = _date;
     }
 
+    /**
+     * @notice Get active liquidity for a date
+     * @param _date liquidity date
+     */
     function getDaysActiveLiquidity(uint256 _date) private returns (uint256 _liquidity) {
         // Skip for the first time liqiduity
         if (daysActiveLiquidity[_date] == 0 && latestLiquidityEvent != 0) {
