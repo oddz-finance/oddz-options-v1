@@ -2,7 +2,6 @@
   "name": "oddz-contracts",
   "version": "1.0.0",
   "description": "Oddz token contracts",
-  "main": "truffle-config.js",
   "scripts": {
     "ganache": "ganache-cli --mnemonic 'sunny coast antique boring prosper wrestle spice bubble stable smoke drill basic' --gasLimit 8000000",
     "deploy": "truffle deploy",
