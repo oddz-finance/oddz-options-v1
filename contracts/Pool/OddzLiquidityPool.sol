@@ -210,20 +210,19 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     }
 
     /**
-     * @notice sends the eligible premium for the provider address
-     * @param _lp Liquidity provider
+     * @notice Allow withdrawal of eligible premium
      */
-    function sendEligiblePremium(address payable _lp) public onlyOwner {
-        require(lpPremium[_lp] > 0, "LP: Not eligible for premium");
+    function withdrawPremium() external {
+        require(lpPremium[msg.sender] > 0, "LP: Not eligible for premium");
         require(
-            getPresentDayTimestamp().sub(latestLiquidityDateMap[_lp]) > premiumLockupDuration,
+            getPresentDayTimestamp().sub(latestLiquidityDateMap[msg.sender]) > premiumLockupDuration,
             "LP: Address not eligible for premium collection"
         );
-        uint256 premium = lpPremium[_lp];
-        lpPremium[_lp] = 0;
-        _lp.transfer(premium);
+        uint256 premium = lpPremium[msg.sender];
+        lpPremium[msg.sender] = 0;
+        msg.sender.transfer(premium);
 
-        emit PremiumCollected(_lp, premium);
+        emit PremiumCollected(msg.sender, premium);
     }
 
     /**

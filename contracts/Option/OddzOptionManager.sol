@@ -446,11 +446,4 @@ contract OddzOptionManager is Ownable, IOddzOption {
     function updatePremiumEligibility(uint256 _date) external {
         pool.updatePremiumEligibility(_date);
     }
-
-    /**
-     * @notice Withdraw collected Premium
-     */
-    function withdrawPremium() external {
-        pool.sendEligiblePremium(msg.sender);
-    }
 }

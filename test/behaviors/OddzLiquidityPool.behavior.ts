@@ -66,4 +66,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       "LP: Invalid Date",
     );
   });
+
+  it("should throw not eligible error while withdraw premium", async function () {
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await expect(oddzLiquidityPool.withdrawPremium()).to.be.revertedWith("LP: Not eligible for premium");
+  });
 }
