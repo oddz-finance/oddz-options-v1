@@ -17,13 +17,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: npm install & build
-      run: |
-        yarn install
-        yarn run lint
-      env:
-        CI: true
-        NODE_ENV: development
     - name: Create .env file
       uses: SpicyPizza/create-envfile@v1.0
       with:
@@ -31,9 +24,14 @@ jobs:
         envkey_MNEMONIC: ${{ secrets.MNEMONIC }}
         directory: <directory_name>
         file_name: .env
-    - name: Create compiled json artifacts
+    - name: npm install & build
       run: |
-        - yarn run compile
+        yarn install
+        yarn run lint
+        yarn run compile
+      env:
+        CI: true
+        NODE_ENV: development
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
       env:
