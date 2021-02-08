@@ -357,7 +357,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     const op2 = await oddzOptionManager.options(2);
     const premiums = op0.premium.toNumber() + op1.premium.toNumber() + op2.premium.toNumber();
-    const surplusBeforeUpdate = (await oddzLiquidityPool.surplus()).toNumber();
+    // const surplusBeforeUpdate = (await oddzLiquidityPool.surplus()).toNumber();
     //console.log(surplusBeforeUpdate);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlockAll([0, 1, 2])).to.emit(oddzOptionManager, "Expire");
@@ -382,7 +382,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
       overrides,
     );
-    const op0 = await oddzOptionManager.options(0);
+    //const op0 = await oddzOptionManager.options(0);
     //console.log("SP 1250, Expiry: 1 Day", op0.premium.toNumber());
 
     await oddzOptionManager.buy(
@@ -393,7 +393,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
       overrides,
     );
-    const op1 = await oddzOptionManager.options(1);
+    //const op1 = await oddzOptionManager.options(1);
     //console.log("SP 1250, Expiry: 10 Days", op1.premium.toNumber());
 
     await provider.send("evm_increaseTime", [getExpiry(2)]);

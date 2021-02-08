@@ -1,9 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, ethers, utils } from "ethers";
-import { OptionType } from "../../test-utils";
-import { waffle } from "hardhat";
+import { BigNumber } from "ethers";
 
-const provider = waffle.provider;
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
 
 export function shouldBehaveLikeOddzLiquidityPool(): void {
