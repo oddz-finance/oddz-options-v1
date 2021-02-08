@@ -2,15 +2,16 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
-import MockOddzLiquidityPoolArtifact from "../artifacts/contracts/Mocks/MockOddzLiquidityPool.sol/MockOddzLiquidityPool.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 
 import { Accounts, Signers } from "../types";
 
-import { OddzOptionManager, MockOddzPriceOracle, MockOddzLiquidityPool, MockOddzVolatility } from "../typechain";
+import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, OddzLiquidityPool } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber } from "ethers";
+import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
+
 const { deployContract } = waffle;
 
 describe("Oddz Option Manager Unit tests", function () {
@@ -30,22 +31,20 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
-      const oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
-        BigNumber.from(1200),
+      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
       const oddzVolatility = (await deployContract(
         this.signers.admin,
         MockOddzVolatilityArtifact,
-      )) as MockOddzLiquidityPool;
-      const oddzLiquidityPool = (await deployContract(
-        this.signers.admin,
-        MockOddzLiquidityPoolArtifact,
       )) as MockOddzVolatility;
+
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
-        oddzPriceOracle.address,
+        this.oddzPriceOracle.address,
         oddzVolatility.address,
-        oddzLiquidityPool.address,
       ])) as OddzOptionManager;
+      const poolAddress = await this.oddzOptionManager.pool();
+      this.oddzLiquidityPool = new ethers.Contract(poolAddress, OddzLiquidityPoolArtifact.abi, this.signers.admin);
     });
     shouldBehaveLikeOddzOptionManager();
   });

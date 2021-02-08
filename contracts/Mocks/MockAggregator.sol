@@ -3,7 +3,7 @@ pragma solidity ^0.7.0;
 
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
-contract MockAggregatorV3 is AggregatorV3Interface  {
+contract MockAggregatorV3 is AggregatorV3Interface {
     int256 public lastAnswer;
     uint256 public lastTimestamp;
     string public symbolA;

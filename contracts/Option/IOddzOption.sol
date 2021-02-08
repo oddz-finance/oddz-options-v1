@@ -4,6 +4,7 @@ pragma solidity ^0.7.0;
 import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 
 /**
  * @title Oddz Call and Put Options
@@ -11,7 +12,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  */
 interface IOddzOption is IOddzAsset {
     enum State { Active, Exercised, Expired }
-    enum OptionType { Put, Call }
+    enum OptionType { Call, Put }
     enum ExcerciseType { Cash, Physical }
 
     event Buy(
