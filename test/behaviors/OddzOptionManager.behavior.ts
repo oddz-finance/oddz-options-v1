@@ -17,6 +17,7 @@ const getExpiry = (days = 1) => {
 export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
     await expect(
       oddzOptionManager.getPremium(1, getExpiry(1), BigNumber.from(100), BigNumber.from(1234), OptionType.Call),
     ).to.be.revertedWith("Invalid Asset");
