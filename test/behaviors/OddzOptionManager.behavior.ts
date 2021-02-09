@@ -1,18 +1,8 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import { OptionType, ExcerciseType } from "../../test-utils";
+import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
-
-const addDaysAndGetSeconds = (days = 0) => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return Date.parse(date.toISOString().slice(0, 10)) / 1000;
-};
-
-const getExpiry = (days = 1) => {
-  return 60 * 60 * 24 * days;
-};
 
 export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset", async function () {
@@ -360,10 +350,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const premiums = op0.premium.toNumber() + op1.premium.toNumber() + op2.premium.toNumber();
     // const surplusBeforeUpdate = (await oddzLiquidityPool.surplus()).toNumber();
     //console.log(surplusBeforeUpdate);
+    await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlockAll([0, 1, 2])).to.emit(oddzOptionManager, "Expire");
     const collected = (await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).collected.toNumber();
     expect(premiums).to.equal(collected);
+    await provider.send("evm_revert", ["0x1"]);
   });
 
   it("should distribute liquidity", async function () {
@@ -396,9 +388,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     //const op1 = await oddzOptionManager.options(1);
     //console.log("SP 1250, Expiry: 10 Days", op1.premium.toNumber());
-
+    await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+    await provider.send("evm_revert", ["0x2"]);
     //console.log(await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2)));
     // await provider.send("evm_increaseTime", [getExpiry(1)]);
     // // increment evm time by one more day at this point
@@ -432,35 +425,207 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   it("should update premium eligibilty correctly", async function () {
-    //TODO: @krupa, for some reason surplus is not updating. we should fix this
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
-    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
-    //console.log(await oddzLiquidityPool.latestLiquidityDateMap(this.accounts.admin));
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
     await oddzOptionManager.buy(
       asset.id,
-      getExpiry(2),
+      getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
       overrides,
     );
-    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
-    await oddzPriceOracle.setUnderlyingPrice(175000000000);
-    await expect(oddzOptionManager.exercise(0))
-      .to.emit(oddzOptionManager, "Exercise")
-      .withArgs(0, 25000000000, ExcerciseType.Cash)
-      .to.emit(oddzLiquidityPool, "Profit")
-      .withArgs(0, 428186620);
-    await oddzLiquidityPool.removeLiquidity(10000000000000); // 1612742400
-    //console.log(await oddzLiquidityPool.latestLiquidityDateMap(this.accounts.admin));
-    await provider.send("evm_increaseTime", [getExpiry(1)]);
-    await expect((await oddzLiquidityPool.surplus()).toNumber()).to.equal(0);
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oddzOptionManager.unlock(0);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(13929002010);
+    await provider.send("evm_revert", ["0x3"]);
+    await provider.send("evm_revert", ["0x4"]);
+  });
+
+  // TODO: This case should be part of liquidity pool
+  it("should withdraw premium successfully", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1"), // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(13929002010);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(15)]);
+    await expect(oddzLiquidityPool.withdrawPremium()).to.emit(oddzLiquidityPool, "PremiumCollected");
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
+    await provider.send("evm_revert", ["0x5"]);
+    await provider.send("evm_revert", ["0x6"]);
+    await provider.send("evm_revert", ["0x7"]);
+  });
+
+  // TODO: This case should be part of liquidity pool
+  it("should update surplus correctly", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1"), // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    // Remove 10% of the liquidity
+    await expect(oddzLiquidityPool.removeLiquidity(10000000000000)).to.emit(oddzLiquidityPool, "PremiumForfeited");
+    await expect((await oddzLiquidityPool.surplus()).toNumber()).to.equal(1392900201);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(12536101809);
+    await provider.send("evm_revert", ["0x8"]);
+    await provider.send("evm_revert", ["0x9"]);
+  });
+
+  // TODO: This case should be part of liquidity pool
+  it("should throw error while withdraw liquidity", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1"), // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oddzOptionManager.unlock(0);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect(oddzLiquidityPool.withdrawPremium()).to.be.revertedWith(
+      "LP: Address not eligible for premium collection",
+    );
+    await provider.send("evm_revert", ["0xa"]);
+    await provider.send("evm_revert", ["0xb"]);
+  });
+
+  // TODO: This case should be part of liquidity pool
+  it("should send premium to the LP automatically for second liquidity after 14 days", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1"), // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oddzOptionManager.unlock(0);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(15)]);
+    await expect(oddzLiquidityPool.addLiquidity({ value: 100000000000000 })).to.emit(
+      oddzLiquidityPool,
+      "PremiumCollected",
+    );
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
+    await provider.send("evm_revert", ["0xc"]);
+    await provider.send("evm_revert", ["0xd"]);
+    await provider.send("evm_revert", ["0xe"]);
+  });
+
+  // TODO: This case should be part of liquidity pool
+  it("should send premium to the LP automatically for remove liquidity after 14 days", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset = await oddzOptionManager.assets(0);
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    const overrides = {
+      value: utils.parseEther("1"), // ether in this case MUST be a string
+    };
+    await oddzOptionManager.buy(
+      asset.id,
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      overrides,
+    );
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oddzOptionManager.unlock(0);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzOptionManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    // console.log((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber());
+    // Maximum withdrawal 80% of (available balance - user premium) - 0.8 * (100000000000000 - 13929002010)
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(15)]);
+    await expect(oddzLiquidityPool.removeLiquidity(79988856798392)).to.emit(oddzLiquidityPool, "PremiumCollected");
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
+    await provider.send("evm_revert", ["0xf"]);
+    await provider.send("evm_revert", ["0x11"]);
+    await provider.send("evm_revert", ["0x12"]);
   });
 }
