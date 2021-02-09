@@ -567,7 +567,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await oddzOptionManager.unlock(0);
     await oddzOptionManager.distributePremium( addDaysAndGetSeconds(15), [this.accounts.admin] );
-    await expect(oddzLiquidityPool.removeLiquidity(80000000000000)).to.emit(oddzLiquidityPool, "PremiumCollected");
+    // console.log((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber());
+    // Maximum withdrawal 80% of (available balance - user premium) - 0.8 * (100000000000000 - 13929002010)
+    await expect(oddzLiquidityPool.removeLiquidity(79988856798392)).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
   });
 }
