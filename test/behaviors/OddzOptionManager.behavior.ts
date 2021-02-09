@@ -567,7 +567,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await oddzOptionManager.unlock(0);
     await oddzOptionManager.distributePremium( addDaysAndGetSeconds(15), [this.accounts.admin] );
-    await expect(oddzLiquidityPool.removeLiquidity(99000000000000)).to.emit(oddzLiquidityPool, "PremiumCollected");
+    await expect(oddzLiquidityPool.removeLiquidity(80000000000000)).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
   });
 }

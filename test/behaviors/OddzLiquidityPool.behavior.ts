@@ -50,12 +50,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity({ value: depositAmount })).to.emit(liquidityManager, "AddLiquidity");
-    const withdrawalAmount = 1000;
+    const withdrawalAmount = 800;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(
       liquidityManager,
       "RemoveLiquidity",
     );
-    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(0);
+    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(200);
   });
 
   it("Should not update premium eligibility if the date is less than the current date", async function () {
