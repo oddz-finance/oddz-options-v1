@@ -607,8 +607,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzLiquidityPool.removeLiquidity(79988856798392)).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
     await provider.send("evm_revert", ["0xf"]);
+    await provider.send("evm_revert", ["0x10"]);
     await provider.send("evm_revert", ["0x11"]);
-    await provider.send("evm_revert", ["0x12"]);
   });
 
   it("should throw an error when trying to excercise an option that is expired", async function () {
@@ -632,7 +632,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Option has expired");
-    await provider.send("evm_revert", ["0x13"]);
+    await provider.send("evm_revert", ["0x12"]);
   });
 
   it("should update settlement percentage and option excercise fee", async function () {
@@ -692,8 +692,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(2));
     expect((await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).enabled).to.equal(true);
 
+    await provider.send("evm_revert", ["0x13"]);
     await provider.send("evm_revert", ["0x14"]);
-    await provider.send("evm_revert", ["0x15"]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -714,7 +714,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
       overrides,
     );
-    await expect(oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(0))).to.be.revertedWith(
+    await expect(oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(1))).to.be.revertedWith(
       "LP: Invalid Date",
     );
   });
@@ -748,8 +748,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       "LP: Premium eligibilty already updated for the date",
     );
 
+    await provider.send("evm_revert", ["0x15"]);
     await provider.send("evm_revert", ["0x16"]);
-    await provider.send("evm_revert", ["0x17"]);
   });
 
   it("should send settlement fee aggragrate staking contract successfully", async function () {
