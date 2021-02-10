@@ -58,11 +58,13 @@ interface IOddzLiquidityPool {
      * @notice called by Oddz call options to send funds to LPs after an option's expiration
      * @param _account Provider account address
      * @param _amount Funds that should be sent
+     * @param _settlementFee Settlement Fee collected while Excercise
      */
     function send(
         uint256 _id,
         address payable _account,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _settlementFee
     ) external;
 
     /**

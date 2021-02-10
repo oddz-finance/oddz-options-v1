@@ -123,7 +123,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function send(
         uint256 _id,
         address payable _account,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _settlementFee
     ) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(_account != address(0), "Invalid address");
@@ -134,11 +135,15 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
 
-        uint256 transferAmount = _amount > ll.amount ? ll.amount : _amount;
+        uint256 transferAmount = _amount;
+        if (_amount > ll.amount) transferAmount = ll.amount.sub(_settlementFee);
+
         daysExercise[date].add(transferAmount);
         _account.transfer(transferAmount);
-        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
-        else emit Loss(_id, transferAmount - ll.premium);
+
+        if (transferAmount.add(_settlementFee) <= ll.premium)
+            emit Profit(_id, ll.premium - transferAmount.add(_settlementFee));
+        else emit Loss(_id, transferAmount.add(_settlementFee) - ll.premium);
     }
 
     /**
@@ -161,7 +166,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @notice Updates Premium Eligibility for the given date
      * @param _date Epoch time for 00:00:00 hours of the date
      */
-    function updatePremiumEligibility(uint256 _date) public onlyOwner {
+    function updatePremiumEligibility(uint256 _date) public {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
         require(!premium.enabled, "LP: Premium eligibilty already updated for the date");
@@ -195,7 +200,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @param _date Epoch time for 00:00:00 hours of the date
      * @param _lps List of the active liquidity provider addresses
      */
-    function distributePremium(uint256 _date, address[] memory _lps) public onlyOwner {
+    function distributePremium(uint256 _date, address[] memory _lps) public {
         require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
@@ -330,6 +335,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _settlementFee
     ) external onlyOwner {}
 }

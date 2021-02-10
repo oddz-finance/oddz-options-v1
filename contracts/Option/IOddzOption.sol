@@ -18,12 +18,12 @@ interface IOddzOption is IOddzAsset {
     event Buy(
         uint256 indexed _optionId,
         address indexed _account,
-        uint256 _settlementFee,
+        uint256 _transactionFee,
         uint256 _totalFee,
         uint32 _underlying
     );
 
-    event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
+    event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
 
     struct Option {
