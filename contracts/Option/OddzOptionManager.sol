@@ -4,6 +4,7 @@ pragma solidity ^0.7.0;
 import "./IOddzOption.sol";
 import "../Oracle/IOddzPriceOracle.sol";
 import "../Oracle/IOddzVolatility.sol";
+import "../Staking/IOddzStaking.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "../Libs/BlackScholes.sol";
 import "hardhat/console.sol";
@@ -15,6 +16,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     OddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
     IOddzVolatility public volatility;
+    IOddzStaking public stakingBenficiary;
     Option[] public options;
     Asset[] public assets;
     Asset public strikeAsset;
@@ -23,16 +25,32 @@ contract OddzOptionManager is Ownable, IOddzOption {
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
-    uint256 public settlementFeePerc = 5;
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
     uint256 internal constant PERCENTAGE_PRECISION = 100000;
 
-    constructor(IOddzPriceOracle _oracle, IOddzVolatility _iv) {
+    /**
+     * @dev Transaction Fee definitions
+     */
+    uint256 public txnFeePerc = 5;
+    uint256 public txnFeeAggregate;
+
+    /**
+     * @dev Settlement Fee definitions
+     */
+    uint256 public settlementFeePerc = 4;
+    uint256 public settlementFeeAggregate;
+
+    constructor(
+        IOddzPriceOracle _oracle,
+        IOddzVolatility _iv,
+        IOddzStaking _staking
+    ) {
         pool = new OddzLiquidityPool();
         oracle = _oracle;
         volatility = _iv;
+        stakingBenficiary = _staking;
         createdAt = block.timestamp;
     }
 
@@ -198,6 +216,15 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     /**
+     * @notice set transaction fee percentage
+     * @param _feePerc transaction fee percentage valid range (1, 10)
+     */
+    function setTransactionFeePerc(uint256 _feePerc) external onlyOwner {
+        require(_feePerc >= 1 && _feePerc <= 10, "Invalid transaction fee");
+        txnFeePerc = _feePerc;
+    }
+
+    /**
      * @notice set settlement fee percentage
      * @param _feePerc settlement fee percentage valid range (1, 10)
      */
@@ -240,9 +267,9 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint32 _underlying,
         OptionType _optionType
     ) private returns (uint256 optionId) {
-        (uint256 optionPremium, uint256 settlementFee, uint256 cp, uint256 iv) =
+        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv) =
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
-        validateOptionAmount(msg.value, optionPremium.add(settlementFee), cp);
+        validateOptionAmount(msg.value, optionPremium.add(txnFee), cp);
 
         (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike);
         maxStrikePrice = maxStrikePrice.min(cp.add(cp));
@@ -262,8 +289,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
             );
 
         options.push(option);
+        txnFeeAggregate = txnFeeAggregate.add(txnFee);
         pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
-        emit Buy(optionId, msg.sender, settlementFee, optionPremium.add(settlementFee), option.assetId);
+
+        emit Buy(optionId, msg.sender, txnFee, optionPremium.add(txnFee), option.assetId);
     }
 
     /**
@@ -274,7 +303,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @param _strike Strike price of the option
      * @param _optionType Option Type (Call/Put)
      * @return optionPremium Premium to be paid
-     * @return settlementFee Settlement Fee
+     * @return txnFee Transaction Fee
      * @return cp Current price of the underlying asset
      * @return iv implied volatility of the underlying asset
      */
@@ -292,7 +321,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         validAsset(_underlying)
         returns (
             uint256 optionPremium,
-            uint256 settlementFee,
+            uint256 txnFee,
             uint256 cp,
             uint256 iv
         )
@@ -301,7 +330,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         (optionPremium, cp) = getPremiumBlackScholes(_underlying, _expiration, _strike, _optionType, iv, _amount);
 
-        settlementFee = getSettlementFee(optionPremium);
+        txnFee = getTransactionFee(optionPremium);
     }
 
     /**
@@ -340,12 +369,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     /**
-     * @notice Settlement fee calculation for the option premium
+     * @notice Transaction fee calculation for the option premium
      * @param _amount Option premium
-     * @return settlementFee Settlement Fee
+     * @return txnFee Transaction Fee
      */
-    function getSettlementFee(uint256 _amount) private view returns (uint256 settlementFee) {
-        settlementFee = _amount.mul(settlementFeePerc).div(100);
+    function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
+        txnFee = _amount.mul(txnFeePerc).div(100);
     }
 
     /**
@@ -357,9 +386,11 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
+
         option.state = State.Exercised;
-        uint256 profit = payProfit(_optionId, ExcerciseType.Cash, option.holder);
-        emit Exercise(_optionId, profit, ExcerciseType.Cash);
+        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+
+        emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
     }
 
     /**
@@ -368,15 +399,14 @@ contract OddzOptionManager is Ownable, IOddzOption {
      */
     function excerciseUA(uint256 _optionId, address payable _uaAddress) external override {
         Option storage option = options[_optionId];
-
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        uint256 profit = payProfit(_optionId, ExcerciseType.Physical, _uaAddress);
+        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Physical, _uaAddress);
 
-        emit Exercise(_optionId, profit, ExcerciseType.Physical);
+        emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
 
     /**
@@ -389,9 +419,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
         uint256 _optionId,
         ExcerciseType _type,
         address payable _address
-    ) internal returns (uint256 profit) {
+    ) internal returns (uint256 profit, uint256 settlementFee) {
         Option memory option = options[_optionId];
         uint256 _cp = getCurrentPrice(assetIdMap[option.assetId]);
+
         if (option.optionType == OptionType.Call) {
             require(option.strike <= _cp, "Call option: Current price is too low");
             profit = _cp.sub(option.strike).mul(option.amount);
@@ -401,8 +432,12 @@ contract OddzOptionManager is Ownable, IOddzOption {
         }
         profit = profit.div(1 ether);
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
-        else pool.sendUA(_optionId, _address, profit);
+        settlementFee = profit.mul(settlementFeePerc).div(100);
+        settlementFeeAggregate = settlementFeeAggregate.add(settlementFee);
+        profit = profit.sub(settlementFee);
+
+        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit, settlementFee);
+        else pool.sendUA(_optionId, _address, profit, settlementFee);
     }
 
     /**
@@ -431,19 +466,22 @@ contract OddzOptionManager is Ownable, IOddzOption {
     }
 
     /**
-     * @notice Distribute Premium for the LPs
-     * @param _date Date of the premium to be distributed
-     * @param _lps list of active liquidity providers
+     * @notice transfer transaction fee to beneficiary
      */
-    function distributePremium(uint256 _date, address[] calldata _lps) external {
-        pool.distributePremium(_date, _lps);
+    function transferTxnFeeToBeneficiary() external {
+        uint256 txnFee = txnFeeAggregate;
+        txnFeeAggregate = 0;
+
+        stakingBenficiary.deposit(txnFee, IOddzStaking.DepositType.Transaction);
     }
 
     /**
-     * @notice update premium eligibility for the LPs
-     * @param _date Date of the premium to be distributed
+     * @notice transfer settlement fee to beneficiary
      */
-    function updatePremiumEligibility(uint256 _date) external {
-        pool.updatePremiumEligibility(_date);
+    function transferSettlementFeeToBeneficiary() external {
+        uint256 settlementFee = settlementFeeAggregate;
+        settlementFeeAggregate = 0;
+
+        stakingBenficiary.deposit(settlementFee, IOddzStaking.DepositType.Settlement);
     }
 }
