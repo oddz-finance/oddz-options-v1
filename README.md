@@ -31,7 +31,9 @@ Before running any command, make sure to install dependencies:
 ```sh
 $ yarn install
 ```
+
 ### Set up .evn
+
 create a new .env file by copying it's content from .env.example and update `INFURA_API_KEY` and `MNEMONIC`
 
 ```sh
