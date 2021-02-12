@@ -3,8 +3,7 @@ pragma solidity ^0.7.0;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-
-import { ERC20Permit } from "./ERC20Permit/ERC20Permit.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 
 /**
  * @title Oddz Token
@@ -17,7 +16,7 @@ contract OddzToken is ERC20, ERC20Permit, Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply
-    ) public ERC20(name, symbol) {
+    ) public ERC20(name, symbol) ERC20Permit(name){
         _mint(msg.sender, totalSupply);
     }
 
