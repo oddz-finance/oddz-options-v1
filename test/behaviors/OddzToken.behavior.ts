@@ -8,15 +8,19 @@ export function shouldBehaveLikeOddzToken(): void {
     expect(await oddzToken.totalSupply()).to.equal(TotalSupply);
     expect(await oddzToken.balanceOf(this.accounts.admin)).to.equal(TotalSupply);
   });
-  it("Should return the correct permit hash", async function () {
-    const oddzToken = await this.oddzToken.connect(this.signers.admin);
-    const permitTypeHash = await oddzToken.PERMIT_TYPEHASH();
-    expect(permitTypeHash).to.equal(
-      bufferToHex(
-        keccakFromString("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
-      ),
-    );
-  });
+  /* cannot execute this testcase
+     as PERMIT_TYPEHASH is a private variable in openzeppelin ERC20Permit
+  */
+
+  // it.only("Should return the correct permit hash", async function () {
+  //   const oddzToken = await this.oddzToken.connect(this.signers.admin);
+  //   const permitTypeHash = await oddzToken.PERMIT_TYPEHASH();
+  //   expect(permitTypeHash).to.equal(
+  //     bufferToHex(
+  //       keccakFromString("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+  //     ),
+  //   );
+  // });
 
   it("should successfully transfer 1 wei", async function () {
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
