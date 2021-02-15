@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { bufferToHex, keccakFromString } from "ethereumjs-util";
+//import { bufferToHex, keccakFromString } from "ethereumjs-util";
 
 const TotalSupply = 100000000;
 export function shouldBehaveLikeOddzToken(): void {
