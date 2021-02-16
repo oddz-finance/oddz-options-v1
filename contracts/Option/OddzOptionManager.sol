@@ -436,8 +436,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         settlementFeeAggregate = settlementFeeAggregate.add(settlementFee);
         profit = profit.sub(settlementFee);
 
-        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit, settlementFee);
-        else pool.sendUA(_optionId, _address, profit, settlementFee);
+        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
+        else pool.sendUA(_optionId, _address, profit);
     }
 
     /**

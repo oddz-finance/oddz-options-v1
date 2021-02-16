@@ -219,7 +219,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       .to.emit(oddzOptionManager, "Exercise")
       .withArgs(0, 24000000000, 1000000000, ExcerciseType.Cash)
       .to.emit(oddzLiquidityPool, "Profit")
-      .withArgs(0, 428186620);
+      .withArgs(0, 1428186620);
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(1000000000);
   });
 
@@ -247,7 +247,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       .to.emit(oddzOptionManager, "Exercise")
       .withArgs(0, 24000000000, 1000000000, ExcerciseType.Cash)
       .to.emit(oddzLiquidityPool, "Loss")
-      .withArgs(0, 5794690220);
+      .withArgs(0, 4794690220);
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(1000000000);
   });
 
@@ -658,7 +658,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       .to.emit(oddzOptionManager, "Exercise")
       .withArgs(0, 23750000000, 1250000000, ExcerciseType.Cash)
       .to.emit(oddzLiquidityPool, "Profit")
-      .withArgs(0, 428186620);
+      .withArgs(0, 1678186620);
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(1250000000);
   });
 

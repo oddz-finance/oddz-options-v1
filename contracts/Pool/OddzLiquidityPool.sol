@@ -128,27 +128,27 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function send(
         uint256 _id,
         address payable _account,
-        uint256 _amount,
-        uint256 _settlementFee
+        uint256 _amount
     ) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(_account != address(0), "Invalid address");
 
         ll.locked = false;
         uint256 date = getPresentDayTimestamp();
-        premiumDayPool[date].collected.add(ll.premium);
         lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
 
         uint256 transferAmount = _amount;
-        if (_amount > ll.amount) transferAmount = ll.amount.sub(_settlementFee);
+        if (_amount > ll.amount) transferAmount = ll.amount;
 
-        daysExercise[date].add(transferAmount);
+        // Premium calculation
+        premiumDayPool[date].collected.add(ll.premium);
+        daysExercise[date].add(ll.amount);
+
         _account.transfer(transferAmount);
 
-        if (transferAmount.add(_settlementFee) <= ll.premium)
-            emit Profit(_id, ll.premium - transferAmount.add(_settlementFee));
-        else emit Loss(_id, transferAmount.add(_settlementFee) - ll.premium);
+        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
+        else emit Loss(_id, transferAmount - ll.premium);
     }
 
     /**
@@ -332,7 +332,6 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount,
-        uint256 _settlementFee
+        uint256 _amount
     ) external onlyOwner {}
 }
