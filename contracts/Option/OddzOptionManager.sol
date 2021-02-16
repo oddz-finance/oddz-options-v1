@@ -290,7 +290,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
         txnFeeAggregate = txnFeeAggregate.add(txnFee);
-        pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
+        pool.lockLiquidity{ value: option.premium }(optionId, option.lockedAmount);
 
         emit Buy(optionId, msg.sender, txnFee, optionPremium.add(txnFee), option.assetId);
     }
@@ -388,7 +388,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Cash, option.holder);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
     }
@@ -404,7 +404,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Physical, _uaAddress);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Physical, _uaAddress);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -415,7 +415,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @param _type Excercise Type e.g: Cash or Physical
      * @param _address address of the option holder
      */
-    function payProfit(
+    function transferProfit(
         uint256 _optionId,
         ExcerciseType _type,
         address payable _address

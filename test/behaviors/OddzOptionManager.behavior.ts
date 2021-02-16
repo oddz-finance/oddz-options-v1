@@ -464,7 +464,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(15)]);
-    await expect(oddzLiquidityPool.withdrawPremium()).to.emit(oddzLiquidityPool, "PremiumCollected");
+    await expect(oddzLiquidityPool.transferPremium()).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
     await provider.send("evm_revert", ["0x5"]);
     await provider.send("evm_revert", ["0x6"]);
@@ -529,7 +529,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    await expect(oddzLiquidityPool.withdrawPremium()).to.be.revertedWith(
+    await expect(oddzLiquidityPool.transferPremium()).to.be.revertedWith(
       "LP: Address not eligible for premium collection",
     );
     await provider.send("evm_revert", ["0xa"]);
