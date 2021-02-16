@@ -63,12 +63,15 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         require(mint > 0, "LP: Amount is too small");
         uint256 date = getPresentDayTimestamp();
-        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
         updateLiquidity(date, msg.value, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date);
-        latestLiquidityDateMap[msg.sender] = date;
 
         _mint(msg.sender, mint);
+
+        // User premium transfer
+        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
+        latestLiquidityDateMap[msg.sender] = date;
+
         emit AddLiquidity(msg.sender, msg.value, mint);
     }
 
@@ -84,12 +87,14 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(burn > 0, "LP: Amount is too small");
 
         uint256 date = getPresentDayTimestamp();
-        sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date);
 
         _burn(msg.sender, burn);
         msg.sender.transfer(_amount);
+
+        // User premium update
+        updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
 
         emit RemoveLiquidity(msg.sender, _amount, burn);
     }
@@ -248,33 +253,25 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     }
 
     /**
-     * @notice sends the eligible premium for the provider address while remove liquidity
+     * @notice updates eligible premium for the provider address while remove liquidity
      * @param _latestLiquidityDate Latest liquidity by the provider
      * @param _amount amount of liquidity removed
      * @param _date liquidity date
      */
-    function sendEligiblePremiumRemove(
+    function updateUserPremium(
         uint256 _latestLiquidityDate,
         uint256 _amount,
         uint256 _date
     ) private {
-        uint256 premium = lpPremium[msg.sender];
-        if (premium <= 0) {
-            return;
-        }
+        if (lpPremium[msg.sender] <= 0) return;
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
             LPBalance[] storage lpBalance = lpBalanceMap[msg.sender];
             uint256 lostPremium =
-                premium.mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
-            lpPremium[msg.sender] = premium.sub(lostPremium);
+                lpPremium[msg.sender].mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
+            lpPremium[msg.sender] = lpPremium[msg.sender].sub(lostPremium);
             surplus = surplus.add(lostPremium);
 
             emit PremiumForfeited(msg.sender, lostPremium);
-        } else {
-            lpPremium[msg.sender] = 0;
-            msg.sender.transfer(premium);
-
-            emit PremiumCollected(msg.sender, premium);
         }
     }
 

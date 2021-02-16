@@ -472,7 +472,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   // TODO: This case should be part of liquidity pool
-  it("should update surplus correctly", async function () {
+  it("should update surplus and emit premium forfeited event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
@@ -575,7 +575,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   // TODO: This case should be part of liquidity pool
-  it("should send premium to the LP automatically for remove liquidity after 14 days", async function () {
+  it("should not alter user premium eligibility", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
@@ -599,13 +599,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    // console.log((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber());
     // Maximum withdrawal 80% of (available balance - user premium) - 0.8 * (100000000000000 - 13929002010)
-
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(15)]);
-    await expect(oddzLiquidityPool.removeLiquidity(79988856798392)).to.emit(oddzLiquidityPool, "PremiumCollected");
-    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(13929002010);
     await provider.send("evm_revert", ["0xf"]);
     await provider.send("evm_revert", ["0x10"]);
     await provider.send("evm_revert", ["0x11"]);
@@ -697,7 +694,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   // TODO: This case should be part of liquidity pool
-  it("should throw an error while enableling premium eligibility for a invalid date", async function () {
+  it("should throw an error while enabling premium eligibility for a invalid date", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
