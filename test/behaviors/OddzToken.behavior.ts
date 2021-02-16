@@ -1,5 +1,7 @@
 import { expect } from "chai";
-
+//import { OddzToken } from "../../typechain";
+import { ecsign } from 'ethereumjs-util';
+import { keccak256, defaultAbiCoder, toUtf8Bytes, solidityPack } from 'ethers/lib/utils'
 //import { bufferToHex, keccakFromString } from "ethereumjs-util";
 
 const TotalSupply = 100000000;
@@ -210,20 +212,43 @@ export function shouldBehaveLikeOddzToken(): void {
 
   });
 
-  // it.only('permit', async function () {
-  //   const oddzToken = await this.oddzToken.connect(this.signers.admin);
-  //   const amount = 100;
-  //   const nonce = await oddzToken.nonces(this.accounts.admin);
-  //   const deadline = 100000000000000; // random timestamp in future
-  //   const hash = await oddzToken.DOMAIN_SEPARATOR();
+ 
+
+  it.only('permit', async function () {
+    const oddzToken = await this.oddzToken.connect(this.accounts.admin);
+    const amount = 100;
+    const nonce = await oddzToken.nonces(this.accounts.admin);
+    const deadline = 100000000000000; // random timestamp in future
+    const domainSeparator = await oddzToken.DOMAIN_SEPARATOR();
+    console.log("domainSeparator: ",domainSeparator)
+     const PERMIT_TYPEHASH = keccak256(
+      toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
+    )
+    const hash= keccak256(
+      solidityPack(
+        ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
+        [
+          '0x19',
+          '0x01',
+          domainSeparator,
+          keccak256(
+            defaultAbiCoder.encode(
+              ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
+              [PERMIT_TYPEHASH, this.accounts.admin, this.accounts.admin1, amount, nonce, deadline]
+            )
+          ),
+        ]
+      )
+    )
+    console.log("hash: ",hash)
     
-    
-  //   console.log("hash: ",hash)
-  //   console.log("getting the sign: ");
-  //   const sig = ecsign(hash, Buffer.from(privateKey,'hex'));
-  //   console.log("permitting")
-  //   await expect(oddzToken.permit(this.accounts.admin, this.accounts.admin1, amount, deadline, sig.v, sig.r, sig.s)).to.emit("Approval")
+    console.log("getting the sign: ");
+    const {v, r, s} = ecsign(Buffer.from(hash.slice(2),'hex'), Buffer.from(this.customwallet.privateKey.slice(2),'hex'))
+
+
+    console.log("permitting")
+    await expect(oddzToken.permit(this.accounts.admin, this.accounts.admin1, amount, deadline, v, r, s)).to.emit(oddzToken,"Approval")
        
     
-  // });
+  });
 }

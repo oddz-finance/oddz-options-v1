@@ -8,6 +8,7 @@ import { OddzToken } from "../typechain/OddzToken";
 import { shouldBehaveLikeOddzToken } from "./behaviors/OddzToken.behavior";
 import { BigNumber } from "ethers";
 import { MockProvider } from "ethereum-waffle";
+
 const { deployContract } = waffle;
 
 describe("Unit tests", function () {
@@ -29,6 +30,14 @@ describe("Unit tests", function () {
 
     this.wallet = wallet;
     this.walletTo = walletTo;
+
+    this.mnemonic = process.env.MNEMONIC;
+    
+
+    this.customwallet = await ethers.Wallet.fromMnemonic(this.mnemonic);
+    console.log("wallet private key: ",this.customwallet.privateKey)
+    console.log("wallet address: ",this.customwallet.address)
+
   });
 
   describe("Oddz token", function () {
