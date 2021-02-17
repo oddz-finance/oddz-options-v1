@@ -13,7 +13,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     using SafeMath for uint256;
     using Math for uint256;
 
-    OddzLiquidityPool public pool;
+    IOddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
     IOddzVolatility public volatility;
     IOddzStaking public stakingBenficiary;
@@ -45,9 +45,10 @@ contract OddzOptionManager is Ownable, IOddzOption {
     constructor(
         IOddzPriceOracle _oracle,
         IOddzVolatility _iv,
-        IOddzStaking _staking
+        IOddzStaking _staking,
+        IOddzLiquidityPool _pool
     ) {
-        pool = new OddzLiquidityPool();
+        pool = _pool;
         oracle = _oracle;
         volatility = _iv;
         stakingBenficiary = _staking;
@@ -290,7 +291,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
         txnFeeAggregate = txnFeeAggregate.add(txnFee);
-        pool.lockLiquidity{ value: option.premium }(optionId, option.lockedAmount);
+        pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
 
         emit Buy(optionId, msg.sender, txnFee, optionPremium.add(txnFee), option.assetId);
     }

@@ -157,7 +157,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should buy option if the asset is supported and emit buy event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const overrides = {
@@ -178,7 +178,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw low premium exception", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const overrides = {
@@ -202,7 +202,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -230,7 +230,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -258,7 +258,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const asset = await oddzOptionManager.assets(0);
     const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -278,7 +278,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -299,7 +299,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -346,7 +346,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -409,7 +409,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     await oddzOptionManager.setTransactionFeePerc(2);
     expect(await oddzOptionManager.txnFeePerc()).to.equal(2);
     const option = await oddzOptionManager.getPremium(
@@ -427,7 +427,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -457,7 +457,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -493,7 +493,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -526,7 +526,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -558,7 +558,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -580,10 +580,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(15)]);
-    await expect(oddzLiquidityPool.addLiquidity({ value: 100000000000000 })).to.emit(
-      oddzLiquidityPool,
-      "PremiumCollected",
-    );
+    await expect(oddzLiquidityPool.addLiquidity(100000000000000)).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
@@ -596,7 +593,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -629,7 +626,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -656,7 +653,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await oddzOptionManager.setSettlementFeePerc(5);
     expect((await oddzOptionManager.settlementFeePerc()).toNumber()).to.equal(5);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -684,7 +681,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -715,7 +712,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -738,7 +735,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -771,7 +768,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
@@ -796,7 +793,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
     const asset = await oddzOptionManager.assets(0);
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzLiquidityPool.addLiquidity({ value: 100000000000000 });
+    await oddzLiquidityPool.addLiquidity(100000000000000);
     const overrides = {
       value: utils.parseEther("1"), // ether in this case MUST be a string
     };
