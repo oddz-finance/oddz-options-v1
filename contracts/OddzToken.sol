@@ -17,7 +17,7 @@ contract OddzToken is ERC20, ERC20Permit, Ownable {
         string memory symbol,
         uint256 totalSupply
     ) public ERC20(name, symbol) ERC20Permit(name) {
-        _mint(msg.sender, totalSupply);
+        _mint(msg.sender, totalSupply * (10**decimals()));
     }
 
     /**
