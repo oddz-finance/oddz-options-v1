@@ -361,22 +361,41 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       asset.id,
-      getExpiry(10),
+      getExpiry(14),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
       OptionType.Call,
       overrides,
     );
     await provider.send("evm_snapshot", []);
+    // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 5 <= (2 + 3)
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(17141460393);
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 15 <= (2 + 3 + 10)
+    await provider.send("evm_increaseTime", [getExpiry(10)]);
+    await expect(oddzOptionManager.unlock(1)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 16  <= (2 + 3 + 10 + 1)
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(15), [this.accounts.admin]);
+
+    // After premium lockup period lp premium is transferred from liquidity pool to LP
+    await expect((await oddzLiquidityPool.balanceOf(this.accounts.admin)).toNumber()).to.equal(100047610566199);
+    await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
+
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    //console.log(await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2)));
-    // await provider.send("evm_increaseTime", [getExpiry(1)]);
-    // // increment evm time by one more day at this point
-    // await oddzLiquidityPool.distributePremium( addDaysAndGetSeconds(2), [this.signers.admin.getAddress()] );
-    // check for lpPremium of admin address should be same as premium
-    // also check premiumDayPool distributed increased same as premium
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
   });
 
   it("should throw an error when transaction fee updated", async function () {
