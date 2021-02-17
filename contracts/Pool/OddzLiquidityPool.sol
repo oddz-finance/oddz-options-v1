@@ -77,7 +77,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
 
-        burn = _amount;
+        burn = divisionCeiling(_amount.mul(totalSupply()), totalBalance());
 
         require(burn <= balanceOf(msg.sender), "LP: Amount is too large");
         require(burn > 0, "LP: Amount is too small");
@@ -89,7 +89,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         // User premium update
         uint256 premium = transferEligiblePremium(date, msg.sender);
         burn = burn.add(premium);
-        _amount = _amount.add(premium);
+        _amount = _amount.add(totalBalance().mul(premium).div(totalSupply()));
         updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
 
         _burn(msg.sender, burn);
@@ -144,6 +144,16 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
         else emit Loss(_id, transferAmount - ll.premium);
+    }
+
+    /*
+     * @nonce Returns LP's balance in USD
+     * @param account Liquidity provider's address
+     * @return Liquidity provider's balance in USD
+     */
+    function usdBalanceOf(address account) external view returns (uint256 share) {
+        if (totalSupply() > 0) share = totalBalance().mul(balanceOf(account)).div(totalSupply());
+        else share = 0;
     }
 
     /**
