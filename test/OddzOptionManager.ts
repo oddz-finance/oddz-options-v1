@@ -65,16 +65,26 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzVolatility.address,
         oddzStaking.address,
         this.oddzLiquidityPool.address,
+        this.usdcToken.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
+      // Allow for liquidty pool
       await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
       await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
+
+      // Allow for option manager
+      await usdcToken.approve(this.oddzOptionManager.address, totalSupply);
+      await usdcToken1.approve(this.oddzOptionManager.address, totalSupply);
+      await usdcToken.allowance(this.accounts.admin, this.oddzOptionManager.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzOptionManager.address);
+
+      // transfer required balance
       await usdcToken.transfer(this.accounts.admin, totalSupply * 0.3);
       await usdcToken.transfer(this.accounts.admin1, totalSupply * 0.3);
     });

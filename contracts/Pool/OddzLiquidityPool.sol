@@ -2,9 +2,9 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
@@ -76,7 +76,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         emit AddLiquidity(msg.sender, _amount, mint);
 
-        require(token.transferFrom(msg.sender, address(this), _amount), "LP Error: Token transfer failed");
+        token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
@@ -120,8 +120,6 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
         lockedAmount = lockedAmount.add(_amount);
 
-        token.safeTransferFrom(msg.sender, address(this), _premium);
-
         // Allocate premium to the self until premium unlock
         _mint(address(this), _premium);
     }
@@ -155,7 +153,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         premiumDayPool[date].collected.add(ll.premium);
         daysExercise[date].add(ll.amount);
 
-        _account.transfer(transferAmount);
+        token.safeTransfer(_account, transferAmount);
 
         if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
         else emit Loss(_id, transferAmount - ll.premium);
