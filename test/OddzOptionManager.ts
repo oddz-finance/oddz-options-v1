@@ -7,11 +7,19 @@ import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStakin
 
 import { Accounts, Signers } from "../types";
 
-import { OddzOptionManager, MockOddzPriceOracle, MockOddzVolatility, MockOddzStaking } from "../typechain";
+import {
+  OddzOptionManager,
+  MockOddzPriceOracle,
+  MockOddzVolatility,
+  MockOddzStaking,
+  OddzToken,
+  OddzLiquidityPool,
+} from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber } from "ethers";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
+import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 
 const { deployContract } = waffle;
 
@@ -41,13 +49,44 @@ describe("Oddz Option Manager Unit tests", function () {
       )) as MockOddzVolatility;
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
 
+      const totalSupply = 1000000000000000;
+      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "USD coin",
+        "USDC",
+        totalSupply,
+      ])) as OddzToken;
+
+      // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+      this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
+        this.usdcToken.address,
+      ])) as OddzLiquidityPool;
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracle.address,
         oddzVolatility.address,
         oddzStaking.address,
+        this.oddzLiquidityPool.address,
+        this.usdcToken.address,
       ])) as OddzOptionManager;
-      const poolAddress = await this.oddzOptionManager.pool();
-      this.oddzLiquidityPool = new ethers.Contract(poolAddress, OddzLiquidityPoolArtifact.abi, this.signers.admin);
+      await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
+
+      const usdcToken = await this.usdcToken.connect(this.signers.admin);
+      const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
+
+      // Allow for liquidty pool
+      await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
+      await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
+      await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
+
+      // Allow for option manager
+      await usdcToken.approve(this.oddzOptionManager.address, totalSupply);
+      await usdcToken1.approve(this.oddzOptionManager.address, totalSupply);
+      await usdcToken.allowance(this.accounts.admin, this.oddzOptionManager.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzOptionManager.address);
+
+      // transfer required balance
+      await usdcToken.transfer(this.accounts.admin, totalSupply * 0.3);
+      await usdcToken.transfer(this.accounts.admin1, totalSupply * 0.3);
     });
     shouldBehaveLikeOddzOptionManager();
   });
