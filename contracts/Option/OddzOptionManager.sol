@@ -7,16 +7,19 @@ import "../Oracle/IOddzVolatility.sol";
 import "../Staking/IOddzStaking.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "../Libs/BlackScholes.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "hardhat/console.sol";
 
 contract OddzOptionManager is Ownable, IOddzOption {
     using SafeMath for uint256;
     using Math for uint256;
+    using SafeERC20 for IERC20;
 
-    OddzLiquidityPool public pool;
+    IOddzLiquidityPool public pool;
     IOddzPriceOracle public oracle;
     IOddzVolatility public volatility;
     IOddzStaking public stakingBenficiary;
+    IERC20 public token;
     Option[] public options;
     Asset[] public assets;
     Asset public strikeAsset;
@@ -45,13 +48,16 @@ contract OddzOptionManager is Ownable, IOddzOption {
     constructor(
         IOddzPriceOracle _oracle,
         IOddzVolatility _iv,
-        IOddzStaking _staking
+        IOddzStaking _staking,
+        IOddzLiquidityPool _pool,
+        IERC20 _token
     ) {
-        pool = new OddzLiquidityPool();
+        pool = _pool;
         oracle = _oracle;
         volatility = _iv;
         stakingBenficiary = _staking;
         createdAt = block.timestamp;
+        token = _token;
     }
 
     /**
@@ -148,14 +154,9 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @notice validate option premium
      * @param _value user paid amount
      * @param _premium option premium
-     * @param _cp current price of the underlying asset
      */
-    function validateOptionAmount(
-        uint256 _value,
-        uint256 _premium,
-        uint256 _cp
-    ) private pure {
-        require(_value >= _premium.mul(1 ether).div(_cp), "Premium is low");
+    function validateOptionAmount(uint256 _value, uint256 _premium) private pure {
+        require(_value >= _premium, "Premium is low");
     }
 
     /**
@@ -241,7 +242,6 @@ contract OddzOptionManager is Ownable, IOddzOption {
         OptionType _optionType
     )
         external
-        payable
         override
         validOptionType(_optionType)
         validExpiration(_expiration)
@@ -269,7 +269,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
     ) private returns (uint256 optionId) {
         (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv) =
             getPremium(_underlying, _expiration, _amount, _strike, _optionType);
-        validateOptionAmount(msg.value, optionPremium.add(txnFee), cp);
+        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
 
         (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike);
         maxStrikePrice = maxStrikePrice.min(cp.add(cp));
@@ -290,6 +290,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
 
         options.push(option);
         txnFeeAggregate = txnFeeAggregate.add(txnFee);
+        token.safeTransferFrom(msg.sender, address(pool), optionPremium.add(txnFee));
+
         pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
 
         emit Buy(optionId, msg.sender, txnFee, optionPremium.add(txnFee), option.assetId);
@@ -388,7 +390,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Cash, option.holder);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Cash, option.holder);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
     }
@@ -404,7 +406,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = payProfit(_optionId, ExcerciseType.Physical, _uaAddress);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Physical, _uaAddress);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -415,7 +417,7 @@ contract OddzOptionManager is Ownable, IOddzOption {
      * @param _type Excercise Type e.g: Cash or Physical
      * @param _address address of the option holder
      */
-    function payProfit(
+    function transferProfit(
         uint256 _optionId,
         ExcerciseType _type,
         address payable _address
@@ -436,8 +438,8 @@ contract OddzOptionManager is Ownable, IOddzOption {
         settlementFeeAggregate = settlementFeeAggregate.add(settlementFee);
         profit = profit.sub(settlementFee);
 
-        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit, settlementFee);
-        else pool.sendUA(_optionId, _address, profit, settlementFee);
+        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
+        else pool.sendUA(_optionId, _address, profit);
     }
 
     /**

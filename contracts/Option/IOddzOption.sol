@@ -53,7 +53,7 @@ interface IOddzOption is IOddzAsset {
         uint256 _amount,
         uint256 _strike,
         OptionType _optionType
-    ) external payable returns (uint256 optionId);
+    ) external returns (uint256 optionId);
 
     /**
      * @notice Exercises an active option

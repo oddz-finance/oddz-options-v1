@@ -2,18 +2,19 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
     using BokkyPooBahsDateTimeLibrary for uint256;
+    using SafeERC20 for IERC20;
 
     /**
      * @dev reqBalance represents minum required balance and will be range between 5 and 9
      */
     uint8 public reqBalance = 8;
-    uint256 public constant INITIAL_RATE = 1e3;
 
     /**
      * @dev Liquidity specific data definitions
@@ -31,11 +32,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(address => uint256) public latestLiquidityDateMap;
     LockedLiquidity[] public lockedLiquidity;
     uint256 public latestLiquidityEvent;
+    IERC20 public token;
 
     /**
      * @dev Premium specific data definitions
      */
-    uint256 public lockedPremium;
     uint256 public premiumLockupDuration = 14 days;
     struct PremiumPool {
         uint256 collected;
@@ -55,26 +56,32 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _;
     }
 
-    function addLiquidity() external payable override returns (uint256 mint) {
-        uint256 supply = totalSupply();
-        uint256 balance = totalBalance();
-        if (supply > 0 && balance > 0) mint = msg.value.mul(supply).div(balance.sub(msg.value));
-        else mint = msg.value.mul(INITIAL_RATE);
+    constructor(IERC20 _token) {
+        token = _token;
+    }
+
+    function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
+        mint = _amount;
 
         require(mint > 0, "LP: Amount is too small");
         uint256 date = getPresentDayTimestamp();
-        sendEligiblePremiumAdd(latestLiquidityDateMap[msg.sender], date);
-        updateLiquidity(date, msg.value, TransactionType.ADD);
-        updateLpBalance(TransactionType.ADD, date);
+        // transfer user eligible premium
+        transferEligiblePremium(date, msg.sender);
+
+        updateLiquidity(date, _amount, TransactionType.ADD);
+        updateLpBalance(TransactionType.ADD, date, _amount);
         latestLiquidityDateMap[msg.sender] = date;
 
         _mint(msg.sender, mint);
-        emit AddLiquidity(msg.sender, msg.value, mint);
+
+        emit AddLiquidity(msg.sender, _amount, mint);
+
+        token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
         require(
-            _amount.mul(10) <= availableBalance().sub(lpPremium[msg.sender]).mul(reqBalance),
+            _amount.mul(10) <= availableBalance().mul(reqBalance),
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
 
@@ -84,14 +91,20 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         require(burn > 0, "LP: Amount is too small");
 
         uint256 date = getPresentDayTimestamp();
-        sendEligiblePremiumRemove(latestLiquidityDateMap[msg.sender], _amount, date);
         updateLiquidity(date, _amount, TransactionType.REMOVE);
-        updateLpBalance(TransactionType.REMOVE, date);
+        updateLpBalance(TransactionType.REMOVE, date, _amount);
+
+        // User premium update
+        uint256 premium = transferEligiblePremium(date, msg.sender);
+        burn = burn.add(premium);
+        _amount = _amount.add(totalBalance().mul(premium).div(totalSupply()));
+        updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
 
         _burn(msg.sender, burn);
-        msg.sender.transfer(_amount);
 
         emit RemoveLiquidity(msg.sender, _amount, burn);
+
+        require(token.transfer(msg.sender, _amount), "LP Error: Insufficient funds");
     }
 
     function lockLiquidity(
@@ -105,14 +118,15 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
             "LP Error: Amount is too large."
         );
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
-        lockedPremium = lockedPremium.add(_premium);
         lockedAmount = lockedAmount.add(_amount);
+
+        // Allocate premium to the self until premium unlock
+        _mint(address(this), _premium);
     }
 
     function unlockLiquidity(uint256 _id) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         ll.locked = false;
-        lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
         PremiumPool storage dayPremium = premiumDayPool[getPresentDayTimestamp()];
         dayPremium.collected = dayPremium.collected.add(ll.premium);
@@ -123,43 +137,57 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function send(
         uint256 _id,
         address payable _account,
-        uint256 _amount,
-        uint256 _settlementFee
+        uint256 _amount
     ) public override onlyOwner validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(_account != address(0), "Invalid address");
 
         ll.locked = false;
         uint256 date = getPresentDayTimestamp();
-        premiumDayPool[date].collected.add(ll.premium);
-        lockedPremium = lockedPremium.sub(ll.premium);
         lockedAmount = lockedAmount.sub(ll.amount);
 
         uint256 transferAmount = _amount;
-        if (_amount > ll.amount) transferAmount = ll.amount.sub(_settlementFee);
+        if (_amount > ll.amount) transferAmount = ll.amount;
 
-        daysExercise[date].add(transferAmount);
-        _account.transfer(transferAmount);
+        // Premium calculation
+        premiumDayPool[date].collected.add(ll.premium);
+        daysExercise[date].add(ll.amount);
 
-        if (transferAmount.add(_settlementFee) <= ll.premium)
-            emit Profit(_id, ll.premium - transferAmount.add(_settlementFee));
-        else emit Loss(_id, transferAmount.add(_settlementFee) - ll.premium);
+        token.safeTransfer(_account, transferAmount);
+
+        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
+        else emit Loss(_id, transferAmount - ll.premium);
+    }
+
+    /*
+     * @nonce Returns LP's balance in USD
+     * @param account Liquidity provider's address
+     * @return Liquidity provider's balance in USD
+     */
+    function usdBalanceOf(address account) external view returns (uint256 share) {
+        if (totalSupply() > 0) share = totalBalance().mul(balanceOf(account)).div(totalSupply());
+        else share = 0;
     }
 
     /**
      * @notice Updates liquidity provider balance
      * @param _type Transaction type
      * @param _date Epoch time for 00:00:00 hours of the date
+     * @param _amount amount of liquidity added/removed
      */
-    function updateLpBalance(TransactionType _type, uint256 _date) private {
+    function updateLpBalance(
+        TransactionType _type,
+        uint256 _date,
+        uint256 _amount
+    ) private {
         LPBalance[] storage lpBalanceList = lpBalanceMap[msg.sender];
-        uint256 currentBalance = msg.value;
+        uint256 currentBalance = _amount;
         if (lpBalanceList.length > 0) {
             if (_type == TransactionType.ADD)
                 currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.add(currentBalance);
             else currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.sub(currentBalance);
         }
-        lpBalanceList.push(LPBalance(currentBalance, _type, msg.value, _date));
+        lpBalanceList.push(LPBalance(currentBalance, _type, _amount, _date));
     }
 
     /**
@@ -193,6 +221,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp].add(lpEligible);
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed.add(lpEligible);
+
+        transferEligiblePremium(_date, _lp);
     }
 
     /**
@@ -215,66 +245,50 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         }
     }
 
-    /**
-     * @notice Allow withdrawal of eligible premium
-     */
-    function withdrawPremium() external {
-        require(lpPremium[msg.sender] > 0, "LP: Not eligible for premium");
+    function transferPremium() external {
+        uint256 date = getPresentDayTimestamp();
         require(
-            getPresentDayTimestamp().sub(latestLiquidityDateMap[msg.sender]) > premiumLockupDuration,
+            date.sub(latestLiquidityDateMap[msg.sender]) > premiumLockupDuration,
             "LP: Address not eligible for premium collection"
         );
-        uint256 premium = lpPremium[msg.sender];
-        lpPremium[msg.sender] = 0;
-        msg.sender.transfer(premium);
-
-        emit PremiumCollected(msg.sender, premium);
+        transferEligiblePremium(date, msg.sender);
     }
 
     /**
      * @notice sends the eligible premium for the provider address while add liquidity
-     * @param _latestLiquidityDate Latest liquidity by the provider
      * @param _date liquidity date
+     * @param _lp liquidity provider address
      */
-    function sendEligiblePremiumAdd(uint256 _latestLiquidityDate, uint256 _date) private {
-        if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
-            return;
-        }
-        uint256 premium = lpPremium[msg.sender];
-        lpPremium[msg.sender] = 0;
-        msg.sender.transfer(premium);
+    function transferEligiblePremium(uint256 _date, address _lp) private returns (uint256 premium) {
+        if (_date.sub(latestLiquidityDateMap[_lp]) <= premiumLockupDuration) return 0;
 
-        emit PremiumCollected(msg.sender, premium);
+        premium = lpPremium[_lp];
+        lpPremium[_lp] = 0;
+        _transfer(address(this), _lp, premium);
+
+        emit PremiumCollected(_lp, premium);
     }
 
     /**
-     * @notice sends the eligible premium for the provider address while remove liquidity
+     * @notice updates eligible premium for the provider address while remove liquidity
      * @param _latestLiquidityDate Latest liquidity by the provider
      * @param _amount amount of liquidity removed
      * @param _date liquidity date
      */
-    function sendEligiblePremiumRemove(
+    function updateUserPremium(
         uint256 _latestLiquidityDate,
         uint256 _amount,
         uint256 _date
     ) private {
-        uint256 premium = lpPremium[msg.sender];
-        if (premium <= 0) {
-            return;
-        }
+        if (lpPremium[msg.sender] <= 0) return;
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
             LPBalance[] storage lpBalance = lpBalanceMap[msg.sender];
             uint256 lostPremium =
-                premium.mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
-            lpPremium[msg.sender] = premium.sub(lostPremium);
+                lpPremium[msg.sender].mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
+            lpPremium[msg.sender] = lpPremium[msg.sender].sub(lostPremium);
             surplus = surplus.add(lostPremium);
 
             emit PremiumForfeited(msg.sender, lostPremium);
-        } else {
-            lpPremium[msg.sender] = 0;
-            msg.sender.transfer(premium);
-
-            emit PremiumCollected(msg.sender, premium);
         }
     }
 
@@ -318,7 +332,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     }
 
     function totalBalance() public view override returns (uint256 balance) {
-        return address(this).balance.sub(lockedPremium);
+        return token.balanceOf(address(this)).sub(balanceOf(address(this)));
     }
 
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
@@ -335,7 +349,6 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount,
-        uint256 _settlementFee
-    ) external onlyOwner {}
+        uint256 _amount
+    ) external override onlyOwner {}
 }

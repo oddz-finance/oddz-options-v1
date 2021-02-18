@@ -4,7 +4,7 @@ pragma solidity ^0.7.0;
 import "../Pool/IOddzLiquidityPool.sol";
 
 contract MockOddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "MockoUSD") {
-    function addLiquidity() external payable override returns (uint256 mint) {}
+    function addLiquidity(uint256 _amount) external override returns (uint256 mint) {}
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {}
 
@@ -19,8 +19,13 @@ contract MockOddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD L
     function send(
         uint256 _id,
         address payable _account,
-        uint256 _amount,
-        uint256 _settlementFee
+        uint256 _amount
+    ) external override onlyOwner {}
+
+    function sendUA(
+        uint256 _id,
+        address payable _account,
+        uint256 _amount
     ) external override onlyOwner {}
 
     function availableBalance() public view override returns (uint256 balance) {}

@@ -2,9 +2,10 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool } from "../typechain";
+import { OddzLiquidityPool, OddzToken } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
+import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 
 const { deployContract } = waffle;
 
@@ -25,11 +26,25 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Liquidity Pool", function () {
     beforeEach(async function () {
-      this.oddzLiquidityPool = (await deployContract(
-        this.signers.admin,
-        OddzLiquidityPoolArtifact,
-        [],
-      )) as OddzLiquidityPool;
+      const totalSupply = 1000000000000000;
+      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "USD coin",
+        "USDC",
+        totalSupply,
+      ])) as OddzToken;
+
+      const usdcToken = await this.usdcToken.connect(this.signers.admin);
+      const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
+
+      this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
+        this.usdcToken.address,
+      ])) as OddzLiquidityPool;
+      await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
+      await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
+      await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
+      await usdcToken.transfer(this.accounts.admin, totalSupply * 0.1);
+      await usdcToken.transfer(this.accounts.admin1, totalSupply * 0.1);
     });
     shouldBehaveLikeOddzLiquidityPool();
   });
