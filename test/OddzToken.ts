@@ -17,7 +17,7 @@ describe("Unit tests", function () {
     this.delegatorAccounts = {} as Accounts;
 
     const signers: Signer[] = await ethers.getSigners();
-    
+
     this.signers.admin = signers[0];
     this.accounts.admin = await signers[0].getAddress();
     this.signers.admin1 = signers[1];
@@ -29,19 +29,13 @@ describe("Unit tests", function () {
     this.walletTo = walletTo;
 
     this.mnemonic = process.env.MNEMONIC;
-    this.privatekey=process.env.PRIVATE_KEY;
-    
-
-    this.customwallet = await ethers.Wallet.fromMnemonic(this.mnemonic);
-    
-
-
+    this.privatekey = process.env.PRIVATE_KEY;
   });
 
   describe("Oddz token", function () {
     beforeEach(async function () {
       const totalSupply = 100000000;
-  
+
       this.oddzToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
         "OddzToken",
         "ODDZ",
@@ -52,7 +46,6 @@ describe("Unit tests", function () {
         "USDC",
         totalSupply,
       ])) as OddzToken;
-     
     });
 
     shouldBehaveLikeOddzToken();

@@ -19,6 +19,7 @@ const chainIds = {
   mainnet: 1,
   rinkeby: 4,
   ropsten: 3,
+  bsc: 97,
 };
 
 // Ensure that we have all the environment variables we need.
@@ -37,7 +38,12 @@ if (!process.env.INFURA_API_KEY) {
 }
 
 function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig {
-  const url: string = "https://" + network + ".infura.io/v3/" + infuraApiKey;
+  let url: string;
+  if (network == "bsc") {
+    url = "https://data-seed-prebsc-1-s2.binance.org:8545/";
+  } else {
+    url = "https://" + network + ".infura.io/v3/" + infuraApiKey;
+  }
   return {
     accounts: {
       count: 10,
@@ -60,6 +66,7 @@ const config: HardhatUserConfig = {
     kovan: createTestnetConfig("kovan"),
     rinkeby: createTestnetConfig("rinkeby"),
     ropsten: createTestnetConfig("ropsten"),
+    bsc: createTestnetConfig("bsc"),
   },
   paths: {
     artifacts: "./artifacts",
@@ -78,8 +85,7 @@ const config: HardhatUserConfig = {
     },
   },
   mocha: {
-    timeout: 100000
-    
+    timeout: 100000,
   },
   typechain: {
     outDir: "typechain",
