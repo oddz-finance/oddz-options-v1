@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^0.0.12",
-    "@openzeppelin/contracts": "3.1.0-solc-0.7",
+    "@openzeppelin/contracts": "^3.4.0",
     "@truffle/hdwallet-provider": "^1.2.0",
     "bip39": "^3.0.3",
     "eslint-config-react-app": "^6.0.0",
