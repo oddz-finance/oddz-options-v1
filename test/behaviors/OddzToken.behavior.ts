@@ -1,7 +1,7 @@
 import { expect } from "chai";
 // import { ecsign } from "ethereumjs-util";
 // import { keccak256, defaultAbiCoder, toUtf8Bytes, solidityPack } from "ethers/lib/utils";
-
+import { BigNumber, utils } from "ethers";
 const TotalSupply = 100000000;
 const Name = "OddzToken";
 const Symbol = "ODDZ";
@@ -38,8 +38,10 @@ export function shouldBehaveLikeOddzToken(): void {
 
   it("Cannot transfer above the amount", async function () {
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
-    const decimals = await oddzToken.decimals();
-    await expect(oddzToken.transfer(this.walletTo.address, TotalSupply * 10 ** decimals + 1)).to.be.reverted;
+    // passing more than total supply
+    await expect(
+      oddzToken.transfer(this.walletTo.address, BigNumber.from(utils.parseEther("100000001"))),
+    ).to.be.revertedWith("transfer amount exceeds balance");
   });
 
   it("cannot transfer to 0x0 account", async function () {
@@ -85,8 +87,9 @@ export function shouldBehaveLikeOddzToken(): void {
     await oddzToken.approve(this.accounts.admin1, 100);
     expect(await oddzToken.allowance(this.accounts.admin, this.accounts.admin1)).to.equal(100);
 
-    await expect(oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 101))
-      .to.be.reverted;
+    await expect(
+      oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 101),
+    ).to.be.revertedWith("transfer amount exceeds allowance");
   });
 
   it("should not be able to transfer tokens again after transferring all the allowances", async function () {
@@ -95,8 +98,9 @@ export function shouldBehaveLikeOddzToken(): void {
     expect(await oddzToken.allowance(this.accounts.admin, this.accounts.admin1)).to.equal(100);
     await oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 100);
     expect(await oddzToken.balanceOf(this.walletTo.address)).to.equal(100);
-    await expect(oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 1)).to
-      .be.reverted;
+    await expect(
+      oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 1),
+    ).to.be.revertedWith("transfer amount exceeds allowance");
   });
 
   it("should increase allowance", async function () {
@@ -142,8 +146,9 @@ export function shouldBehaveLikeOddzToken(): void {
     expect(await oddzToken.allowance(this.accounts.admin, this.accounts.admin1)).to.equal(100);
     await oddzToken.decreaseAllowance(this.accounts.admin1, 10);
     expect(await oddzToken.allowance(this.accounts.admin, this.accounts.admin1)).to.equal(90);
-    await expect(oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 100))
-      .to.be.reverted;
+    await expect(
+      oddzToken.connect(this.signers.admin1).transferFrom(this.accounts.admin, this.walletTo.address, 100),
+    ).to.be.revertedWith("transfer amount exceeds allowance");
   });
 
   it("should be able to set another spender and delegate transfer", async function () {
