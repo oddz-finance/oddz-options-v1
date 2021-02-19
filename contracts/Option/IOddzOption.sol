@@ -19,7 +19,7 @@ interface IOddzOption {
         address indexed _account,
         uint256 _transactionFee,
         uint256 _totalFee,
-        uint32 _underlying
+        uint32 _pairId
     );
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
@@ -33,13 +33,13 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
-        uint32 assetId;
+        uint32 pairId;
         OptionType optionType;
     }
 
     /**
      * @notice Buy a new option
-     * @param _underlying Underlying asset
+     * @param _pair Underlying asset
      * @param _expiration Option expiration in unix timestamp
      * @param _amount Option amount in wei
      * @param _strike Strike price expressed in wei
@@ -47,7 +47,7 @@ interface IOddzOption {
      * @return optionId Created option ID
      */
     function buy(
-        uint32 _underlying,
+        uint32 _pair,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
