@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice Oddz options IV
  */
 interface IOddzVolatility {
-
     struct AssetVolatility {
         uint32 _asset;
         uint256 _iv;

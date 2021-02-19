@@ -1,3 +1,5 @@
+![Build Status](https://github.com/oddz-finance/oddz-contracts/workflows/build/badge.svg?branch=master)
+
 # Oddz finance
 
 World's First multi-chain Options trading Protocol built on Binance chain with built-in oracle
@@ -28,6 +30,14 @@ Before running any command, make sure to install dependencies:
 
 ```sh
 $ yarn install
+```
+
+### Set up .evn
+
+create a new .env file by copying it's content from .env.example and update `INFURA_API_KEY` and `MNEMONIC`
+
+```sh
+$ cp .env.example .env
 ```
 
 ### Compile

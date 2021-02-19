@@ -3,6 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 
 /**
  * @title Oddz Call and Put Options
@@ -10,18 +11,18 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  */
 interface IOddzOption {
     enum State { Active, Exercised, Expired }
-    enum OptionType { Put, Call }
+    enum OptionType { Call, Put }
     enum ExcerciseType { Cash, Physical }
 
     event Buy(
         uint256 indexed _optionId,
         address indexed _account,
-        uint256 _settlementFee,
+        uint256 _transactionFee,
         uint256 _totalFee,
         uint32 _underlying
     );
 
-    event Exercise(uint256 indexed _optionId, uint256 _profit, ExcerciseType _type);
+    event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
 
     struct Option {
@@ -51,7 +52,7 @@ interface IOddzOption {
         uint256 _amount,
         uint256 _strike,
         OptionType _optionType
-    ) external payable returns (uint256 optionId);
+    ) external returns (uint256 optionId);
 
     /**
      * @notice Exercises an active option

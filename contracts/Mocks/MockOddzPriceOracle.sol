@@ -13,4 +13,8 @@ contract MockOddzPriceOracle is IOddzPriceOracle {
     function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public view override returns (uint256) {
         return price;
     }
+
+    function setUnderlyingPrice(uint256 _price) external {
+        price = _price;
+    }
 }

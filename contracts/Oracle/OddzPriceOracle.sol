@@ -55,7 +55,7 @@ contract OddzPriceOracle is IOddzPriceOracle, Ownable {
      * @param _strikeAsset Id of the strike asset.
      * @param _aggregator Address of the Oracle aggregator.
      */
-    function setAgreggator(
+    function setAggregator(
         uint32 _underlying,
         uint32 _strikeAsset,
         address _aggregator

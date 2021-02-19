@@ -3,8 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./IOddzAsset.sol";
 
-contract OddzAssetManager is Ownable, IOddzAsset{
-
+contract OddzAssetManager is Ownable, IOddzAsset {
     Asset[] public assets;
     Asset public strikeAsset;
     mapping(bytes32 => Asset) internal assetNameMap;
@@ -20,6 +19,12 @@ contract OddzAssetManager is Ownable, IOddzAsset{
         _;
     }
 
+    /**
+     * @notice Used for adding the new asset
+     * @param _name Name for the underlying asset
+     * @param _precision Precision for the underlying asset
+     * @return assetId Asset id
+     */
     function addAsset(bytes32 _name, uint256 _precision) external override onlyOwner returns (uint32 assetId) {
         require(assetNameMap[_name].active == false, "Asset already present");
         assetId = uint32(assets.length);
@@ -31,6 +36,12 @@ contract OddzAssetManager is Ownable, IOddzAsset{
         emit NewAsset(asset.id, asset.name, asset.active);
     }
 
+    /**
+     * @notice Used for activating the asset
+     * @param _assetId Id for the underlying asset
+     * @return name of the underlying asset
+     * @return status of the underlying asset
+     */
     function activateAsset(uint32 _assetId)
         external
         override
@@ -39,13 +50,19 @@ contract OddzAssetManager is Ownable, IOddzAsset{
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = false;
+        asset.active = true;
         status = asset.active;
         name = asset.name;
 
         emit AssetActivate(asset.id, asset.name);
     }
 
+    /**
+     * @notice Used for deactivating the asset
+     * @param _assetId Id for the underlying asset
+     * @return name of the underlying asset
+     * @return status of the underlying asset
+     */
     function deactivateAsset(uint32 _assetId)
         external
         override
@@ -54,7 +71,7 @@ contract OddzAssetManager is Ownable, IOddzAsset{
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = true;
+        asset.active = false;
         status = asset.active;
         name = asset.name;
 
