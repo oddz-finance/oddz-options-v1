@@ -17,7 +17,7 @@ import {
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 
