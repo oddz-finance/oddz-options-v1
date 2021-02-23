@@ -305,7 +305,16 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         uint256 _strike,
         OptionType _optionType,
         uint256 _amount
-    ) private view returns (uint256 optionPremium, uint256 cp, uint256 iv, uint256 ivDecimal) {
+    )
+        private
+        view
+        returns (
+            uint256 optionPremium,
+            uint256 cp,
+            uint256 iv,
+            uint256 ivDecimal
+        )
+    {
         AssetPair memory pair = pairIdMap[_pair];
         Asset memory asset = assetIdMap[pair.primary];
         cp = getCurrentPrice(pair);
