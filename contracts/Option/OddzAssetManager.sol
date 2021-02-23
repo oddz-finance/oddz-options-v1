@@ -111,6 +111,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         AssetPair memory pair = AssetPair({ id: pairId, primary: _primary, strike: _strike, active: true });
         pairIdMap[pairId] = pair;
         pairs.push(pair);
+        pairMap[_primary][_strike] = pair;
 
         emit NewAssetPair(pair.id, pair.primary, pair.strike, pair.active);
     }
