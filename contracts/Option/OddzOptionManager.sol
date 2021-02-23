@@ -155,10 +155,11 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
-        uint32 _pair
+        uint32 _pair,
+        uint256 _ivDecimal
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[pairIdMap[_pair].primary].precision, PERCENTAGE_PRECISION);
-        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[pairIdMap[_pair].primary].precision, PERCENTAGE_PRECISION);
+        minAssetPrice = getPutOverColl(_cp, _iv, assetIdMap[pairIdMap[_pair].primary].precision, _ivDecimal);
+        maxAssetPrice = getCallOverColl(_cp, _iv, assetIdMap[pairIdMap[_pair].primary].precision, _ivDecimal);
         validStrike(_strike, minAssetPrice, maxAssetPrice, assetIdMap[pairIdMap[_pair].primary].precision);
     }
 
@@ -213,11 +214,11 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         uint32 _pair,
         OptionType _optionType
     ) private returns (uint256 optionId) {
-        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv) =
+        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv, uint256 ivDecimal) =
             getPremium(_pair, _expiration, _amount, _strike, _optionType);
         validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
 
-        (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike, _pair);
+        (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike, _pair, ivDecimal);
 
         optionId = options.length;
         Option memory option =
@@ -253,6 +254,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
      * @return txnFee Transaction Fee
      * @return cp Current price of the underlying asset
      * @return iv implied volatility of the underlying asset
+     * @return ivDecimal implied volatility precision
      */
     function getPremium(
         uint32 _pair,
@@ -270,17 +272,15 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
             uint256 optionPremium,
             uint256 txnFee,
             uint256 cp,
-            uint256 iv
+            uint256 iv,
+            uint256 ivDecimal
         )
     {
-        (iv, ) = volatility.calculateIv(pairIdMap[_pair].primary, _optionType, _expiration, _amount, _strike);
-
-        (optionPremium, cp) = getPremiumBlackScholes(
+        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(
             pairIdMap[_pair].primary,
             _expiration,
             _strike,
             _optionType,
-            iv,
             _amount
         );
 
@@ -293,28 +293,31 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
      * @param _expiration Option period in unix timestamp
      * @param _strike Strike price of the option
      * @param _optionType Option Type (Call/Put)
-     * @param _iv implied volatility of the underlying asset
      * @param _amount Option amount
      * @return optionPremium Premium to be paid
      * @return cp Current price of the underlying asset
+     * @return iv implied volatility of the underlying asset
+     * @return ivDecimal implied volatility precision
      */
     function getPremiumBlackScholes(
         uint32 _pair,
         uint256 _expiration,
         uint256 _strike,
         OptionType _optionType,
-        uint256 _iv,
         uint256 _amount
-    ) private view returns (uint256 optionPremium, uint256 cp) {
+    ) private view returns (uint256 optionPremium, uint256 cp, uint256 iv, uint256 ivDecimal) {
         AssetPair memory pair = pairIdMap[_pair];
+        Asset memory asset = assetIdMap[pair.primary];
         cp = getCurrentPrice(pair);
+        (iv, ivDecimal) = volatility.calculateIv(pair.primary, _optionType, _expiration, _amount, _strike);
+
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == OptionType.Call ? true : false,
             _strike,
             cp,
-            PERCENTAGE_PRECISION,
+            asset.precision,
             _expiration,
-            _iv,
+            iv,
             0,
             0,
             PERCENTAGE_PRECISION
@@ -322,7 +325,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         // _amount in wei
         optionPremium = optionPremium.mul(_amount).div(1e18);
         // convert to USD price precision
-        optionPremium = optionPremium.mul(10**token.decimals()).div(assetIdMap[pair.primary].precision);
+        optionPremium = optionPremium.mul(10**token.decimals()).div(asset.precision);
     }
 
     /**
@@ -389,7 +392,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
             profit = option.strike.sub(_cp).mul(option.amount);
         }
         // amount in wei
-        profit = profit.div(1 ether);
+        profit = profit.div(1e18);
         // convert profit to usd decimals
         profit = profit.mul(10**token.decimals()).div(assetIdMap[pair.primary].precision);
 
