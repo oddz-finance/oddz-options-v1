@@ -2,7 +2,6 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzAsset.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
@@ -10,7 +9,7 @@ import "@openzeppelin/contracts/math/Math.sol";
  * @title Oddz Call and Put Options
  * @notice Oddz Options Contract
  */
-interface IOddzOption is IOddzAsset {
+interface IOddzOption {
     enum State { Active, Exercised, Expired }
     enum OptionType { Call, Put }
     enum ExcerciseType { Cash, Physical }
@@ -20,7 +19,7 @@ interface IOddzOption is IOddzAsset {
         address indexed _account,
         uint256 _transactionFee,
         uint256 _totalFee,
-        uint32 _underlying
+        uint32 _pairId
     );
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
@@ -34,13 +33,13 @@ interface IOddzOption is IOddzAsset {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
-        uint32 assetId;
+        uint32 pairId;
         OptionType optionType;
     }
 
     /**
      * @notice Buy a new option
-     * @param _underlying Underlying asset
+     * @param _pair Underlying asset
      * @param _expiration Option expiration in unix timestamp
      * @param _amount Option amount in wei
      * @param _strike Strike price expressed in wei
@@ -48,7 +47,7 @@ interface IOddzOption is IOddzAsset {
      * @return optionId Created option ID
      */
     function buy(
-        uint32 _underlying,
+        uint32 _pair,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
