@@ -1,13 +1,13 @@
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 
-import OddzPriceOracleArtifact from "../artifacts/contracts/Oracle/OddzPriceOracle.sol/OddzPriceOracle.json";
+import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
 import MockAggregatorArtifact from "../artifacts/contracts/Mocks/MockAggregator.sol/MockAggregatorV3.json";
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-import { OddzPriceOracle } from "../typechain/OddzPriceOracle";
+import { OddzPriceOracleManager } from "../typechain/OddzPriceOracleManager";
 import { MockOddzPriceOracle } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracle } from "./behaviors/OddzPriceOracle.behavior";
 import { AssetIds } from "../test-utils";
@@ -35,7 +35,11 @@ describe("Unit tests", function () {
         utils.formatBytes32String("Mock"),
         8,
       ])) as MockOddzPriceOracle;
-      this.oddzPriceOracle = (await deployContract(this.signers.admin, OddzPriceOracleArtifact, [])) as OddzPriceOracle;
+      this.oddzPriceOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzPriceOracleManagerArtifact,
+        [],
+      )) as OddzPriceOracleManager;
     });
 
     shouldBehaveLikeOddzPriceOracle();

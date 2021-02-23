@@ -30,10 +30,23 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Invalid Asset");
   });
 
-  it("should return premium price only if the asset pair is active", async function () {
+  it.only("should return premium price only if the asset pair is active", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const pairId = getAssetPair(this.oddzOptionManager, this.signers.admin);
     await oddzOptionManager.deactivateAssetPair(pairId);
+    await this.oddzPriceOracleManager
+      .connect(this.signers.admin)
+      .addAggregator(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        this.oddzPriceOracle.address,
+        this.oddzPriceOracle.address,
+      );
+
+    await this.oddzPriceOracleManager
+      .connect(this.signers.admin)
+      .setActiveAggregator("0x451a30cc92f3f8b0a022d859ae699055938642e49780b32c401e9db0ecfe0cc9");
+
     await expect(
       oddzOptionManager.getPremium(
         pairId,

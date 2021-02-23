@@ -2,7 +2,7 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzOption.sol";
-import "../Oracle/IOddzPriceOracle.sol";
+import "../Oracle/OddzPriceOracleManager.sol";
 import "../Oracle/IOddzVolatility.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
@@ -17,7 +17,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
     using SafeERC20 for IERC20Extented;
 
     IOddzLiquidityPool public pool;
-    IOddzPriceOracle public oracle;
+    OddzPriceOracleManager public oracle;
     IOddzVolatility public volatility;
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
@@ -43,7 +43,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
     uint256 public settlementFeeAggregate;
 
     constructor(
-        IOddzPriceOracle _oracle,
+        OddzPriceOracleManager _oracle,
         IOddzVolatility _iv,
         IOddzStaking _staking,
         IOddzLiquidityPool _pool,
@@ -139,7 +139,12 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
      * @return cp - current price of the underlying asset
      */
     function getCurrentPrice(AssetPair memory _pair) private view returns (uint256 cp) {
-        cp = oracle.getUnderlyingPrice(_pair.primary, _pair.strike);
+        uint8 decimal;
+        (cp, decimal) = oracle.getUnderlyingPrice(assetIdMap[_pair.primary].name, assetIdMap[_pair.strike].name);
+
+        if (decimal > assetIdMap[_pair.primary].precision)
+            cp = cp.div(uint256(decimal).div(assetIdMap[_pair.primary].precision));
+        else cp = cp.mul(assetIdMap[_pair.primary].precision).div(uint256(decimal));
     }
 
     /**
