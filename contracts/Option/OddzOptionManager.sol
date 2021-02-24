@@ -142,9 +142,9 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         uint8 decimal;
         (cp, decimal) = oracle.getUnderlyingPrice(assetIdMap[_pair.primary].name, assetIdMap[_pair.strike].name);
 
-        if (decimal > assetIdMap[_pair.primary].precision)
-            cp = cp.div(uint256(decimal).div(assetIdMap[_pair.primary].precision));
-        else cp = cp.mul(assetIdMap[_pair.primary].precision).div(uint256(decimal));
+        if (10**decimal > assetIdMap[_pair.primary].precision)
+            cp = cp.div((10**decimal).div(assetIdMap[_pair.primary].precision));
+        else cp = cp.mul(assetIdMap[_pair.primary].precision).div(10**decimal);
     }
 
     /**
