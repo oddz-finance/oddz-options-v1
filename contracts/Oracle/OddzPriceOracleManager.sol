@@ -60,10 +60,8 @@ contract OddzPriceOracleManager is Ownable {
         require(address(_aggregator).isContract(), "Invalid aggregator");
 
         AggregatorData memory data = AggregatorData(_underlying, _strikeAsset, _aggregator);
-
-        agHash = keccak256(abi.encodePacked(_underlying, _strikeAsset, _aggregator));
+        agHash = keccak256(abi.encode(_underlying, _strikeAsset, address(_aggregator)));
         aggregatorMap[agHash] = data;
-
         aggregators[_underlying][_strikeAsset].push(data);
 
         _aggregator.setPairContract(_underlying, _strikeAsset, _aggregatorPriceContract);
@@ -77,7 +75,7 @@ contract OddzPriceOracleManager is Ownable {
      */
     function setActiveAggregator(bytes32 _agHash) public onlyOwner {
         AggregatorData storage data = aggregatorMap[_agHash];
-        require(address(data._aggregator) != address(0), "Invalid assets");
+        require(address(data._aggregator) != address(0), "Invalid aggregator");
 
         IOddzPriceOracle oldAg = activeAggregator[data._underlying][data._strikeAsset];
         activeAggregator[data._underlying][data._strikeAsset] = data._aggregator;
@@ -91,7 +89,7 @@ contract OddzPriceOracleManager is Ownable {
         returns (uint256 price, uint8 decimal)
     {
         IOddzPriceOracle aggregator = activeAggregator[_underlying][_strikeAsset];
-        require(address(aggregator) != address(0), "Invalid assets");
+        require(address(aggregator) != address(0), "No aggregator");
 
         (price, decimal) = aggregator.getPrice(_underlying, _strikeAsset);
     }

@@ -2,16 +2,16 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
-import MockAggregatorArtifact from "../artifacts/contracts/Mocks/MockAggregator.sol/MockAggregatorV3.json";
+import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
 import { OddzPriceOracleManager } from "../typechain/OddzPriceOracleManager";
 import { MockOddzPriceOracle } from "../typechain";
-import { shouldBehaveLikeOddzPriceOracle } from "./behaviors/OddzPriceOracle.behavior";
+import { shouldBehaveLikeOddzPriceOracleManager } from "./behaviors/OddzPriceOracleManager.behavior";
 import { AssetIds } from "../test-utils";
-import { utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 describe("Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
@@ -28,13 +28,10 @@ describe("Unit tests", function () {
 
   describe("Oddz Price oracle", function () {
     beforeEach(async function () {
-      this.MockAggregator = (await deployContract(this.signers.admin, MockAggregatorArtifact, [
-        AssetIds.ETH,
-        AssetIds.USDT,
-        8,
-        utils.formatBytes32String("Mock"),
-        8,
+      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
+
       this.oddzPriceOracleManager = (await deployContract(
         this.signers.admin,
         OddzPriceOracleManagerArtifact,
@@ -42,6 +39,6 @@ describe("Unit tests", function () {
       )) as OddzPriceOracleManager;
     });
 
-    shouldBehaveLikeOddzPriceOracle();
+    shouldBehaveLikeOddzPriceOracleManager();
   });
 });
