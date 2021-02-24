@@ -281,13 +281,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
             uint256 ivDecimal
         )
     {
-        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(
-            pairIdMap[_pair].primary,
-            _expiration,
-            _strike,
-            _optionType,
-            _amount
-        );
+        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(_pair, _expiration, _strike, _optionType, _amount);
 
         txnFee = getTransactionFee(optionPremium);
     }
