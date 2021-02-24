@@ -4,7 +4,6 @@ import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry } from "../.
 import { waffle } from "hardhat";
 import { OddzLiquidityPool, OddzOptionManager, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
-import { util } from "prettier";
 const provider = waffle.provider;
 let snapshotCount = 0;
 

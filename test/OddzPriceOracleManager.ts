@@ -10,8 +10,7 @@ const { deployContract } = waffle;
 import { OddzPriceOracleManager } from "../typechain/OddzPriceOracleManager";
 import { MockOddzPriceOracle } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracleManager } from "./behaviors/OddzPriceOracleManager.behavior";
-import { AssetIds } from "../test-utils";
-import { BigNumber, utils } from "ethers";
+import { BigNumber } from "ethers";
 
 describe("Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
