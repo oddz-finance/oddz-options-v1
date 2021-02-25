@@ -36,6 +36,8 @@ describe("Unit tests", function () {
         OddzPriceOracleManagerArtifact,
         [],
       )) as OddzPriceOracleManager;
+
+      await this.oddzPriceOracle.transferOwnership(this.oddzPriceOracleManager.address);
     });
 
     shouldBehaveLikeOddzPriceOracleManager();
