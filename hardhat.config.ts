@@ -20,6 +20,7 @@ const chainIds = {
   rinkeby: 4,
   ropsten: 3,
   bsc: 97,
+  matic: 80001,
 };
 
 // Ensure that we have all the environment variables we need.
@@ -41,6 +42,8 @@ function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig 
   let url: string;
   if (network == "bsc") {
     url = "https://data-seed-prebsc-1-s2.binance.org:8545/";
+  } else if (network == "matic") {
+    url = "https://rpc-mumbai.matic.today";
   } else {
     url = "https://" + network + ".infura.io/v3/" + infuraApiKey;
   }
@@ -67,6 +70,7 @@ const config: HardhatUserConfig = {
     rinkeby: createTestnetConfig("rinkeby"),
     ropsten: createTestnetConfig("ropsten"),
     bsc: createTestnetConfig("bsc"),
+    matic: createTestnetConfig("matic"),
   },
   paths: {
     artifacts: "./artifacts",
