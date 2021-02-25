@@ -45,7 +45,7 @@ const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer,
 };
 
 export function shouldBehaveLikeOddzOptionManager(): void {
-  it("should fail with message invalid asset", async function () {
+  it("should fail with message invalid asset pair", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     await expect(
@@ -83,16 +83,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const { optionPremium, txnFee } = option;
     await expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
     await expect(BigNumber.from(txnFee).div(1e10)).to.equal(332658431);
-  });
-
-  it("should return newly added asset ids for multiple assets", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    await oddzOptionManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
-    const asset0 = await oddzOptionManager.assets(0);
-    expect(asset0.id).to.be.equal(0);
-    await oddzOptionManager.addAsset(utils.formatBytes32String("BTC"), BigNumber.from(1e8));
-    const asset1 = await oddzOptionManager.assets(1);
-    expect(asset1.id).to.be.equal(1);
   });
 
   it("should return the premium price 1 day", async function () {
@@ -168,7 +158,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Expiration cannot be more than 30 days");
   });
 
-  it("should prevent buying options for unsupported asset type", async function () {
+  it("should prevent buying options for unsupported asset pair type", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await expect(
       oddzOptionManager.buy(
@@ -178,10 +168,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         BigNumber.from(123400000000),
         OptionType.Call,
       ),
-    ).to.be.revertedWith("Invalid Asset");
+    ).to.be.revertedWith("Invalid Asset pair");
   });
 
-  it("should buy option if the asset is supported and emit buy event", async function () {
+  it("should buy option if the asset pair is supported and emit buy event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const pairId = getAssetPair(
