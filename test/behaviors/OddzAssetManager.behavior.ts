@@ -12,6 +12,16 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     expect(asset.id).to.be.equal(0);
   });
 
+  it("should return newly added asset ids for multiple assets", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
+    const asset0 = await oddzAssetManager.assets(0);
+    expect(asset0.id).to.be.equal(0);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("BTC"), BigNumber.from(1e8));
+    const asset1 = await oddzAssetManager.assets(1);
+    expect(asset1.id).to.be.equal(1);
+  });
+
   it("should fail with message Asset already present", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
     // call should be optionType.call

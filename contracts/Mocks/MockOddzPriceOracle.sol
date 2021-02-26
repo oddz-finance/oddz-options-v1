@@ -2,19 +2,33 @@
 pragma solidity ^0.7.0;
 
 import "../Oracle/IOddzPriceOracle.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockOddzPriceOracle is IOddzPriceOracle {
-    uint256 public price;
+contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
+    uint256 public oprice;
 
     constructor(uint256 _price) {
-        price = _price;
+        oprice = _price;
     }
 
-    function getUnderlyingPrice(uint32 _asset, uint32 _strikeAsset) public view override returns (uint256) {
-        return price;
+    function getPrice(bytes32 _underlying, bytes32 _strikeAsset)
+        public
+        view
+        override
+        onlyOwner
+        returns (uint256 price, uint8 decimals)
+    {
+        price = oprice;
+        decimals = 8;
     }
 
     function setUnderlyingPrice(uint256 _price) external {
-        price = _price;
+        oprice = _price;
     }
+
+    function setPairContract(
+        bytes32 _underlying,
+        bytes32 _strikeAsset,
+        address _aggregator
+    ) public override onlyOwner {}
 }
