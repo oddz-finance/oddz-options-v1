@@ -65,7 +65,7 @@ describe("Oddz Option Manager Unit tests", function () {
         "USDC",
         totalSupply,
       ])) as OddzToken;
-
+      const bscForwarder = "0xFcE240fABBF8D5FdefD3B565E414151F2B9f153b";
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
@@ -76,6 +76,7 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzStaking.address,
         this.oddzLiquidityPool.address,
         this.usdcToken.address,
+        bscForwarder,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
 
