@@ -2,7 +2,7 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzOption.sol";
-import "../Oracle/IOddzPriceOracle.sol";
+import "../Oracle/OddzPriceOracleManager.sol";
 import "../Oracle/IOddzVolatility.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
@@ -18,7 +18,7 @@ contract OddzOptionManager is IOddzOption, BaseRelayRecipient, OddzAssetManager 
     using SafeERC20 for IERC20Extented;
 
     IOddzLiquidityPool public pool;
-    IOddzPriceOracle public oracle;
+    OddzPriceOracleManager public oracle;
     IOddzVolatility public volatility;
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
@@ -44,7 +44,7 @@ contract OddzOptionManager is IOddzOption, BaseRelayRecipient, OddzAssetManager 
     uint256 public settlementFeeAggregate;
 
     constructor(
-        IOddzPriceOracle _oracle,
+        OddzPriceOracleManager _oracle,
         IOddzVolatility _iv,
         IOddzStaking _staking,
         IOddzLiquidityPool _pool,
@@ -164,7 +164,12 @@ contract OddzOptionManager is IOddzOption, BaseRelayRecipient, OddzAssetManager 
      * @return cp - current price of the underlying asset
      */
     function getCurrentPrice(AssetPair memory _pair) private view returns (uint256 cp) {
-        cp = oracle.getUnderlyingPrice(_pair.primary, _pair.strike);
+        uint8 decimal;
+        (cp, decimal) = oracle.getUnderlyingPrice(assetIdMap[_pair.primary].name, assetIdMap[_pair.strike].name);
+
+        if (10**decimal > assetIdMap[_pair.primary].precision)
+            cp = cp.div((10**decimal).div(assetIdMap[_pair.primary].precision));
+        else cp = cp.mul(assetIdMap[_pair.primary].precision).div(10**decimal);
     }
 
     /**
@@ -301,13 +306,7 @@ contract OddzOptionManager is IOddzOption, BaseRelayRecipient, OddzAssetManager 
             uint256 ivDecimal
         )
     {
-        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(
-            pairIdMap[_pair].primary,
-            _expiration,
-            _strike,
-            _optionType,
-            _amount
-        );
+        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(_pair, _expiration, _strike, _optionType, _amount);
 
         txnFee = getTransactionFee(optionPremium);
     }
