@@ -4,15 +4,13 @@ pragma experimental ABIEncoderV2;
 
 import "./IOddzPriceOracle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IStdReference.sol";
 
 contract BandPriceOracle is Ownable, IOddzPriceOracle {
-    using SafeMath for uint256;
     using Address for address;
 
-    mapping(bytes32 => mapping(bytes32 => IStdReference)) addressMap;
+    mapping(bytes32 => mapping(bytes32 => IStdReference)) public addressMap;
 
     function getPrice(bytes32 _underlying, bytes32 _strikeAsset)
         public
@@ -23,12 +21,11 @@ contract BandPriceOracle is Ownable, IOddzPriceOracle {
     {
         IStdReference aggregator = addressMap[_underlying][_strikeAsset];
         require(address(aggregator) != address(0), "No aggregator");
-
         IStdReference.ReferenceData memory data =
-            aggregator.getReferenceData(string(abi.encodePacked(_underlying)), string(abi.encodePacked(_strikeAsset)));
+            aggregator.getReferenceData(bytes32ToString(_underlying), bytes32ToString(_strikeAsset));
 
-        price = data.rate.mul(10**9);
-        decimals = 9;
+        price = data.rate;
+        decimals = 18;
     }
 
     function setPairContract(
@@ -40,5 +37,17 @@ contract BandPriceOracle is Ownable, IOddzPriceOracle {
         addressMap[_underlying][_strikeAsset] = IStdReference(_aggregator);
 
         emit AddAssetPairAggregator(_underlying, _strikeAsset, address(this), _aggregator);
+    }
+
+    function bytes32ToString(bytes32 _bytes32) private pure returns (string memory) {
+        uint8 i = 0;
+        while (i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
     }
 }
