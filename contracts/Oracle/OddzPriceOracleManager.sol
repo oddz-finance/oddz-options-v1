@@ -14,10 +14,6 @@ contract OddzPriceOracleManager is Ownable {
         IOddzPriceOracle _aggregator;
     }
 
-    /**
-     * @dev The Oracle aggregators data. (underlying => strikeAsset => AggregatorData)
-     */
-    mapping(bytes32 => mapping(bytes32 => AggregatorData[])) public aggregators;
     mapping(bytes32 => mapping(bytes32 => IOddzPriceOracle)) public activeAggregator;
     mapping(bytes32 => AggregatorData) public aggregatorMap;
 
@@ -62,7 +58,6 @@ contract OddzPriceOracleManager is Ownable {
         AggregatorData memory data = AggregatorData(_underlying, _strikeAsset, _aggregator);
         agHash = keccak256(abi.encode(_underlying, _strikeAsset, address(_aggregator)));
         aggregatorMap[agHash] = data;
-        aggregators[_underlying][_strikeAsset].push(data);
 
         _aggregator.setPairContract(_underlying, _strikeAsset, _aggregatorPriceContract);
 
