@@ -17,7 +17,7 @@ import {
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 
@@ -49,7 +49,7 @@ describe("Oddz Option Manager Unit tests", function () {
       )) as MockOddzVolatility;
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
 
-      const totalSupply = 1000000000000000;
+      const totalSupply = BigNumber.from(utils.parseEther("100000000"));
       this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
         "USD coin",
         "USDC",
@@ -85,8 +85,8 @@ describe("Oddz Option Manager Unit tests", function () {
       await usdcToken1.allowance(this.accounts.admin1, this.oddzOptionManager.address);
 
       // transfer required balance
-      await usdcToken.transfer(this.accounts.admin, totalSupply * 0.3);
-      await usdcToken.transfer(this.accounts.admin1, totalSupply * 0.3);
+      await usdcToken.transfer(this.accounts.admin, totalSupply.div(3));
+      await usdcToken.transfer(this.accounts.admin1, totalSupply.div(3));
     });
     shouldBehaveLikeOddzOptionManager();
   });
