@@ -12,17 +12,17 @@ contract BandPriceOracle is Ownable, IOddzPriceOracle {
 
     mapping(bytes32 => mapping(bytes32 => IStdReference)) public addressMap;
 
-    function getPrice(bytes32 _underlying, bytes32 _strikeAsset)
+    function getPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
         override
         onlyOwner
         returns (uint256 price, uint8 decimals)
     {
-        IStdReference aggregator = addressMap[_underlying][_strikeAsset];
+        IStdReference aggregator = addressMap[_underlying][_strike];
         require(address(aggregator) != address(0), "No aggregator");
         IStdReference.ReferenceData memory data =
-            aggregator.getReferenceData(bytes32ToString(_underlying), bytes32ToString(_strikeAsset));
+            aggregator.getReferenceData(bytes32ToString(_underlying), bytes32ToString(_strike));
 
         price = data.rate;
         decimals = 18;
@@ -30,13 +30,13 @@ contract BandPriceOracle is Ownable, IOddzPriceOracle {
 
     function setPairContract(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
+        bytes32 _strike,
         address _aggregator
     ) public override onlyOwner {
         require(_aggregator.isContract(), "Invalid band aggregator");
-        addressMap[_underlying][_strikeAsset] = IStdReference(_aggregator);
+        addressMap[_underlying][_strike] = IStdReference(_aggregator);
 
-        emit AddAssetPairAggregator(_underlying, _strikeAsset, address(this), _aggregator);
+        emit AddAssetPairAggregator(_underlying, _strike, address(this), _aggregator);
     }
 
     function bytes32ToString(bytes32 _bytes32) private pure returns (string memory) {
