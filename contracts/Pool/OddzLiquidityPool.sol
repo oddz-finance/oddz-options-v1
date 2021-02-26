@@ -5,10 +5,8 @@ import "./IOddzLiquidityPool.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
-import "../Biconomy/BaseRelayRecipient.sol";
 
-
-contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, BaseRelayRecipient, ERC20("Oddz USD LP token", "oUSD") {
+contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
     using BokkyPooBahsDateTimeLibrary for uint256;
     using SafeERC20 for IERC20;
@@ -353,21 +351,4 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, BaseRelayRecipient, E
         address payable _account,
         uint256 _amount
     ) external override onlyOwner {}
-
-    function versionRecipient() external override virtual view returns (string memory){
-        return "1";
-    }
-
-    function _msgSender() internal override(BaseRelayRecipient, Context) virtual view returns (address payable ret) {
-        if (msg.data.length >= 24 && isTrustedForwarder(msg.sender)) {
-            // At this point we know that the sender is a trusted forwarder,
-            // so we trust that the last bytes of msg.data are the verified sender address.
-            // extract sender address from the end of msg.data
-            assembly {
-                ret := shr(96,calldataload(sub(calldatasize(),20)))
-            }
-        } else {
-            return msg.sender;
-        }
-    }
 }
