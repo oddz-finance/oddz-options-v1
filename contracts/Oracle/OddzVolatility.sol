@@ -16,7 +16,7 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
     mapping(bytes32 => mapping(bytes32 => AssetVolatility)) internal assetVolatilityMap;
 
     uint256 public MIN_IV = 10000;
-    uint256 public MAX_IV = 500000;
+    uint256 public MAX_IV = 1e8;
     uint256 public MIN_DECIMAL = uint256(5);
     uint256 public MAX_DECIMAL = uint256(8);
 

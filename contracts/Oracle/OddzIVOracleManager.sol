@@ -86,13 +86,13 @@ contract OddzIVOracleManager is Ownable {
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
-    ) public view returns (uint256 price, uint8 decimal) {
+    ) public view returns (uint256 iv, uint8 decimal) {
         IOddzVolatilityOracle aggregator = activeIVAggregator[_underlying][_strikeAsset];
         require(address(aggregator) != address(0), "No aggregator");
 
         bool isCallOption = (_type == IOddzOption.OptionType.Call);
 
-        (price, decimal) = aggregator.getIv(
+        (iv, decimal) = aggregator.getIv(
             _underlying,
             _strikeAsset,
             isCallOption,
