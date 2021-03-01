@@ -56,7 +56,6 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 1e9, 5),
     ).to.be.revertedWith("Invalid IV");
   });
-  
 
   it("Should throw Invalid aggregator message", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
