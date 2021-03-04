@@ -169,6 +169,17 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         else share = 0;
     }
 
+    /*
+     * @nonce Returns LP's active liquidty
+     * @param account Liquidity provider's address
+     * @return Liquidity provider's active liquidity in USD
+     */
+    function activeLiquidity(address account) public view returns (uint256 share) {
+        LPBalance[] storage lpBalanceList = lpBalanceMap[account];
+        if (lpBalanceList.length > 0) return lpBalanceList[lpBalanceList.length - 1].currentBalance;
+        return 0;
+    }
+
     /**
      * @notice Updates liquidity provider balance
      * @param _type Transaction type
@@ -180,14 +191,11 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _date,
         uint256 _amount
     ) private {
-        LPBalance[] storage lpBalanceList = lpBalanceMap[msg.sender];
-        uint256 currentBalance = _amount;
-        if (lpBalanceList.length > 0) {
-            if (_type == TransactionType.ADD)
-                currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.add(currentBalance);
-            else currentBalance = lpBalanceList[lpBalanceList.length - 1].currentBalance.sub(currentBalance);
-        }
-        lpBalanceList.push(LPBalance(currentBalance, _type, _amount, _date));
+        uint256 balance = activeLiquidity(msg.sender);
+        if (_type == TransactionType.ADD) balance = balance.add(_amount);
+        else balance = balance.sub(_amount);
+
+        lpBalanceMap[msg.sender].push(LPBalance(balance, _type, _amount, _date));
     }
 
     /**
@@ -281,10 +289,10 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _date
     ) private {
         if (lpPremium[msg.sender] <= 0) return;
+        uint256 balance = activeLiquidity(msg.sender);
+        require(balance > 0, "LP Error: current balance is less than or equal to zero");
         if (_date.sub(_latestLiquidityDate) <= premiumLockupDuration) {
-            LPBalance[] storage lpBalance = lpBalanceMap[msg.sender];
-            uint256 lostPremium =
-                lpPremium[msg.sender].mul(_amount).div(lpBalanceMap[msg.sender][lpBalance.length - 1].currentBalance);
+            uint256 lostPremium = lpPremium[msg.sender].mul(_amount).div(activeLiquidity(msg.sender));
             lpPremium[msg.sender] = lpPremium[msg.sender].sub(lostPremium);
             surplus = surplus.add(lostPremium);
 
