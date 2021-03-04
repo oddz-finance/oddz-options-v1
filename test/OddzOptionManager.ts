@@ -5,6 +5,7 @@ import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPr
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
+import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -16,6 +17,7 @@ import {
   OddzToken,
   OddzLiquidityPool,
   OddzPriceOracleManager,
+  SwapUnderlyingAsset,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -65,11 +67,18 @@ describe("Oddz Option Manager Unit tests", function () {
         "USDC",
         totalSupply,
       ])) as OddzToken;
-
+      console.log("deploying swapper")
+      const pancakeSwapRouterAddress="0xd2007Df32B99009fbE3Fb48B572dF8Bf44A0d8Ff";
+      this.swapUnderlyingAsset = (await deployContract(this.signers.admin, SwapUnderlyingAssetArtifact, [
+        pancakeSwapRouterAddress
+      ])) as  SwapUnderlyingAsset;
+       console.log("deployed swapper")
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
+        this.swapUnderlyingAsset.address
       ])) as OddzLiquidityPool;
+      console.log("deployed liquidity")
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
         oddzVolatility.address,
@@ -78,7 +87,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.usdcToken.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
-
+      console.log("transferred ownership")
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 

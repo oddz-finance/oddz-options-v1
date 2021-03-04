@@ -2,10 +2,11 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool, OddzToken } from "../typechain";
+import { OddzLiquidityPool, OddzToken, SwapUnderlyingAsset } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
+import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
 
 const { deployContract } = waffle;
 
@@ -27,6 +28,7 @@ describe("Oddz Option Manager Unit tests", function () {
   describe("Oddz Liquidity Pool", function () {
     beforeEach(async function () {
       const totalSupply = 1000000000000000;
+
       this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
         "USD coin",
         "USDC",
@@ -36,8 +38,14 @@ describe("Oddz Option Manager Unit tests", function () {
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
+      const pancakeSwapRouterAddress = "0xd2007Df32B99009fbE3Fb48B572dF8Bf44A0d8Ff";
+      this.swapUnderLyingAsset = (await deployContract(this.signers.admin, SwapUnderlyingAssetArtifact, [
+        pancakeSwapRouterAddress,
+      ])) as SwapUnderlyingAsset;
+
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
+        this.swapUnderLyingAsset.address,
       ])) as OddzLiquidityPool;
       await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);

@@ -2,8 +2,15 @@ import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry } from "../../test-utils";
 import { waffle } from "hardhat";
-import { OddzLiquidityPool, OddzOptionManager, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
+import {
+  OddzLiquidityPool,
+  OddzOptionManager,
+  OddzPriceOracleManager,
+  MockOddzPriceOracle,
+  SwapUnderlyingAsset,
+} from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
+
 const provider = waffle.provider;
 let snapshotCount = 0;
 
@@ -36,6 +43,12 @@ const getAssetPair = async (
   await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 
   return (await oom.pairs(0)).id;
+};
+
+const addAssetAddresses = async (swapUnderlyingAsset: SwapUnderlyingAsset, admin: Signer, usdcAddress: string) => {
+  const swapAsset = await swapUnderlyingAsset.connect(admin);
+  await swapAsset.addAssetAddress(utils.formatBytes32String("ETH"), "0xd66c6B4F0be8CE5b39D52E0Fd1344c389929B378");
+  await swapAsset.addAssetAddress(utils.formatBytes32String("USD"), usdcAddress);
 };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
@@ -246,6 +259,50 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("10")),
     );
+  });
+
+  it.only("Call option - excercise flow with underlying asset", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+   console.log("option manager")
+    const pairId = getAssetPair(
+      this.oddzOptionManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+    );
+     console.log("received pair")
+   
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+    const swapUnderlyingAsset = await this.swapUnderlyingAsset.connect(this.signers.admin);
+   console.log("adding asset addresses")
+    addAssetAddresses(
+      this.swapUnderlyingAsset,
+      this.signers.admin,
+      this.usdcToken.address,
+    );
+
+   console.log("added asset address");
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    console.log("added liquidity")
+    await oddzOptionManager.buy(
+      pairId,
+      getExpiry(2),
+      BigNumber.from(utils.parseEther("0.001")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+    );
+    console.log("bought")
+    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
+    console.log("exercise revert")
+    await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    console.log("set price")
+    await expect(oddzOptionManager.exercise(0))
+      .to.emit(oddzOptionManager, "Exercise")
+      .to.emit(oddzLiquidityPool, "Profit")
+      .to.emit(swapUnderlyingAsset, "Swapped")
+      
+   console.log("exercise")
   });
 
   it("Put option - excercise flow", async function () {

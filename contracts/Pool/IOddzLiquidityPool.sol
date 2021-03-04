@@ -74,7 +74,8 @@ interface IOddzLiquidityPool {
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount
+        uint256 _amount,
+        bytes32 _underlyingAsset
     ) external;
 
     /**

@@ -5,6 +5,7 @@ import "./IOddzLiquidityPool.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
+import "../Integrations/Dex/SwapUnderlyingAsset.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
@@ -49,6 +50,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(uint256 => uint256) internal daysExercise;
     mapping(address => uint256) public lpPremium;
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
+    SwapUnderlyingAsset public swapUnderlyingAsset;
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
@@ -56,8 +58,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _;
     }
 
-    constructor(IERC20 _token) {
+    constructor(IERC20 _token, SwapUnderlyingAsset _swapUnderlyingAsset) {
         token = _token;
+        swapUnderlyingAsset = _swapUnderlyingAsset;
     }
 
     function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
@@ -349,6 +352,28 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount
-    ) external override onlyOwner {}
+        uint256 _amount,
+        bytes32 _underlyingAsset
+    ) external override onlyOwner validLiquidty(_id) {
+        LockedLiquidity storage ll = lockedLiquidity[_id];
+        require(_account != address(0), "Invalid address");
+
+        ll.locked = false;
+        uint256 date = getPresentDayTimestamp();
+        lockedAmount = lockedAmount.sub(ll.amount);
+
+        uint256 transferAmount = _amount;
+        if (_amount > ll.amount) transferAmount = ll.amount;
+
+        // Premium calculation
+        premiumDayPool[date].collected.add(ll.premium);
+        daysExercise[date].add(ll.amount);
+
+        //token.safeTransfer(_account, transferAmount);
+
+        swapUnderlyingAsset.swapTokensForETH(address(token), _underlyingAsset, transferAmount, 0, 10000000);
+
+        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
+        else emit Loss(_id, transferAmount - ll.premium);
+    }
 }
