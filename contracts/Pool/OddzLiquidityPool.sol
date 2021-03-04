@@ -371,7 +371,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         //token.safeTransfer(_account, transferAmount);
 
-        swapUnderlyingAsset.swapTokensForETH(address(token), _underlyingAsset, transferAmount, 0, 10000000);
+        token.transfer(address(swapUnderlyingAsset), transferAmount);
+        swapUnderlyingAsset.swapTokensForETH(address(token), _underlyingAsset, transferAmount, 0, 1000000000000);
 
         if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
         else emit Loss(_id, transferAmount - ll.premium);

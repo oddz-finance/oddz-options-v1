@@ -3,7 +3,7 @@ pragma solidity ^0.7.4;
 interface ISwapUnderlyingAsset {
     event AddedAssetAddress(bytes32 indexed _assetName, address _assetAddress);
     event UpdatedAssetAddress(bytes32 indexed _assetName, address _assetAddress);
-    event Swapped(uint256 indexed _amountIn);
+    event Swapped(uint256 indexed _amountIn, uint256 _amountOut);
 
     /**
      * @notice Function to add asset address
