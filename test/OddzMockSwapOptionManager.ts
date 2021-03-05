@@ -5,7 +5,7 @@ import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPr
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
-import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
+import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
 import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
 import WETHArtifact from "../mockSwap_artifacts/periphery/contracts/WETH.sol/WETH.json";
 import UniswapV2Router02Artifact from "../mockSwap_artifacts/periphery/contracts/UniswapV2Router02.sol/UniswapV2Router02.json";
