@@ -410,7 +410,7 @@ contract OddzOptionManager is IOddzOption, OddzAssetManager {
         profit = profit.sub(settlementFee);
 
         if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
-        else pool.sendUA(_optionId, _address, profit, assetIdMap[pair.primary].name);
+        else pool.sendUA(_optionId, _address, profit, assetIdMap[pair.primary].name, assetIdMap[pair.strike].name);
     }
 
     /**

@@ -5,7 +5,7 @@ import "./IOddzLiquidityPool.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
-import "../Integrations/Dex/PancakeSwap/SwapUnderlyingAsset.sol";
+import "../Integrations/Dex/DexManager.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
@@ -50,7 +50,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(uint256 => uint256) internal daysExercise;
     mapping(address => uint256) public lpPremium;
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
-    SwapUnderlyingAsset public swapUnderlyingAsset;
+    DexManager public dexManager;
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
@@ -58,9 +58,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _;
     }
 
-    constructor(IERC20 _token, SwapUnderlyingAsset _swapUnderlyingAsset) {
+    constructor(IERC20 _token, DexManager _dexManager) {
         token = _token;
-        swapUnderlyingAsset = _swapUnderlyingAsset;
+        dexManager = _dexManager;
     }
 
     function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
@@ -153,12 +153,16 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         address payable _account,
         uint256 _amount,
-        bytes32 _underlyingAsset
+        bytes32 _underlyingAsset,
+        bytes32 _strikeAsset
     ) public override onlyOwner validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
-        token.safeTransfer(address(swapUnderlyingAsset), transferAmount);
-        swapUnderlyingAsset.swapTokensForETH(address(token), _underlyingAsset, transferAmount, 0, 1000000000000);
+
+        address exchange = dexManager.getExchange(_underlyingAsset, _strikeAsset);
+        token.safeTransfer(address(exchange), transferAmount);
+        dexManager.swap(_strikeAsset, _underlyingAsset, _account, transferAmount, 0, 1000000000000);
+        //swapUnderlyingAsset.swapTokensForUA(_strikeAsset, _underlyingAsset, transferAmount, 0, 1000000000000);
         // Send event
         emitSendEvent(_id, lockedPremium, transferAmount);
     }

@@ -78,7 +78,8 @@ interface IOddzLiquidityPool {
         uint256 _id,
         address payable _account,
         uint256 _amount,
-        bytes32 _underlyingAsset
+        bytes32 _underlyingAsset,
+        bytes32 _strikeAsset
     ) external;
 
     /**

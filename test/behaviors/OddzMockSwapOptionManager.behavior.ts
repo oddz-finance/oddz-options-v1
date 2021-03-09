@@ -2,13 +2,7 @@ import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { OptionType, getExpiry } from "../../test-utils";
 
-import {
-  OddzLiquidityPool,
-  OddzOptionManager,
-  OddzPriceOracleManager,
-  MockOddzPriceOracle,
-  SwapUnderlyingAsset,
-} from "../../typechain";
+import { OddzLiquidityPool, OddzOptionManager, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
 
 const getAssetPair = async (
@@ -42,17 +36,17 @@ const getAssetPair = async (
   return (await oom.pairs(0)).id;
 };
 
-const addAssetAddresses = async (
-  swapUnderlyingAsset: SwapUnderlyingAsset,
-  admin: Signer,
-  usdcAddress: string,
-  ethAddress: string,
-) => {
-  const swapAsset = await swapUnderlyingAsset.connect(admin);
+// const addAssetAddresses = async (
+//   dexManager: DexManager,
+//   admin: Signer,
+//   usdcAddress: string,
+//   ethAddress: string,
+// ) => {
+//   const swapAsset = await dexManager.connect(admin);
 
-  await swapAsset.addAssetAddress(utils.formatBytes32String("ETH"), ethAddress);
-  await swapAsset.addAssetAddress(utils.formatBytes32String("USDC"), usdcAddress);
-};
+//   await swapAsset.addAssetAddress(utils.formatBytes32String("ETH"), ethAddress);
+//   await swapAsset.addAssetAddress(utils.formatBytes32String("USDC"), usdcAddress);
+// };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
   const olp = await oddzLiquidityPool.connect(admin);
@@ -73,13 +67,13 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    const swapUnderlyingAsset = await this.swapUnderlyingAsset.connect(this.signers.admin);
-    await addAssetAddresses(
-      this.swapUnderlyingAsset,
-      this.signers.admin,
-      this.usdcToken.address,
-      this.ethToken.address,
-    );
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    // await addAssetAddresses(
+    //   this.dexManager,
+    //   this.signers.admin,
+    //   this.usdcToken.address,
+    //   this.ethToken.address,
+    // );
 
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -98,37 +92,32 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin))
       .to.emit(oddzOptionManager, "Exercise")
       .to.emit(oddzLiquidityPool, "Profit")
-      .to.emit(swapUnderlyingAsset, "Swapped");
+      .to.emit(dexManager, "Swapped");
   });
 
-  it("Call option - excercise flow with underlying asset, revert without adding asset addresses", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+  it("revert with invalid assets", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    await expect(
+      dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("ETH"),
+        this.ethToken.address,
+        this.usdcToken.address,
+        this.swapUnderlyingAsset.address,
+      ),
+    ).to.be.revertedWith("Invalid assets");
+  });
 
-    const pairId = getAssetPair(
-      this.oddzOptionManager,
-      this.signers.admin,
-      this.oddzPriceOracleManager,
-      this.oddzPriceOracle,
-    );
-
-    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-
-    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-
-    await oddzOptionManager.buy(
-      pairId,
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("0.001")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
-
-    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
-
-    await oddzPriceOracle.setUnderlyingPrice(175000000000);
-
-    await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin)).to.be.revertedWith(
-      "PancakeLibrary: ZERO_ADDRESS",
-    );
+  it("revert with invalid asset name", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    await expect(
+      dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String(""),
+        this.ethToken.address,
+        this.usdcToken.address,
+        this.swapUnderlyingAsset.address,
+      ),
+    ).to.be.revertedWith("invalid asset name");
   });
 }
