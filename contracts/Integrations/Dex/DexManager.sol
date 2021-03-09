@@ -95,7 +95,6 @@ contract DexManager is Ownable {
 
     function getExchange(bytes32 _underlying, bytes32 _strike) public view returns (address exchangeAddress) {
         exchangeAddress = address(activeExchange[_underlying][_strike]);
-        console.log("got exchange");
     }
 
     /**
