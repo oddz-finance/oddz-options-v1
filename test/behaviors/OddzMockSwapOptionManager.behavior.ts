@@ -77,7 +77,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
       .to.emit(dexManager, "Swapped");
   });
 
-  it.only("Check balance of the user after swap", async function () {
+  it("Check balance of the user after swap", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
@@ -130,7 +130,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
         utils.formatBytes32String("ETH"),
         this.ethToken.address,
         this.usdcToken.address,
-        this.swapUnderlyingAsset.address,
+        this.pancakeSwapForUnderlyingAsset.address,
       ),
     ).to.be.revertedWith("Invalid assets");
   });
@@ -143,7 +143,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
         utils.formatBytes32String(""),
         this.ethToken.address,
         this.usdcToken.address,
-        this.swapUnderlyingAsset.address,
+        this.pancakeSwapForUnderlyingAsset.address,
       ),
     ).to.be.revertedWith("invalid asset name");
   });

@@ -5,7 +5,7 @@ import "./IOddzLiquidityPool.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
-import "../Integrations/Dex/DexManager.sol";
+import "../Swap/DexManager.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;

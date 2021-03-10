@@ -1,6 +1,6 @@
 pragma solidity ^0.7.4;
 
-interface IDexSwap {
+interface IPancakeSwap {
     /**
      * @notice Function to swap exact tokens for tokens
      * @param _amountIn input tokens

@@ -3,19 +3,19 @@ pragma solidity ^0.7.4;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../IDexSwap.sol";
+import "./IPancakeSwap.sol";
 import "hardhat/console.sol";
-import "../ISwapUnderlyingAsset.sol";
+import "../../../Swap/ISwapUnderlyingAsset.sol";
 
-contract SwapUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
+contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
     mapping(bytes32 => address) public assetAddresses;
 
-    IDexSwap dexswap;
+    IPancakeSwap pancakeSwap;
 
-    constructor(address _dexswap) public {
-        dexswap = IDexSwap(_dexswap);
+    constructor(address _pancakeSwap) public {
+        pancakeSwap = IPancakeSwap(_pancakeSwap);
     }
 
     /**
@@ -39,8 +39,8 @@ contract SwapUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         address[] memory path = new address[](2);
         path[0] = assetAddresses[_fromToken];
         path[1] = assetAddresses[_toToken];
-        ERC20(path[0]).approve(address(dexswap), _amountIn);
-        result = dexswap.swapExactTokensForTokens(_amountIn, _amountOutMin, path, address(this), _deadline);
+        ERC20(path[0]).approve(address(pancakeSwap), _amountIn);
+        result = pancakeSwap.swapExactTokensForTokens(_amountIn, _amountOutMin, path, address(this), _deadline);
         // converting address to address payable
         ERC20(address(uint160(path[1]))).safeTransfer(_account, result[1]);
     }

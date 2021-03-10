@@ -5,7 +5,8 @@ import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPr
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
-import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
+import PancakeSwapForUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/PancakeSwapForUnderlyingAsset.sol/PancakeSwapForUnderlyingAsset.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
 import WETHArtifact from "../mockSwap_artifacts/periphery/contracts/WETH.sol/WETH.json";
 import UniswapV2Router02Artifact from "../mockSwap_artifacts/periphery/contracts/UniswapV2Router02.sol/UniswapV2Router02.json";
@@ -20,7 +21,8 @@ import {
   OddzToken,
   OddzLiquidityPool,
   OddzPriceOracleManager,
-  SwapUnderlyingAsset,
+  PancakeSwapForUnderlyingAsset,
+  DexManager,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -56,9 +58,13 @@ describe("Oddz Option Manager Unit tests", function () {
         WETH.address,
       ]);
 
-      this.swapUnderlyingAsset = (await deployContract(this.signers.admin, SwapUnderlyingAssetArtifact, [
-        this.uniswapRouter.address,
-      ])) as SwapUnderlyingAsset;
+      this.pancakeSwapForUnderlyingAsset = (await deployContract(
+        this.signers.admin,
+        PancakeSwapForUnderlyingAssetArtifact,
+        [this.uniswapRouter.address],
+      )) as PancakeSwapForUnderlyingAsset;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
 
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
@@ -87,7 +93,7 @@ describe("Oddz Option Manager Unit tests", function () {
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
-        this.swapUnderlyingAsset.address,
+        this.dexManager.address,
       ])) as OddzLiquidityPool;
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,

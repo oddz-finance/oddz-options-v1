@@ -2,18 +2,19 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool, OddzToken, SwapUnderlyingAsset } from "../typechain";
+import { OddzLiquidityPool, OddzToken, PancakeSwapForUnderlyingAsset, DexManager } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
-import SwapUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/SwapUnderlyingAsset.sol/SwapUnderlyingAsset.json";
+import PancakeSwapForUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/PancakeSwapForUnderlyingAsset.sol/PancakeSwapForUnderlyingAsset.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
 import WETHArtifact from "../mockSwap_artifacts/periphery/contracts/WETH.sol/WETH.json";
 import UniswapV2Router02Artifact from "../mockSwap_artifacts/periphery/contracts/UniswapV2Router02.sol/UniswapV2Router02.json";
 
 const { deployContract } = waffle;
 
-describe("Oddz Option Manager Unit tests", function () {
+describe("Oddz Liquidity Pool Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -39,9 +40,13 @@ describe("Oddz Option Manager Unit tests", function () {
         WETH.address,
       ]);
 
-      this.swapUnderlyingAsset = (await deployContract(this.signers.admin, SwapUnderlyingAssetArtifact, [
-        this.uniswapRouter.address,
-      ])) as SwapUnderlyingAsset;
+      this.pancakeSwapForUnderlyingAsset = (await deployContract(
+        this.signers.admin,
+        PancakeSwapForUnderlyingAssetArtifact,
+        [this.uniswapRouter.address],
+      )) as PancakeSwapForUnderlyingAsset;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
 
       const totalSupply = 1000000000000000;
 
@@ -56,7 +61,7 @@ describe("Oddz Option Manager Unit tests", function () {
 
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
-        this.swapUnderlyingAsset.address,
+        this.dexManager.address,
       ])) as OddzLiquidityPool;
 
       await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
