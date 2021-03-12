@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: BSD-4-Clause
+pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.0;
 
 import "./IOddzAsset.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
     Asset[] public assets;
-    mapping(bytes32 => Asset) internal assetNameMap;
-    mapping(uint32 => Asset) internal assetIdMap;
+    mapping(bytes32 => Asset) public assetNameMap;
+    mapping(uint32 => Asset) public assetIdMap;
 
     AssetPair[] public pairs;
-    mapping(uint32 => AssetPair) internal pairIdMap;
-    mapping(uint32 => mapping(uint32 => AssetPair)) internal pairMap;
+    mapping(uint32 => AssetPair) public pairIdMap;
+    mapping(uint32 => mapping(uint32 => AssetPair)) public pairMap;
 
     modifier validAsset(uint32 _underlying) {
         require(assetIdMap[_underlying].active == true, "Invalid Asset");
@@ -32,17 +33,51 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         _;
     }
 
+    // Added only required getters for now
+    function getAssetAddressByName(bytes32 _name) public view returns (address assetAddress) {
+        require(_name != "", "invalid asset name");
+        require(assetNameMap[_name].assetAddress != address(0), "Invalid asset address");
+        assetAddress = assetNameMap[_name].assetAddress;
+    }
+
+    function getStatusOfPair(uint32 _pairId) public view returns (bool status) {
+        status = pairIdMap[_pairId].active;
+    }
+
+    function getAsset(uint32 _assetId) public view returns (Asset memory asset) {
+        asset = assetIdMap[_assetId];
+    }
+
+    function getPair(uint32 _pairId) public view returns (AssetPair memory pair) {
+        pair = pairIdMap[_pairId];
+    }
+
+    function getPrimaryFromPair(uint32 _pairId) public view returns (uint32 primary) {
+        primary = pairIdMap[_pairId].primary;
+    }
+
+    function getAssetName(uint32 _assetId) public view returns (bytes32 name) {
+        name = assetIdMap[_assetId].name;
+    }
+
     /**
      * @notice Used for adding the new asset
      * @param _name Name for the underlying asset
+     * @param _assetAddress Address of the underlying asset
      * @param _precision Precision for the underlying asset
      * @return assetId Asset id
      */
-    function addAsset(bytes32 _name, uint256 _precision) external override onlyOwner returns (uint32 assetId) {
+    function addAsset(
+        bytes32 _name,
+        address _assetAddress,
+        uint256 _precision
+    ) external override onlyOwner returns (uint32 assetId) {
         require(assetNameMap[_name].name == "", "Asset already present");
+        require(_assetAddress != address(0), "invalid address");
 
         assetId = uint32(assets.length);
-        Asset memory asset = Asset({ id: assetId, name: _name, active: true, precision: _precision });
+        Asset memory asset =
+            Asset({ id: assetId, name: _name, assetAddress: _assetAddress, active: true, precision: _precision });
         assetNameMap[_name] = asset;
         assetIdMap[assetId] = asset;
         assets.push(asset);

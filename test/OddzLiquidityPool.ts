@@ -2,10 +2,17 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool, OddzToken, PancakeSwapForUnderlyingAsset, DexManager } from "../typechain";
+import {
+  OddzLiquidityPool,
+  OddzToken,
+  PancakeSwapForUnderlyingAsset,
+  DexManager,
+  OddzAssetManager,
+} from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
+import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import PancakeSwapForUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/PancakeSwapForUnderlyingAsset.sol/PancakeSwapForUnderlyingAsset.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
@@ -46,7 +53,15 @@ describe("Oddz Liquidity Pool Unit tests", function () {
         [this.uniswapRouter.address],
       )) as PancakeSwapForUnderlyingAsset;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
+      this.oddzAssetManager = (await deployContract(
+        this.signers.admin,
+        OddzAssetManagerArtifact,
+        [],
+      )) as OddzAssetManager;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+        this.oddzAssetManager.address,
+      ])) as DexManager;
 
       const totalSupply = 1000000000000000;
 

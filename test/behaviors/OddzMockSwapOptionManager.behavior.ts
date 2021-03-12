@@ -2,19 +2,27 @@ import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { OptionType, getExpiry } from "../../test-utils";
 
-import { OddzLiquidityPool, OddzOptionManager, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
+import {
+  OddzLiquidityPool,
+  OddzAssetManager,
+  OddzPriceOracleManager,
+  MockOddzPriceOracle,
+  OddzToken,
+} from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
 
 const getAssetPair = async (
-  oddzOptionManager: OddzOptionManager,
+  oddzAssetManager: OddzAssetManager,
   admin: Signer,
   oddzPriceOracleManager: OddzPriceOracleManager,
   oracleAddress: MockOddzPriceOracle,
+  usdcToken: OddzToken,
+  ethToken: OddzToken,
 ) => {
-  const oom = await oddzOptionManager.connect(admin);
-  await oom.addAsset(utils.formatBytes32String("USD"), BigNumber.from(1e8));
-  await oom.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
-  await oom.addAssetPair(1, 0);
+  const oam = await oddzAssetManager.connect(admin);
+  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, BigNumber.from(1e8));
+  await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, BigNumber.from(1e8));
+  await oam.addAssetPair(1, 0);
 
   await oddzPriceOracleManager
     .connect(admin)
@@ -33,7 +41,7 @@ const getAssetPair = async (
 
   await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 
-  return (await oom.pairs(0)).id;
+  return (await oam.pairs(0)).id;
 };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
@@ -47,12 +55,13 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
-
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     const dexManager = await this.dexManager.connect(this.signers.admin);
@@ -68,9 +77,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     );
 
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
-
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
-
     await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin))
       .to.emit(oddzOptionManager, "Exercise")
       .to.emit(oddzLiquidityPool, "Profit")
@@ -81,10 +88,12 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
@@ -128,23 +137,8 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
       dexManager.addExchange(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("ETH"),
-        this.ethToken.address,
-        this.usdcToken.address,
         this.pancakeSwapForUnderlyingAsset.address,
       ),
     ).to.be.revertedWith("Invalid assets");
-  });
-
-  it("revert with invalid asset name", async function () {
-    const dexManager = await this.dexManager.connect(this.signers.admin);
-    await expect(
-      dexManager.addExchange(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String(""),
-        this.ethToken.address,
-        this.usdcToken.address,
-        this.pancakeSwapForUnderlyingAsset.address,
-      ),
-    ).to.be.revertedWith("invalid asset name");
   });
 }

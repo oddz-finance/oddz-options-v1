@@ -15,6 +15,7 @@ interface IOddzAsset {
     struct Asset {
         uint32 id;
         bytes32 name;
+        address assetAddress;
         bool active;
         uint256 precision;
     }
@@ -29,10 +30,15 @@ interface IOddzAsset {
     /**
      * @notice Add asset
      * @param _name Symbol of the asset e.g. BTC, ETH
+     * @param _assetAddress Address of the asset
      * @param _precision Percentage precision for the asset
      * @return assetId Asset ID
      */
-    function addAsset(bytes32 _name, uint256 _precision) external returns (uint32 assetId);
+    function addAsset(
+        bytes32 _name,
+        address _assetAddress,
+        uint256 _precision
+    ) external returns (uint32 assetId);
 
     /**
      * @notice Activate an asset

@@ -72,14 +72,15 @@ interface IOddzLiquidityPool {
      * @param _id Id of LockedLiquidity that should be unlocked
      * @param _account Provider account address
      * @param _amount Funds that should be sent
-     * @param _underlyingAsset underlying asset ticker
+     * @param _underlying underlying asset name
+     * @param _strike strike asset name
      */
     function sendUA(
         uint256 _id,
         address payable _account,
         uint256 _amount,
-        bytes32 _underlyingAsset,
-        bytes32 _strikeAsset
+        bytes32 _underlying,
+        bytes32 _strike
     ) external;
 
     /**

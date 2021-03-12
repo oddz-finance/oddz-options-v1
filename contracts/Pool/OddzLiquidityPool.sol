@@ -153,16 +153,14 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         address payable _account,
         uint256 _amount,
-        bytes32 _underlyingAsset,
-        bytes32 _strikeAsset
+        bytes32 _underlying,
+        bytes32 _strike
     ) public override onlyOwner validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
-
-        address exchange = dexManager.getExchange(_underlyingAsset, _strikeAsset);
-        token.safeTransfer(address(exchange), transferAmount);
-        dexManager.swap(_strikeAsset, _underlyingAsset, _account, transferAmount, 0, 1000000000000);
-        //swapUnderlyingAsset.swapTokensForUA(_strikeAsset, _underlyingAsset, transferAmount, 0, 1000000000000);
+        token.safeTransfer(dexManager.getExchange(_underlying, _strike), transferAmount);
+        // block.timestamp -- deadline till the block gets created
+        dexManager.swap(_strike, _underlying, _account, transferAmount, block.timestamp);
         // Send event
         emitSendEvent(_id, lockedPremium, transferAmount);
     }

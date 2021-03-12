@@ -1,6 +1,7 @@
 pragma solidity ^0.7.4;
 
 import "./ISwapUnderlyingAsset.sol";
+import "../Option/OddzAssetManager.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -8,6 +9,7 @@ import "hardhat/console.sol";
 
 contract DexManager is Ownable {
     using Address for address;
+    OddzAssetManager assetManager;
 
     struct ExchangeData {
         bytes32 _underlying;
@@ -54,29 +56,29 @@ contract DexManager is Ownable {
         uint256 _swappedTokens
     );
 
+    constructor(OddzAssetManager _assetManger) public {
+        assetManager = _assetManger;
+    }
+
     /**
      * @notice Function to add the the exchange data data.
      * @param _underlying Id of the underlying.
-     * @param _strikeAsset Id of the strike asset.
+     * @param _strike Id of the strike asset.
      * @param _exchange Address of the exchange.
      */
     function addExchange(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
-        address _underlyingAssetAddress,
-        address _strikeAssetAddress,
+        bytes32 _strike,
         ISwapUnderlyingAsset _exchange
     ) public onlyOwner returns (bytes32 exHash) {
-        require(_underlying != _strikeAsset, "Invalid assets");
+        require(_underlying != _strike, "Invalid assets");
         require(address(_exchange).isContract(), "Invalid exchange");
 
-        ExchangeData memory data = ExchangeData(_underlying, _strikeAsset, _exchange);
-        exHash = keccak256(abi.encode(_underlying, _strikeAsset, address(_exchange)));
+        ExchangeData memory data = ExchangeData(_underlying, _strike, _exchange);
+        exHash = keccak256(abi.encode(_underlying, _strike, address(_exchange)));
         exchangeMap[exHash] = data;
-        _exchange.addAssetAddress(_underlying, _underlyingAssetAddress);
-        _exchange.addAssetAddress(_strikeAsset, _strikeAssetAddress);
 
-        emit NewExchange(_underlying, _strikeAsset, _exchange);
+        emit NewExchange(_underlying, _strike, _exchange);
     }
 
     /**
@@ -94,6 +96,7 @@ contract DexManager is Ownable {
     }
 
     function getExchange(bytes32 _underlying, bytes32 _strike) public view returns (address exchangeAddress) {
+        require(address(activeExchange[_underlying][_strike]) != address(0), "invalid exchange address");
         exchangeAddress = address(activeExchange[_underlying][_strike]);
     }
 
@@ -103,7 +106,6 @@ contract DexManager is Ownable {
      * @param _toToken name of the asset to swap to
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
-     * @param _amountOutMin minimum amount of toTokens to swap to
      * @param _deadline deadline timestamp for txn to be valid
      */
 
@@ -112,14 +114,19 @@ contract DexManager is Ownable {
         bytes32 _toToken,
         address payable _account,
         uint256 _amountIn,
-        uint256 _amountOutMin,
         uint256 _deadline
     ) public {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
 
         uint256[] memory swapResult =
-            exchange.swapTokensForUA(_fromToken, _toToken, _account, _amountIn, _amountOutMin, _deadline);
+            exchange.swapTokensForUA(
+                assetManager.getAssetAddressByName(_fromToken),
+                assetManager.getAssetAddressByName(_toToken),
+                _account,
+                _amountIn,
+                _deadline
+            );
         emit Swapped(_fromToken, _toToken, swapResult[0], swapResult[1]);
     }
 }

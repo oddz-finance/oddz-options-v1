@@ -1,10 +1,9 @@
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-
+import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 import { Accounts, Signers } from "../types";
-
-import { OddzAssetManager } from "../typechain";
+import { OddzAssetManager, OddzToken } from "../typechain";
 import { shouldBehaveLikeOddzAssetManager } from "./behaviors/OddzAssetManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 
@@ -32,6 +31,25 @@ describe("Oddz Asset Manager Unit tests", function () {
         OddzAssetManagerArtifact,
         [],
       )) as OddzAssetManager;
+      const totalSupply = 1000000000000000;
+
+      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "USD coin",
+        "USDC",
+        totalSupply,
+      ])) as OddzToken;
+
+      this.ethToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "Eth Token",
+        "ETH",
+        totalSupply,
+      ])) as OddzToken;
+
+      this.btcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "BTC Token",
+        "BTC",
+        totalSupply,
+      ])) as OddzToken;
     });
     shouldBehaveLikeOddzAssetManager();
   });
