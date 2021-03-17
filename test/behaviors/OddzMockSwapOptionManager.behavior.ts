@@ -131,6 +131,39 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     );
   });
 
+
+  it("should revert the swap with non swapper role", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
+    await oddzOptionManager.buy(
+      pairId,
+      getExpiry(2),
+      BigNumber.from(utils.parseEther("0.001")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+    );
+
+    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
+    await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    // remove swapper
+    await dexManager.removeSwapper(this.oddzLiquidityPool.address);
+    await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin))
+      .to.be.revertedWith("caller has no access to the method");
+  });
+
   it("revert with invalid assets", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     await expect(
@@ -140,5 +173,26 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
         this.pancakeSwapForUnderlyingAsset.address,
       ),
     ).to.be.revertedWith("Invalid assets");
+  });
+
+  it(" should revert add exchange with non admin role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin1);
+    await expect(
+      dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("BTC"),
+        this.pancakeSwapForUnderlyingAsset.address,
+      ),
+    ).to.be.revertedWith("caller has no access to the method");
+  });
+
+  it(" should revert with non swapper role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    await expect(
+      dexManager.getExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD")
+      ),
+    ).to.be.revertedWith("caller has no access to the method");
   });
 }

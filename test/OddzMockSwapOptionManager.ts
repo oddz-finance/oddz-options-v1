@@ -175,6 +175,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
         ),
       );
       await this.dexManager.connect(this.signers.admin).setActiveExchange(hash);
+      await this.dexManager.setSwapper(this.oddzLiquidityPool.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);

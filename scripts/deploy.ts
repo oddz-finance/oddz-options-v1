@@ -1,41 +1,37 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-// When running the script with `hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
-import { ethers } from "hardhat";
-import { BigNumber, Contract, ContractFactory } from "ethers";
+import { ethers, waffle } from "hardhat";
+import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
+import { BigNumber, Contract, utils } from "ethers";
+import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 
-const SCALING_FACTOR = BigNumber.from(10 ** 18);
+async function main() {
+  try {
+    const [owner] = await ethers.getSigners();
+    const { deployContract } = waffle;
+    const usdcTokenAddress = "0x1fAD2f9d5f033E916632ba4B951B15271cfb9f96";
+    const optionManagerAddress = "0x360A2B04dDb263aD1701C346589F25AF296ff2A0";
+    //const usdcToken: Contract = await ethers.getContractAt(OddzTokenArtifact.abi, usdcTokenAddress);
+    //await usdcToken.approve(optionManagerAddress, BigNumber.from(utils.parseEther("1")));
 
-async function main(): Promise<void> {
-  // Hardhat always runs the compile task when running scripts through it.
-  // If this runs in a standalone fashion you may want to call compile manually
-  // to make sure everything is compiled
-  // await run("compile");
-
-  // Total oddz supply
-  const totalSupply = BigNumber.from(100000000).mul(SCALING_FACTOR);
-
-  // We get the contract to deploy
-  const Greeter: ContractFactory = await ethers.getContractFactory("Greeter");
-  const greeter: Contract = await Greeter.deploy("Hello, Buidler!");
-  await greeter.deployed();
-  console.log("Greeter deployed to: ", greeter.address);
-
-  const OddzToken: ContractFactory = await ethers.getContractFactory("OddzToken");
-  const oddzToken: Contract = await OddzToken.deploy(OddzToken, "OddzToken", "ODDZ", totalSupply);
-  console.log("OddzToken deployed to: ", oddzToken.address);
-
-  const OddzOptionManager: ContractFactory = await ethers.getContractFactory("OddzOptionManager");
-  const oddzOptionManager: Contract = await OddzOptionManager.deploy();
-  console.log("OddzOptionManager deployed to", oddzOptionManager.address);
+    const oddzOptionManagerContract: Contract = await ethers.getContractAt(
+      OddzOptionManagerArtifact.abi,
+      optionManagerAddress,
+    );
+    const option = await oddzOptionManagerContract.options(2);
+    console.log("option: ",option)
+    await oddzOptionManagerContract.connect(owner).exercise(2);
+    console.log("exercised")
+  } catch (ex) {
+    console.log("Exception : ", ex);
+  }
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch((error: Error) => {
-    console.error(error);
-    process.exit(1);
-  });
+export const getExpiry = (days = 1) => {
+  return 60 * 60 * 24 * days;
+};
+
+export const OptionType = {
+  Call: 0,
+  Put: 1,
+};
+
+main();

@@ -121,6 +121,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.oddzAssetManager.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
+      
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);

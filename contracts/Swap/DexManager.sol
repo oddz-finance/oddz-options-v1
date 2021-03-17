@@ -2,14 +2,16 @@ pragma solidity ^0.7.4;
 
 import "./ISwapUnderlyingAsset.sol";
 import "../Option/OddzAssetManager.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
-contract DexManager is Ownable {
+contract DexManager is AccessControl {
     using Address for address;
     OddzAssetManager assetManager;
+
+    bytes32 public constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
 
     struct ExchangeData {
         bytes32 _underlying;
@@ -56,8 +58,29 @@ contract DexManager is Ownable {
         uint256 _swappedTokens
     );
 
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE,_address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlySwapper(address _address){
+        require(hasRole(SWAPPER_ROLE,_address),"caller has no access to the method");
+        _;
+    }
+
     constructor(OddzAssetManager _assetManger) public {
         assetManager = _assetManger;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setSwapper(address _address) public{
+        require(_address!=address(0),"invalid address");
+        grantRole(SWAPPER_ROLE, _address);
+    }
+
+    function removeSwapper(address _address) public{
+        require(_address!=address(0),"invalid address");
+        revokeRole(SWAPPER_ROLE, _address);
     }
 
     /**
@@ -70,7 +93,7 @@ contract DexManager is Ownable {
         bytes32 _underlying,
         bytes32 _strike,
         ISwapUnderlyingAsset _exchange
-    ) public onlyOwner returns (bytes32 exHash) {
+    ) public onlyOwner(msg.sender) returns (bytes32 exHash) {
         require(_underlying != _strike, "Invalid assets");
         require(address(_exchange).isContract(), "Invalid exchange");
 
@@ -85,7 +108,7 @@ contract DexManager is Ownable {
      * @notice Function to set the exchange data.
      * @param _exHash hash of the underlying, strike asset and exchange.
      */
-    function setActiveExchange(bytes32 _exHash) public onlyOwner {
+    function setActiveExchange(bytes32 _exHash) public onlyOwner(msg.sender) {
         ExchangeData storage data = exchangeMap[_exHash];
         require(address(data._exchange) != address(0), "Invalid exchange");
 
@@ -95,7 +118,10 @@ contract DexManager is Ownable {
         emit SetExchange(data._underlying, data._strikeAsset, oldEx, data._exchange);
     }
 
-    function getExchange(bytes32 _underlying, bytes32 _strike) public view returns (address exchangeAddress) {
+    function getExchange(
+                    bytes32 _underlying, 
+                    bytes32 _strike
+                    ) onlySwapper(msg.sender) public view returns (address exchangeAddress) {
         require(address(activeExchange[_underlying][_strike]) != address(0), "invalid exchange address");
         exchangeAddress = address(activeExchange[_underlying][_strike]);
     }
@@ -115,7 +141,7 @@ contract DexManager is Ownable {
         address payable _account,
         uint256 _amountIn,
         uint256 _deadline
-    ) public {
+    ) onlySwapper(msg.sender) public {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
 
