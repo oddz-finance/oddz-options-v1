@@ -74,6 +74,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
+    modifier validAssetPair(uint32 _pairId) {
+        require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
+        _;
+    }
+
     /**
      * @notice validate strike price
      * @param _strike strike price provided by the option buyer
@@ -98,10 +103,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     function validateOptionAmount(uint256 _value, uint256 _premium) private pure {
         require(_value >= _premium, "Premium is low");
-    }
-
-    function validateAssetPair(uint32 _pairId) private view {
-        require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
     }
 
     /**
@@ -152,8 +153,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint8 decimal;
         // retrieving struct if more than one field is used, to reduce gas for memory storage
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair.primary);
-        bytes32 strike = assetManager.getAssetName(_pair.strike);
-        (cp, decimal) = oracle.getUnderlyingPrice(primary.name, strike);
+        (cp, decimal) = oracle.getUnderlyingPrice(primary.name, assetManager.getAssetName(_pair.strike));
 
         if (10**decimal > primary.precision) cp = cp.div((10**decimal).div(primary.precision));
         else cp = cp.mul(primary.precision).div(10**decimal);
@@ -206,8 +206,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _amount,
         uint256 _strike,
         OptionType _optionType
-    ) external override validOptionType(_optionType) validExpiration(_expiration) returns (uint256 optionId) {
-        validateAssetPair(_pair);
+    )
+        external
+        override
+        validOptionType(_optionType)
+        validExpiration(_expiration)
+        validAssetPair(_pair)
+        returns (uint256 optionId)
+    {
         optionId = createOption(_strike, _amount, _expiration, _pair, _optionType);
     }
 
@@ -280,6 +286,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         view
         validOptionType(_optionType)
         validExpiration(_expiration)
+        validAssetPair(_pair)
         returns (
             uint256 optionPremium,
             uint256 txnFee,
@@ -288,7 +295,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
             uint256 ivDecimal
         )
     {
-        validateAssetPair(_pair);
         (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(_pair, _expiration, _strike, _optionType, _amount);
 
         txnFee = getTransactionFee(optionPremium);
@@ -411,7 +417,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit.div(1e18);
 
         IOddzAsset.Asset memory primary = assetManager.getAsset(pair.primary);
-        bytes32 strike = assetManager.getAssetName(pair.strike);
         // convert profit to usd decimals
         profit = profit.mul(10**token.decimals()).div(primary.precision);
 
@@ -421,7 +426,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit.sub(settlementFee);
 
         if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
-        else pool.sendUA(_optionId, _address, profit, primary.name, strike);
+        else pool.sendUA(_optionId, _address, profit, primary.name, assetManager.getAssetName(pair.strike));
     }
 
     /**

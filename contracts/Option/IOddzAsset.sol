@@ -30,13 +30,13 @@ interface IOddzAsset {
     /**
      * @notice Add asset
      * @param _name Symbol of the asset e.g. BTC, ETH
-     * @param _assetAddress Address of the asset
+     * @param _address Address of the asset
      * @param _precision Percentage precision for the asset
      * @return assetId Asset ID
      */
     function addAsset(
         bytes32 _name,
-        address _assetAddress,
+        address _address,
         uint256 _precision
     ) external returns (uint32 assetId);
 

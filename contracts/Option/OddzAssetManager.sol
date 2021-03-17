@@ -33,7 +33,6 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         _;
     }
 
-    // Added only required getters for now
     function getAssetAddressByName(bytes32 _name) public view returns (address assetAddress) {
         require(_name != "", "invalid asset name");
         require(assetNameMap[_name].assetAddress != address(0), "Invalid asset address");
@@ -56,6 +55,10 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         primary = pairIdMap[_pairId].primary;
     }
 
+    function getStrikeFromPair(uint32 _pairId) public view returns (uint32 strike) {
+        strike = pairIdMap[_pairId].strike;
+    }
+
     function getAssetName(uint32 _assetId) public view returns (bytes32 name) {
         name = assetIdMap[_assetId].name;
     }
@@ -63,21 +66,21 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     /**
      * @notice Used for adding the new asset
      * @param _name Name for the underlying asset
-     * @param _assetAddress Address of the underlying asset
+     * @param _address Address of the underlying asset
      * @param _precision Precision for the underlying asset
      * @return assetId Asset id
      */
     function addAsset(
         bytes32 _name,
-        address _assetAddress,
+        address _address,
         uint256 _precision
     ) external override onlyOwner returns (uint32 assetId) {
         require(assetNameMap[_name].name == "", "Asset already present");
-        require(_assetAddress != address(0), "invalid address");
+        require(_address != address(0), "invalid address");
 
         assetId = uint32(assets.length);
         Asset memory asset =
-            Asset({ id: assetId, name: _name, assetAddress: _assetAddress, active: true, precision: _precision });
+            Asset({ id: assetId, name: _name, assetAddress: _address, active: true, precision: _precision });
         assetNameMap[_name] = asset;
         assetIdMap[assetId] = asset;
         assets.push(asset);

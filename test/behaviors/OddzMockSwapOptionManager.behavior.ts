@@ -131,7 +131,6 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     );
   });
 
-
   it("should revert the swap with non swapper role", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
@@ -160,8 +159,9 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     // remove swapper
     await dexManager.removeSwapper(this.oddzLiquidityPool.address);
-    await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin))
-      .to.be.revertedWith("caller has no access to the method");
+    await expect(oddzOptionManager.excerciseUA(0, this.accounts.admin)).to.be.revertedWith(
+      "caller has no access to the method",
+    );
   });
 
   it("revert with invalid assets", async function () {
@@ -189,10 +189,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
   it(" should revert with non swapper role", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     await expect(
-      dexManager.getExchange(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD")
-      ),
+      dexManager.getExchange(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.be.revertedWith("caller has no access to the method");
   });
 }

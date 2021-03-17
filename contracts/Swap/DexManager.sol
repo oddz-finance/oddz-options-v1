@@ -59,12 +59,12 @@ contract DexManager is AccessControl {
     );
 
     modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE,_address), "caller has no access to the method");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
         _;
     }
 
-    modifier onlySwapper(address _address){
-        require(hasRole(SWAPPER_ROLE,_address),"caller has no access to the method");
+    modifier onlySwapper(address _address) {
+        require(hasRole(SWAPPER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -73,13 +73,13 @@ contract DexManager is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setSwapper(address _address) public{
-        require(_address!=address(0),"invalid address");
+    function setSwapper(address _address) public {
+        require(_address != address(0), "invalid address");
         grantRole(SWAPPER_ROLE, _address);
     }
 
-    function removeSwapper(address _address) public{
-        require(_address!=address(0),"invalid address");
+    function removeSwapper(address _address) public {
+        require(_address != address(0), "invalid address");
         revokeRole(SWAPPER_ROLE, _address);
     }
 
@@ -118,10 +118,12 @@ contract DexManager is AccessControl {
         emit SetExchange(data._underlying, data._strikeAsset, oldEx, data._exchange);
     }
 
-    function getExchange(
-                    bytes32 _underlying, 
-                    bytes32 _strike
-                    ) onlySwapper(msg.sender) public view returns (address exchangeAddress) {
+    function getExchange(bytes32 _underlying, bytes32 _strike)
+        public
+        view
+        onlySwapper(msg.sender)
+        returns (address exchangeAddress)
+    {
         require(address(activeExchange[_underlying][_strike]) != address(0), "invalid exchange address");
         exchangeAddress = address(activeExchange[_underlying][_strike]);
     }
@@ -130,6 +132,7 @@ contract DexManager is AccessControl {
      * @notice Function to swap Tokens
      * @param _fromToken name of the asset to swap from
      * @param _toToken name of the asset to swap to
+     * @param _exchange address of the exchange
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
@@ -138,12 +141,14 @@ contract DexManager is AccessControl {
     function swap(
         bytes32 _fromToken,
         bytes32 _toToken,
+        address _exchange,
         address payable _account,
         uint256 _amountIn,
         uint256 _deadline
-    ) onlySwapper(msg.sender) public {
+    ) public onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
+        require(address(exchange) == _exchange, "Invalid exchange");
 
         uint256[] memory swapResult =
             exchange.swapTokensForUA(
