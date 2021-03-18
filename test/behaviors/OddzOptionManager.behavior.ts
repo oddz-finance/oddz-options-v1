@@ -43,7 +43,7 @@ const getAssetPair = async (
 
   await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 
-  return (await oam.pairs(0)).id;
+  return (await oam.pairs(0))._id;
 };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {

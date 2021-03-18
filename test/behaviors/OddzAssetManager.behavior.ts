@@ -8,17 +8,17 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, BigNumber.from(1e8)),
     ).to.emit(oddzAssetManager, "NewAsset");
     const asset = await oddzAssetManager.assets(0);
-    expect(asset.id).to.be.equal(0);
+    expect(asset._id).to.be.equal(0);
   });
 
   it("should return newly added asset ids for multiple assets", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
     await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, BigNumber.from(1e8));
     const asset0 = await oddzAssetManager.assets(0);
-    expect(asset0.id).to.be.equal(0);
+    expect(asset0._id).to.be.equal(0);
     await oddzAssetManager.addAsset(utils.formatBytes32String("BTC"), this.btcToken.address, BigNumber.from(1e8));
     const asset1 = await oddzAssetManager.assets(1);
-    expect(asset1.id).to.be.equal(1);
+    expect(asset1._id).to.be.equal(1);
   });
 
   it("should fail with message Asset already present", async function () {
@@ -84,8 +84,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, BigNumber.from(1e8));
     await oddzAssetManager.addAssetPair(1, 0);
     const pair = await oddzAssetManager.pairs(0);
-    await oddzAssetManager.deactivateAssetPair(pair.id);
-    await expect(oddzAssetManager.activateAssetPair(pair.id))
+    await oddzAssetManager.deactivateAssetPair(pair._id);
+    await expect(oddzAssetManager.activateAssetPair(pair._id))
       .to.emit(oddzAssetManager, "AssetActivatePair")
       .withArgs(0, 1, 0);
   });
@@ -96,7 +96,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, BigNumber.from(1e8));
     await expect(oddzAssetManager.addAssetPair(1, 0)).to.emit(oddzAssetManager, "NewAssetPair").withArgs(0, 1, 0, true);
     const pair = await oddzAssetManager.pairs(0);
-    await expect(oddzAssetManager.activateAssetPair(pair.id)).to.be.revertedWith("Asset pair is active");
+    await expect(oddzAssetManager.activateAssetPair(pair._id)).to.be.revertedWith("Asset pair is active");
   });
 
   it("should deactivate asset pair successfully", async function () {
@@ -105,7 +105,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, BigNumber.from(1e8));
     await oddzAssetManager.addAssetPair(1, 0);
     const pair = await oddzAssetManager.pairs(0);
-    await expect(oddzAssetManager.deactivateAssetPair(pair.id))
+    await expect(oddzAssetManager.deactivateAssetPair(pair._id))
       .to.emit(oddzAssetManager, "AssetDeactivatePair")
       .withArgs(0, 1, 0);
   });
@@ -116,7 +116,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, BigNumber.from(1e8));
     await expect(oddzAssetManager.addAssetPair(1, 0)).to.emit(oddzAssetManager, "NewAssetPair").withArgs(0, 1, 0, true);
     const pair = await oddzAssetManager.pairs(0);
-    await oddzAssetManager.deactivateAssetPair(pair.id);
-    await expect(oddzAssetManager.deactivateAssetPair(pair.id)).to.be.revertedWith("Invalid Asset pair");
+    await oddzAssetManager.deactivateAssetPair(pair._id);
+    await expect(oddzAssetManager.deactivateAssetPair(pair._id)).to.be.revertedWith("Invalid Asset pair");
   });
 }

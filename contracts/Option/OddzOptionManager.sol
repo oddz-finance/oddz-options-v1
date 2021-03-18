@@ -152,11 +152,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function getCurrentPrice(IOddzAsset.AssetPair memory _pair) private view returns (uint256 cp) {
         uint8 decimal;
         // retrieving struct if more than one field is used, to reduce gas for memory storage
-        IOddzAsset.Asset memory primary = assetManager.getAsset(_pair.primary);
-        (cp, decimal) = oracle.getUnderlyingPrice(primary.name, assetManager.getAssetName(_pair.strike));
+        IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
+        (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
 
-        if (10**decimal > primary.precision) cp = cp.div((10**decimal).div(primary.precision));
-        else cp = cp.mul(primary.precision).div(10**decimal);
+        if (10**decimal > primary._precision) cp = cp.div((10**decimal).div(primary._precision));
+        else cp = cp.mul(primary._precision).div(10**decimal);
     }
 
     /**
@@ -177,9 +177,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
         uint32 primaryId = assetManager.getPrimaryFromPair(_pair);
         IOddzAsset.Asset memory primary = assetManager.getAsset(primaryId);
-        minAssetPrice = getPutOverColl(_cp, _iv, primary.precision, _ivDecimal);
-        maxAssetPrice = getCallOverColl(_cp, _iv, primary.precision, _ivDecimal);
-        validStrike(_strike, minAssetPrice, maxAssetPrice, primary.precision);
+        minAssetPrice = getPutOverColl(_cp, _iv, primary._precision, _ivDecimal);
+        maxAssetPrice = getCallOverColl(_cp, _iv, primary._precision, _ivDecimal);
+        validStrike(_strike, minAssetPrice, maxAssetPrice, primary._precision);
     }
 
     /**
@@ -329,15 +329,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
         )
     {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(_pair);
-        IOddzAsset.Asset memory primary = assetManager.getAsset(pair.primary);
+        IOddzAsset.Asset memory primary = assetManager.getAsset(pair._primary);
         cp = getCurrentPrice(pair);
-        (iv, ivDecimal) = volatility.calculateIv(pair.primary, _optionType, _expiration, _amount, _strike);
+        (iv, ivDecimal) = volatility.calculateIv(pair._primary, _optionType, _expiration, _amount, _strike);
 
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == IOddzOption.OptionType.Call ? true : false,
             _strike,
             cp,
-            primary.precision,
+            primary._precision,
             _expiration,
             iv,
             0,
@@ -347,7 +347,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         // _amount in wei
         optionPremium = optionPremium.mul(_amount).div(1e18);
         // convert to USD price precision
-        optionPremium = optionPremium.mul(10**token.decimals()).div(primary.precision);
+        optionPremium = optionPremium.mul(10**token.decimals()).div(primary._precision);
     }
 
     /**
@@ -416,9 +416,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         // amount in wei
         profit = profit.div(1e18);
 
-        IOddzAsset.Asset memory primary = assetManager.getAsset(pair.primary);
+        IOddzAsset.Asset memory primary = assetManager.getAsset(pair._primary);
         // convert profit to usd decimals
-        profit = profit.mul(10**token.decimals()).div(primary.precision);
+        profit = profit.mul(10**token.decimals()).div(primary._precision);
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = profit.mul(settlementFeePerc).div(100);
@@ -426,7 +426,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit.sub(settlementFee);
 
         if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
-        else pool.sendUA(_optionId, _address, profit, primary.name, assetManager.getAssetName(pair.strike));
+        else pool.sendUA(_optionId, _address, profit, primary._name, assetManager.getAssetName(pair._strike));
     }
 
     /**
