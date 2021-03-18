@@ -192,4 +192,33 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
       dexManager.getExchange(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.be.revertedWith("caller has no access to the method");
   });
+
+  it(" should revert set swapper with non admin role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin1);
+    await expect(dexManager.setSwapper(this.accounts.admin1)).to.be.revertedWith("sender must be an admin to grant");
+  });
+
+  it(" should revert remove swapper with non admin role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin1);
+    await expect(dexManager.removeSwapper(this.accounts.admin1)).to.be.revertedWith(
+      "sender must be an admin to revoke",
+    );
+  });
+
+  it(" should set swapper with admin role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    const role = await dexManager.SWAPPER_ROLE();
+    await expect(dexManager.setSwapper(this.accounts.admin1))
+      .to.emit(dexManager, "RoleGranted")
+      .withArgs(role, this.accounts.admin1, this.accounts.admin);
+  });
+
+  it(" should revoke swapper with admin role", async function () {
+    const dexManager = await this.dexManager.connect(this.signers.admin);
+    const role = await dexManager.SWAPPER_ROLE();
+    await dexManager.setSwapper(this.accounts.admin1),
+      await expect(dexManager.removeSwapper(this.accounts.admin1))
+        .to.emit(dexManager, "RoleRevoked")
+        .withArgs(role, this.accounts.admin1, this.accounts.admin);
+  });
 }
