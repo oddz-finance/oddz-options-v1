@@ -52,31 +52,25 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
   describe("Oddz Mockswap Option Manager", function () {
     beforeEach(async function () {
       this.uniswapFactory = await deployContract(this.signers.admin, UniswapV2FactoryArtifact, [this.accounts.admin]);
-
       const WETH = await deployContract(this.signers.admin, WETHArtifact, []);
-
       this.uniswapRouter = await deployContract(this.signers.admin, UniswapV2Router02Artifact, [
         this.uniswapFactory.address,
         WETH.address,
       ]);
-
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
-
       this.oddzPriceOracleManager = (await deployContract(
         this.signers.admin,
         OddzPriceOracleManagerArtifact,
         [],
       )) as OddzPriceOracleManager;
       await this.oddzPriceOracle.transferOwnership(this.oddzPriceOracleManager.address);
-
       const oddzVolatility = (await deployContract(
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
-
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
       this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
         "USD coin",
@@ -88,10 +82,8 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
         "ETH",
         totalSupply,
       ])) as OddzToken;
-
       await this.uniswapFactory.createPair(this.ethToken.address, this.usdcToken.address);
       await this.uniswapFactory.createPair(WETH.address, this.usdcToken.address);
-
       const pair0 = await this.uniswapFactory.allPairs(0);
       const pair1 = await this.uniswapFactory.allPairs(1);
 
@@ -109,7 +101,6 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
           pair0,
           "1000000000000",
         );
-
       await this.uniswapRouter
         .connect(this.signers.admin)
         .addLiquidity(
@@ -154,7 +145,6 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
       ])) as OddzOptionManager;
 
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
-
       await this.pancakeSwapForUnderlyingAsset.transferOwnership(this.dexManager.address);
 
       await this.dexManager
@@ -164,6 +154,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
           utils.formatBytes32String("USD"),
           this.pancakeSwapForUnderlyingAsset.address,
         );
+
       const hash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
@@ -174,6 +165,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
           ],
         ),
       );
+
       await this.dexManager.connect(this.signers.admin).setActiveExchange(hash);
       await this.dexManager.setSwapper(this.oddzLiquidityPool.address);
 
@@ -183,12 +175,14 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
       // Allow for liquidty pool
       await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
+
       await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
       await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
 
       // Allow for option manager
       await usdcToken.approve(this.oddzOptionManager.address, totalSupply);
       await usdcToken1.approve(this.oddzOptionManager.address, totalSupply);
+
       await usdcToken.allowance(this.accounts.admin, this.oddzOptionManager.address);
       await usdcToken1.allowance(this.accounts.admin1, this.oddzOptionManager.address);
 

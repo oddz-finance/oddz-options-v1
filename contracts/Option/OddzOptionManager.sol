@@ -370,7 +370,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Cash, option.holder);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId);
+        pool.send(_optionId, option.holder, profit);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
     }
@@ -378,15 +379,25 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Used for physical settlement excerise for an active option
      * @param _optionId Option id
+     * @param _deadline Deadline until which txn does not revert
      */
-    function excerciseUA(uint256 _optionId, address payable _uaAddress) external override {
+    function excerciseUA(uint256 _optionId, uint32 _deadline) external override {
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId, ExcerciseType.Physical, _uaAddress);
+        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId);
+        IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
+        pool.sendUA(
+            _optionId,
+            option.holder,
+            profit,
+            assetManager.getAssetName(pair._primary),
+            assetManager.getAssetName(pair._strike),
+            _deadline
+        );
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -394,14 +405,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Sends profits in USD from the USD pool to an option holder's address
      * @param _optionId ID of the option
-     * @param _type Excercise Type e.g: Cash or Physical
-     * @param _address address of the option holder
      */
-    function transferProfit(
-        uint256 _optionId,
-        ExcerciseType _type,
-        address payable _address
-    ) internal returns (uint256 profit, uint256 settlementFee) {
+    function transferProfit(uint256 _optionId) internal returns (uint256 profit, uint256 settlementFee) {
         Option memory option = options[_optionId];
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
         uint256 _cp = getCurrentPrice(pair);
@@ -416,17 +421,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
         // amount in wei
         profit = profit.div(1e18);
 
-        IOddzAsset.Asset memory primary = assetManager.getAsset(pair._primary);
         // convert profit to usd decimals
-        profit = profit.mul(10**token.decimals()).div(primary._precision);
+        profit = profit.mul(10**token.decimals()).div(assetManager.getPrecision(pair._primary));
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = profit.mul(settlementFeePerc).div(100);
         settlementFeeAggregate = settlementFeeAggregate.add(settlementFee);
         profit = profit.sub(settlementFee);
-
-        if (_type == ExcerciseType.Cash) pool.send(_optionId, _address, profit);
-        else pool.sendUA(_optionId, _address, profit, primary._name, assetManager.getAssetName(pair._strike));
     }
 
     /**

@@ -27,7 +27,8 @@ contract MockOddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD L
         address payable _account,
         uint256 _amount,
         bytes32 _underlyingAsset,
-        bytes32 _strikeAsset
+        bytes32 _strikeAsset,
+        uint32 _deadline
     ) external override onlyOwner {}
 
     function availableBalance() public view override returns (uint256 balance) {}

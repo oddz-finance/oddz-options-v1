@@ -63,6 +63,10 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         name = assetIdMap[_assetId]._name;
     }
 
+    function getPrecision(uint32 _assetId) public view returns (uint256 precision) {
+        precision = assetIdMap[_assetId]._precision;
+    }
+
     /**
      * @notice Used for adding the new asset
      * @param _name Name for the underlying asset

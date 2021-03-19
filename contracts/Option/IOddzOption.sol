@@ -63,7 +63,7 @@ interface IOddzOption {
     /**
      * @notice Exercises an active option in underlying asset
      * @param _optionId Option ID
-     * @param _uaAddress Underlying asset address
+     * @param _deadline Deadline until which txn does not revert
      */
-    function excerciseUA(uint256 _optionId, address payable _uaAddress) external;
+    function excerciseUA(uint256 _optionId, uint32 _deadline) external;
 }
