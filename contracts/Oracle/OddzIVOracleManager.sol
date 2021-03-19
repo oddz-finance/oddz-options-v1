@@ -11,7 +11,7 @@ contract OddzIVOracleManager is Ownable {
 
     struct AggregatorIVData {
         bytes32 _underlying;
-        bytes32 _strikeAsset;
+        bytes32 _strike;
         IOddzVolatilityOracle _aggregator;
     }
 
@@ -21,21 +21,21 @@ contract OddzIVOracleManager is Ownable {
     /**
      * @dev Emitted when the new Oracle aggregator data has been added.
      * @param _underlying Address of the underlying asset.
-     * @param _strikeAsset Address of the strike asset.
+     * @param _strike Address of the strike asset.
      * @param _aggregator Address of the Oracle aggregator.
      */
-    event NewIVAggregator(bytes32 indexed _underlying, bytes32 indexed _strikeAsset, IOddzVolatilityOracle _aggregator);
+    event NewIVAggregator(bytes32 indexed _underlying, bytes32 indexed _strike, IOddzVolatilityOracle _aggregator);
 
     /**
      * @dev Emitted when the Oracle aggregator data has been changed.
      * @param _underlying Address of the underlying asset.
-     * @param _strikeAsset Address of the strike asset.
+     * @param _strike Address of the strike asset.
      * @param _previousAggregator Address of the previous aggregator.
      * @param _newAggregator Address of the new aggregator.
      */
     event SetIVAggregator(
         bytes32 indexed _underlying,
-        bytes32 indexed _strikeAsset,
+        bytes32 indexed _strike,
         IOddzVolatilityOracle _previousAggregator,
         IOddzVolatilityOracle _newAggregator
     );
@@ -43,26 +43,26 @@ contract OddzIVOracleManager is Ownable {
     /**
      * @notice Function to add the the IV Oracle aggregator data.
      * @param _underlying Id of the underlying.
-     * @param _strikeAsset Id of the strike asset.
+     * @param _strike Id of the strike asset.
      * @param _aggregator Address of the oddz aggregator.
      * @param _aggregatorPriceContract Address of the price oracle aggregator
      */
     function addIVAggregator(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
+        bytes32 _strike,
         IOddzVolatilityOracle _aggregator,
         address _aggregatorPriceContract
     ) public onlyOwner returns (bytes32 agHash) {
-        require(_underlying != _strikeAsset, "Invalid assets");
+        require(_underlying != _strike, "Invalid assets");
         require(address(_aggregator).isContract(), "Invalid aggregator");
 
-        AggregatorIVData memory data = AggregatorIVData(_underlying, _strikeAsset, _aggregator);
-        agHash = keccak256(abi.encode(_underlying, _strikeAsset, address(_aggregator)));
+        AggregatorIVData memory data = AggregatorIVData(_underlying, _strike, _aggregator);
+        agHash = keccak256(abi.encode(_underlying, _strike, address(_aggregator)));
         aggregatorIVMap[agHash] = data;
 
-        _aggregator.setPairContract(_underlying, _strikeAsset, _aggregatorPriceContract);
+        _aggregator.setPairContract(_underlying, _strike, _aggregatorPriceContract);
 
-        emit NewIVAggregator(_underlying, _strikeAsset, _aggregator);
+        emit NewIVAggregator(_underlying, _strike, _aggregator);
     }
 
     /**
@@ -73,28 +73,28 @@ contract OddzIVOracleManager is Ownable {
         AggregatorIVData storage ivData = aggregatorIVMap[_agHash];
         require(address(ivData._aggregator) != address(0), "Invalid aggregator");
 
-        IOddzVolatilityOracle oldIvAg = activeIVAggregator[ivData._underlying][ivData._strikeAsset];
-        activeIVAggregator[ivData._underlying][ivData._strikeAsset] = ivData._aggregator;
+        IOddzVolatilityOracle oldIvAg = activeIVAggregator[ivData._underlying][ivData._strike];
+        activeIVAggregator[ivData._underlying][ivData._strike] = ivData._aggregator;
 
-        emit SetIVAggregator(ivData._underlying, ivData._strikeAsset, oldIvAg, ivData._aggregator);
+        emit SetIVAggregator(ivData._underlying, ivData._strike, oldIvAg, ivData._aggregator);
     }
 
     function calculateIv(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
+        bytes32 _strike,
         IOddzOption.OptionType _type,
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
     ) public view returns (uint256 iv, uint8 decimal) {
-        IOddzVolatilityOracle aggregator = activeIVAggregator[_underlying][_strikeAsset];
+        IOddzVolatilityOracle aggregator = activeIVAggregator[_underlying][_strike];
         require(address(aggregator) != address(0), "No aggregator");
 
         bool isCallOption = (_type == IOddzOption.OptionType.Call);
 
         (iv, decimal) = aggregator.getIv(
             _underlying,
-            _strikeAsset,
+            _strike,
             isCallOption,
             _expiration,
             _currentPrice,
