@@ -12,6 +12,8 @@ abstract contract BaseRelayRecipient is IRelayRecipient {
      */
     // bsc testnet forwader
     //0xFcE240fABBF8D5FdefD3B565E414151F2B9f153b;
+    // new bsc testnet forwarder
+    //0x61456BF1715C1415730076BB79ae118E806E74d2
     address public trustedForwarder;
 
     /*
