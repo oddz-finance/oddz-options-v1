@@ -45,7 +45,7 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
 
     function setPairContract(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
+        bytes32 _strike,
         address _aggregator
     ) public override {}
 
