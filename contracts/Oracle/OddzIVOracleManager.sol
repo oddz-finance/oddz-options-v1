@@ -92,13 +92,6 @@ contract OddzIVOracleManager is Ownable {
 
         bool isCallOption = (_type == IOddzOption.OptionType.Call);
 
-        (iv, decimal) = aggregator.getIv(
-            _underlying,
-            _strike,
-            isCallOption,
-            _expiration,
-            _currentPrice,
-            _strikePrice
-        );
+        (iv, decimal) = aggregator.getIv(_underlying, _strike, isCallOption, _expiration, _currentPrice, _strikePrice);
     }
 }
