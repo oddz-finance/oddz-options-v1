@@ -2,22 +2,12 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import {
-  OddzLiquidityPool,
-  OddzToken,
-  PancakeSwapForUnderlyingAsset,
-  DexManager,
-  OddzAssetManager,
-} from "../typechain";
+import { OddzLiquidityPool, OddzToken, DexManager, OddzAssetManager } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import PancakeSwapForUnderlyingAssetArtifact from "../artifacts/contracts/Integrations/Dex/PancakeSwap/PancakeSwapForUnderlyingAsset.sol/PancakeSwapForUnderlyingAsset.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
-import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
-import WETHArtifact from "../mockSwap_artifacts/periphery/contracts/WETH.sol/WETH.json";
-import UniswapV2Router02Artifact from "../mockSwap_artifacts/periphery/contracts/UniswapV2Router02.sol/UniswapV2Router02.json";
 
 const { deployContract } = waffle;
 
@@ -38,21 +28,6 @@ describe("Oddz Liquidity Pool Unit tests", function () {
 
   describe("Oddz Liquidity Pool", function () {
     beforeEach(async function () {
-      this.uniswapFactory = await deployContract(this.signers.admin, UniswapV2FactoryArtifact, [this.accounts.admin]);
-
-      const WETH = await deployContract(this.signers.admin, WETHArtifact, []);
-
-      this.uniswapRouter = await deployContract(this.signers.admin, UniswapV2Router02Artifact, [
-        this.uniswapFactory.address,
-        WETH.address,
-      ]);
-
-      this.pancakeSwapForUnderlyingAsset = (await deployContract(
-        this.signers.admin,
-        PancakeSwapForUnderlyingAssetArtifact,
-        [this.uniswapRouter.address],
-      )) as PancakeSwapForUnderlyingAsset;
-
       this.oddzAssetManager = (await deployContract(
         this.signers.admin,
         OddzAssetManagerArtifact,
