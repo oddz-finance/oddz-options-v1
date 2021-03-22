@@ -85,7 +85,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
-    function setMaxDeadline(uint32 _deadline) public {
+    function setMaxDeadline(uint32 _deadline) public onlyOwner {
         maxDeadline = _deadline;
     }
 
@@ -340,7 +340,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(_pair);
         uint256 precision = assetManager.getPrecision(pair._primary);
         cp = getCurrentPrice(pair);
-        (iv, ivDecimal) = volatility.calculateIv(pair._primary, _optionType, _expiration, _amount, _strike);
+        (iv, ivDecimal) = volatility.calculateIv(
+            assetManager.getAssetName(pair._primary),
+            assetManager.getAssetName(pair._strike),
+            _optionType,
+            _expiration,
+            _amount,
+            _strike
+        );
 
         optionPremium = BlackScholes.getOptionPrice(
             _optionType == IOddzOption.OptionType.Call ? true : false,

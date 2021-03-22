@@ -11,6 +11,7 @@ import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexMa
 import UniswapV2FactoryArtifact from "../mockSwap_artifacts/core/contracts/UniswapV2Factory.sol/UniswapV2Factory.json";
 import WETHArtifact from "../mockSwap_artifacts/periphery/contracts/WETH.sol/WETH.json";
 import UniswapV2Router02Artifact from "../mockSwap_artifacts/periphery/contracts/UniswapV2Router02.sol/UniswapV2Router02.json";
+import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -25,6 +26,7 @@ import {
   OddzAssetManager,
   PancakeSwapForUnderlyingAsset,
   DexManager,
+  OddzIVOracleManager,
 } from "../typechain";
 import { shouldBehaveLikeMockSwapOddzOptionManager } from "./behaviors/OddzMockSwapOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -70,6 +72,29 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
+
+      const oddzIVOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzIVOracleManagerArtifact,
+        [],
+      )) as OddzIVOracleManager;
+
+      await oddzIVOracleManager.addIVAggregator(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        oddzVolatility.address,
+        oddzVolatility.address,
+      );
+
+      const ivAggregatorHash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), oddzVolatility.address],
+        ),
+      );
+
+      await oddzIVOracleManager.setActiveIVAggregator(ivAggregatorHash);
+
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
       this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
@@ -137,7 +162,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
-        oddzVolatility.address,
+        oddzIVOracleManager.address,
         oddzStaking.address,
         this.oddzLiquidityPool.address,
         this.usdcToken.address,
@@ -157,7 +182,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
           this.pancakeSwapForUnderlyingAsset.address,
         );
 
-      const hash = utils.keccak256(
+      const exchangeAggregatorhash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
           [
@@ -168,7 +193,7 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
         ),
       );
 
-      await this.dexManager.connect(this.signers.admin).setActiveExchange(hash);
+      await this.dexManager.connect(this.signers.admin).setActiveExchange(exchangeAggregatorhash);
       await this.dexManager.setSwapper(this.oddzLiquidityPool.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);

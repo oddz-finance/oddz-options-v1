@@ -959,4 +959,17 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
+
+  it("should set max deadline by owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const deadline = 100;
+    await oddzOptionManager.setMaxDeadline(deadline);
+    expect(await oddzOptionManager.maxDeadline()).to.equal(deadline);
+  });
+
+  it("should revert set max deadline by non owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
+
+    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller");
+  });
 }
