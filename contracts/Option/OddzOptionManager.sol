@@ -50,7 +50,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @dev Max Deadline in seconds
      */
 
-    uint32 public maxDeadline = 90;
+    uint32 public maxDeadline;
 
     constructor(
         OddzPriceOracleManager _oracle,
@@ -83,6 +83,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
         _;
+    }
+
+    function setMaxDeadline(uint32 _deadline) public {
+        maxDeadline = _deadline;
     }
 
     /**

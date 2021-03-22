@@ -144,6 +144,8 @@ describe("Oddz Mockswap Option Manager Unit tests", function () {
         this.oddzAssetManager.address,
       ])) as OddzOptionManager;
 
+      await this.oddzOptionManager.setMaxDeadline(90);
+
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
       await this.pancakeSwapForUnderlyingAsset.transferOwnership(this.dexManager.address);
 
