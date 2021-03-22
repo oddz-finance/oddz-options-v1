@@ -114,8 +114,6 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
       OptionType.Call,
     );
 
-    await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
-
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const balanceBefore = await await this.ethToken.balanceOf(this.accounts.admin);
 
@@ -132,6 +130,37 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
 
     await expect(await this.ethToken.balanceOf(this.accounts.admin)).to.equal(
       BigNumber.from(balanceBefore).add(BigNumber.from("47902852630873785")),
+    );
+  });
+
+  it("should revert with more than max deadline", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
+    await oddzOptionManager.buy(
+      pairId,
+      getExpiry(2),
+      BigNumber.from(utils.parseEther("0.001")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+    );
+
+    await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    const deadline = await oddzOptionManager.maxDeadline();
+    await expect(oddzOptionManager.excerciseUA(0, deadline + 1)).to.be.revertedWith(
+      "Deadline input is more than maximum limit allowed",
     );
   });
 
@@ -166,7 +195,7 @@ export function shouldBehaveLikeMockSwapOddzOptionManager(): void {
     await expect(oddzOptionManager.excerciseUA(0, 15)).to.be.revertedWith("caller has no access to the method");
   });
 
-  it("revert with invalid assets", async function () {
+  it("should revert with invalid assets", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     await expect(
       dexManager.addExchange(

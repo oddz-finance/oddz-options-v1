@@ -46,6 +46,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
     uint256 public settlementFeePerc = 4;
     uint256 public settlementFeeAggregate;
 
+    /**
+     * @dev Max Deadline in seconds
+     */
+
+    uint32 public maxDeadline = 90;
+
     constructor(
         OddzPriceOracleManager _oracle,
         IOddzVolatility _iv,
@@ -175,8 +181,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint32 _pair,
         uint256 _ivDecimal
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        uint32 primaryId = assetManager.getPrimaryFromPair(_pair);
-        IOddzAsset.Asset memory primary = assetManager.getAsset(primaryId);
+        IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pair));
         minAssetPrice = getPutOverColl(_cp, _iv, primary._precision, _ivDecimal);
         maxAssetPrice = getCallOverColl(_cp, _iv, primary._precision, _ivDecimal);
         validStrike(_strike, minAssetPrice, maxAssetPrice, primary._precision);
@@ -329,7 +334,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         )
     {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(_pair);
-        IOddzAsset.Asset memory primary = assetManager.getAsset(pair._primary);
+        uint256 precision = assetManager.getPrecision(pair._primary);
         cp = getCurrentPrice(pair);
         (iv, ivDecimal) = volatility.calculateIv(pair._primary, _optionType, _expiration, _amount, _strike);
 
@@ -337,7 +342,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             _optionType == IOddzOption.OptionType.Call ? true : false,
             _strike,
             cp,
-            primary._precision,
+            precision,
             _expiration,
             iv,
             0,
@@ -347,7 +352,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         // _amount in wei
         optionPremium = optionPremium.mul(_amount).div(1e18);
         // convert to USD price precision
-        optionPremium = optionPremium.mul(10**token.decimals()).div(primary._precision);
+        optionPremium = optionPremium.mul(10**token.decimals()).div(precision);
     }
 
     /**
@@ -370,7 +375,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId);
+        (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
         pool.send(_optionId, option.holder, profit);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
@@ -382,13 +387,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _deadline Deadline until which txn does not revert
      */
     function excerciseUA(uint256 _optionId, uint32 _deadline) external override {
+        require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = transferProfit(_optionId);
+        (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
         pool.sendUA(
             _optionId,
@@ -406,7 +412,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice Sends profits in USD from the USD pool to an option holder's address
      * @param _optionId ID of the option
      */
-    function transferProfit(uint256 _optionId) internal returns (uint256 profit, uint256 settlementFee) {
+    function getProfit(uint256 _optionId) internal returns (uint256 profit, uint256 settlementFee) {
         Option memory option = options[_optionId];
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
         uint256 _cp = getCurrentPrice(pair);
