@@ -13,26 +13,32 @@ interface IOddzAsset {
     event AssetDeactivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
 
     struct Asset {
-        uint32 id;
-        bytes32 name;
-        bool active;
-        uint256 precision;
+        uint32 _id;
+        bytes32 _name;
+        address _address;
+        bool _active;
+        uint256 _precision;
     }
 
     struct AssetPair {
-        uint32 id;
-        uint32 primary;
-        uint32 strike;
-        bool active;
+        uint32 _id;
+        uint32 _primary;
+        uint32 _strike;
+        bool _active;
     }
 
     /**
      * @notice Add asset
      * @param _name Symbol of the asset e.g. BTC, ETH
+     * @param _address Address of the asset
      * @param _precision Percentage precision for the asset
      * @return assetId Asset ID
      */
-    function addAsset(bytes32 _name, uint256 _precision) external returns (uint32 assetId);
+    function addAsset(
+        bytes32 _name,
+        address _address,
+        uint256 _precision
+    ) external returns (uint32 assetId);
 
     /**
      * @notice Activate an asset

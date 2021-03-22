@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
-import "./IOddzPriceOracle.sol";
+import "../../../Oracle/IOddzPriceOracle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity ^0.7.0;
 
-import "./IOddzVolatilityOracle.sol";
+import "../../../Oracle/IOddzVolatilityOracle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OddzVolatility is Ownable, IOddzVolatilityOracle {

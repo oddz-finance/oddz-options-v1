@@ -5,6 +5,7 @@ import "./IOddzLiquidityPool.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
 import "hardhat/console.sol";
+import "../Swap/DexManager.sol";
 
 contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using SafeMath for uint256;
@@ -49,6 +50,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(uint256 => uint256) internal daysExercise;
     mapping(address => uint256) public lpPremium;
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
+    DexManager public dexManager;
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
@@ -56,8 +58,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _;
     }
 
-    constructor(IERC20 _token) {
+    constructor(IERC20 _token, DexManager _dexManager) {
         token = _token;
+        dexManager = _dexManager;
     }
 
     function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
@@ -139,24 +142,29 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         address payable _account,
         uint256 _amount
     ) public override onlyOwner validLiquidty(_id) {
-        LockedLiquidity storage ll = lockedLiquidity[_id];
-        require(_account != address(0), "Invalid address");
-
-        ll.locked = false;
-        uint256 date = getPresentDayTimestamp();
-        lockedAmount = lockedAmount.sub(ll.amount);
-
-        uint256 transferAmount = _amount;
-        if (_amount > ll.amount) transferAmount = ll.amount;
-
-        // Premium calculation
-        premiumDayPool[date].collected.add(ll.premium);
-        daysExercise[date].add(ll.amount);
-
+        (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+        // Transfer Funds
         token.safeTransfer(_account, transferAmount);
+        // Send event
+        emitSendEvent(_id, lockedPremium, transferAmount);
+    }
 
-        if (transferAmount <= ll.premium) emit Profit(_id, ll.premium - transferAmount);
-        else emit Loss(_id, transferAmount - ll.premium);
+    function sendUA(
+        uint256 _id,
+        address payable _account,
+        uint256 _amount,
+        bytes32 _underlying,
+        bytes32 _strike,
+        uint32 _deadline
+    ) public override onlyOwner validLiquidty(_id) {
+        (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+        address exchange = dexManager.getExchange(_underlying, _strike);
+        // Transfer Funds
+        token.safeTransfer(exchange, transferAmount);
+        // block.timestamp + deadline --> deadline from the current block
+        dexManager.swap(_strike, _underlying, exchange, _account, transferAmount, block.timestamp + _deadline);
+        // Send event
+        emitSendEvent(_id, lockedPremium, transferAmount);
     }
 
     /*
@@ -335,6 +343,48 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _liquidity = daysActiveLiquidity[_date];
     }
 
+    /**
+     * @notice update and returns locked liquidity
+     * @param _lid Id of LockedLiquidity that should be unlocked
+     * @param _account Provider account address
+     * @param _amount Funds that should be sent
+     */
+    function updateAndFetchLockedLiquidity(
+        uint256 _lid,
+        address _account,
+        uint256 _amount
+    ) private returns (uint256 lockedPremium, uint256 transferAmount) {
+        LockedLiquidity storage ll = lockedLiquidity[_lid];
+        require(_account != address(0), "Invalid address");
+
+        ll.locked = false;
+        uint256 date = getPresentDayTimestamp();
+        lockedAmount = lockedAmount.sub(ll.amount);
+        lockedPremium = ll.premium;
+
+        transferAmount = _amount;
+        if (_amount > ll.amount) transferAmount = ll.amount;
+
+        // Premium calculation
+        premiumDayPool[date].collected.add(lockedPremium);
+        daysExercise[date].add(ll.amount);
+    }
+
+    /**
+     * @notice Emit Profit/Loss event based on exercise
+     * @param _lid Id of LockedLiquidity that should be unlocked
+     * @param _lockedPremium Locked premium in the pool
+     * @param _transferAmount Funds that is sent to option buyer
+     */
+    function emitSendEvent(
+        uint256 _lid,
+        uint256 _lockedPremium,
+        uint256 _transferAmount
+    ) private {
+        if (_transferAmount <= _lockedPremium) emit Profit(_lid, _lockedPremium - _transferAmount);
+        else emit Loss(_lid, _transferAmount - _lockedPremium);
+    }
+
     function availableBalance() public view override returns (uint256 balance) {
         return totalBalance().sub(lockedAmount);
     }
@@ -353,10 +403,4 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         if (_numerator.mod(_denominator) != 0) result = result + 1;
         return result;
     }
-
-    function sendUA(
-        uint256 _id,
-        address payable _account,
-        uint256 _amount
-    ) external override onlyOwner {}
 }

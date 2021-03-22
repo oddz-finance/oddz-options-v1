@@ -2,21 +2,29 @@ import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry } from "../../test-utils";
 import { waffle } from "hardhat";
-import { OddzLiquidityPool, OddzOptionManager, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
+import {
+  OddzLiquidityPool,
+  OddzAssetManager,
+  OddzToken,
+  OddzPriceOracleManager,
+  MockOddzPriceOracle,
+} from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
 const provider = waffle.provider;
 let snapshotCount = 0;
 
 const getAssetPair = async (
-  oddzOptionManager: OddzOptionManager,
+  oddzAssetManager: OddzAssetManager,
   admin: Signer,
   oddzPriceOracleManager: OddzPriceOracleManager,
   oracleAddress: MockOddzPriceOracle,
+  usdcToken: OddzToken,
+  ethToken: OddzToken,
 ) => {
-  const oom = await oddzOptionManager.connect(admin);
-  await oom.addAsset(utils.formatBytes32String("USD"), BigNumber.from(1e8));
-  await oom.addAsset(utils.formatBytes32String("ETH"), BigNumber.from(1e8));
-  await oom.addAssetPair(1, 0);
+  const oam = await oddzAssetManager.connect(admin);
+  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, BigNumber.from(1e8));
+  await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, BigNumber.from(1e8));
+  await oam.addAssetPair(1, 0);
 
   await oddzPriceOracleManager
     .connect(admin)
@@ -35,7 +43,7 @@ const getAssetPair = async (
 
   await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 
-  return (await oom.pairs(0)).id;
+  return (await oam.pairs(0))._id;
 };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
@@ -55,14 +63,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
   it("should return premium price only if the asset pair is active", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const pairId = getAssetPair(
-      this.oddzOptionManager,
+    const pairId = await getAssetPair(
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
-    await oddzOptionManager.deactivateAssetPair(pairId);
-
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await oddzAssetManager.deactivateAssetPair(pairId);
     await expect(
       oddzOptionManager.getPremium(
         pairId,
@@ -72,7 +82,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         OptionType.Call,
       ),
     ).to.be.revertedWith("Invalid Asset pair");
-    await oddzOptionManager.activateAssetPair(pairId);
+    await oddzAssetManager.activateAssetPair(pairId);
     const option = await oddzOptionManager.getPremium(
       pairId,
       getExpiry(1),
@@ -89,10 +99,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     // call should be optionType.call
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     const option = await oddzOptionManager.getPremium(
       pairId,
@@ -113,10 +125,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     // call should be optionType.call
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     const option = await oddzOptionManager.getPremium(
       pairId,
@@ -175,10 +189,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await expect(
       oddzOptionManager.buy(
@@ -196,10 +212,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
 
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
@@ -219,10 +237,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
@@ -252,10 +272,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -285,10 +307,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -307,10 +331,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -329,10 +355,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -376,10 +404,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -444,10 +474,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -468,10 +500,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -502,10 +536,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -542,10 +578,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -582,10 +620,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -616,10 +656,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -656,10 +698,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -694,10 +738,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -719,10 +765,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -760,10 +808,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -793,10 +843,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -818,10 +870,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -852,10 +906,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -881,10 +937,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pairId = getAssetPair(
-      this.oddzOptionManager,
+      this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
       this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
@@ -900,5 +958,18 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
+  });
+
+  it("should set max deadline by owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const deadline = 100;
+    await oddzOptionManager.setMaxDeadline(deadline);
+    expect(await oddzOptionManager.maxDeadline()).to.equal(deadline);
+  });
+
+  it("should revert set max deadline by non owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
+
+    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller");
   });
 }

@@ -57,6 +57,7 @@ interface IOddzLiquidityPool {
 
     /**
      * @notice called by Oddz call options to send funds in USD to LPs after an option's expiration
+     * @param _id Id of LockedLiquidity that should be unlocked
      * @param _account Provider account address
      * @param _amount Funds that should be sent
      */
@@ -68,13 +69,20 @@ interface IOddzLiquidityPool {
 
     /**
      * @notice called by Oddz call options to send funds in UA to LPs after an option's expiration
+     * @param _id Id of LockedLiquidity that should be unlocked
      * @param _account Provider account address
      * @param _amount Funds that should be sent
+     * @param _underlying underlying asset name
+     * @param _strike strike asset name
+     * @param _deadline deadline until which txn does not revert
      */
     function sendUA(
         uint256 _id,
         address payable _account,
-        uint256 _amount
+        uint256 _amount,
+        bytes32 _underlying,
+        bytes32 _strike,
+        uint32 _deadline
     ) external;
 
     /**

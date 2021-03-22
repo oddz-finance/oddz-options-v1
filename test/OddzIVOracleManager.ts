@@ -2,7 +2,7 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 
 import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
-import OddzVolatilityArtifact from "../artifacts/contracts/Oracle/OddzVolatility.sol/OddzVolatility.json";
+import OddzVolatilityArtifact from "../artifacts/contracts/Integrations/VolatilityOracle/Oddz/OddzVolatility.sol/OddzVolatility.json";
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";

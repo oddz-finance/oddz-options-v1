@@ -6,6 +6,8 @@ import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOra
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
+import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -17,6 +19,8 @@ import {
   OddzToken,
   OddzLiquidityPool,
   OddzPriceOracleManager,
+  OddzAssetManager,
+  DexManager,
   OddzIVOracleManager,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
@@ -44,6 +48,16 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
+      this.oddzAssetManager = (await deployContract(
+        this.signers.admin,
+        OddzAssetManagerArtifact,
+        [],
+      )) as OddzAssetManager;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+        this.oddzAssetManager.address,
+      ])) as DexManager;
+
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
@@ -91,16 +105,25 @@ describe("Oddz Option Manager Unit tests", function () {
         totalSupply,
       ])) as OddzToken;
 
+      this.ethToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "ETH Token",
+        "ETH",
+        totalSupply,
+      ])) as OddzToken;
+
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
+        this.dexManager.address,
       ])) as OddzLiquidityPool;
+
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
         oddzIVOracleManager.address,
         oddzStaking.address,
         this.oddzLiquidityPool.address,
         this.usdcToken.address,
+        this.oddzAssetManager.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
 
