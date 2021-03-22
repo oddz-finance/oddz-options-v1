@@ -5,7 +5,7 @@ pragma solidity ^0.7.0;
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
 import "../Oracle/OddzPriceOracleManager.sol";
-import "../Oracle/IOddzVolatility.sol";
+import "../Oracle/OddzIVOracleManager.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
@@ -21,7 +21,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     OddzAssetManager public assetManager;
     IOddzLiquidityPool public pool;
     OddzPriceOracleManager public oracle;
-    IOddzVolatility public volatility;
+    OddzIVOracleManager public volatility;
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
     Option[] public options;
@@ -54,7 +54,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     constructor(
         OddzPriceOracleManager _oracle,
-        IOddzVolatility _iv,
+        OddzIVOracleManager _iv,
         IOddzStaking _staking,
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
@@ -127,9 +127,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _cp,
         uint256 _iv,
         uint256 _decimal,
-        uint256 _ivDecimal
+        uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = _cp.add(_cp.mul(_iv).div(_ivDecimal));
+        oc = _cp.add(_cp.mul(_iv).div(10**_ivDecimal));
         oc = oc.min(_cp.add(_cp));
         // convert to usd decimals
         oc = oc.mul(10**token.decimals()).div(_decimal);
@@ -147,9 +147,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _cp,
         uint256 _iv,
         uint256 _decimal,
-        uint256 _ivDecimal
+        uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = (_cp.mul(_iv).div(_ivDecimal)).sub(_cp);
+        oc = (_cp.mul(_iv).div(10**_ivDecimal)).sub(_cp);
         // convert to usd decimals
         oc = oc.mul(10**token.decimals()).div(_decimal);
     }
@@ -183,7 +183,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _iv,
         uint256 _strike,
         uint32 _pair,
-        uint256 _ivDecimal
+        uint8 _ivDecimal
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
         IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pair));
         minAssetPrice = getPutOverColl(_cp, _iv, primary._precision, _ivDecimal);
@@ -242,7 +242,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint32 _pair,
         OptionType _optionType
     ) private returns (uint256 optionId) {
-        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv, uint256 ivDecimal) =
+        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv, uint8 ivDecimal) =
             getPremium(_pair, _expiration, _amount, _strike, _optionType);
         validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
 
@@ -301,7 +301,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             uint256 txnFee,
             uint256 cp,
             uint256 iv,
-            uint256 ivDecimal
+            uint8 ivDecimal
         )
     {
         (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(_pair, _expiration, _strike, _optionType, _amount);
@@ -334,7 +334,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             uint256 optionPremium,
             uint256 cp,
             uint256 iv,
-            uint256 ivDecimal
+            uint8 ivDecimal
         )
     {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(_pair);

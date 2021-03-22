@@ -2,6 +2,7 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
@@ -25,6 +26,7 @@ import {
   OddzAssetManager,
   PancakeSwapForUnderlyingAsset,
   DexManager,
+  OddzIVOracleManager,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -91,6 +93,29 @@ describe("Oddz Option Manager Unit tests", function () {
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
+
+      const oddzIVOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzIVOracleManagerArtifact,
+        [],
+      )) as OddzIVOracleManager;
+
+      await oddzIVOracleManager.addIVAggregator(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        oddzVolatility.address,
+        oddzVolatility.address,
+      );
+
+      const hash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), oddzVolatility.address],
+        ),
+      );
+
+      await oddzIVOracleManager.setActiveIVAggregator(hash);
+
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
 
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
@@ -114,7 +139,7 @@ describe("Oddz Option Manager Unit tests", function () {
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
-        oddzVolatility.address,
+        oddzIVOracleManager.address,
         oddzStaking.address,
         this.oddzLiquidityPool.address,
         this.usdcToken.address,

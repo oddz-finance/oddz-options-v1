@@ -12,7 +12,7 @@ import { MockOddzPriceOracle } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracleManager } from "./behaviors/OddzPriceOracleManager.behavior";
 import { BigNumber } from "ethers";
 
-describe("Unit tests", function () {
+describe("Oddz Price Oracle Manager Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
