@@ -11,7 +11,7 @@ contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
         oprice = _price;
     }
 
-    function getPrice(bytes32 _underlying, bytes32 _strikeAsset)
+    function getPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
         override
@@ -28,7 +28,7 @@ contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
 
     function setPairContract(
         bytes32 _underlying,
-        bytes32 _strikeAsset,
+        bytes32 _strike,
         address _aggregator
     ) public override onlyOwner {}
 }
