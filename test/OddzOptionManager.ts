@@ -2,9 +2,12 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
 import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
+import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -16,6 +19,9 @@ import {
   OddzToken,
   OddzLiquidityPool,
   OddzPriceOracleManager,
+  OddzAssetManager,
+  DexManager,
+  OddzIVOracleManager,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -42,6 +48,16 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Option Manager", function () {
     beforeEach(async function () {
+      this.oddzAssetManager = (await deployContract(
+        this.signers.admin,
+        OddzAssetManagerArtifact,
+        [],
+      )) as OddzAssetManager;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+        this.oddzAssetManager.address,
+      ])) as DexManager;
+
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
@@ -57,6 +73,29 @@ describe("Oddz Option Manager Unit tests", function () {
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
+
+      const oddzIVOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzIVOracleManagerArtifact,
+        [],
+      )) as OddzIVOracleManager;
+
+      await oddzIVOracleManager.addIVAggregator(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        oddzVolatility.address,
+        oddzVolatility.address,
+      );
+
+      const hash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), oddzVolatility.address],
+        ),
+      );
+
+      await oddzIVOracleManager.setActiveIVAggregator(hash);
+
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
 
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
@@ -66,17 +105,27 @@ describe("Oddz Option Manager Unit tests", function () {
         totalSupply,
       ])) as OddzToken;
       const bscForwarder = "0xFcE240fABBF8D5FdefD3B565E414151F2B9f153b";
+
+      this.ethToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+        "ETH Token",
+        "ETH",
+        totalSupply,
+      ])) as OddzToken;
+
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
+        this.dexManager.address,
       ])) as OddzLiquidityPool;
+
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
-        oddzVolatility.address,
+        oddzIVOracleManager.address,
         oddzStaking.address,
         this.oddzLiquidityPool.address,
         this.usdcToken.address,
         bscForwarder,
+        this.oddzAssetManager.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
 

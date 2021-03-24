@@ -1,53 +1,95 @@
 // SPDX-License-Identifier: BSD-4-Clause
+pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.0;
 
 import "./IOddzAsset.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
     Asset[] public assets;
-    mapping(bytes32 => Asset) internal assetNameMap;
-    mapping(uint32 => Asset) internal assetIdMap;
+    mapping(bytes32 => Asset) public assetNameMap;
+    mapping(uint32 => Asset) public assetIdMap;
 
     AssetPair[] public pairs;
-    mapping(uint32 => AssetPair) internal pairIdMap;
-    mapping(uint32 => mapping(uint32 => AssetPair)) internal pairMap;
+    mapping(uint32 => AssetPair) public pairIdMap;
+    mapping(uint32 => mapping(uint32 => AssetPair)) public pairMap;
 
     modifier validAsset(uint32 _underlying) {
-        require(assetIdMap[_underlying].active == true, "Invalid Asset");
+        require(assetIdMap[_underlying]._active == true, "Invalid Asset");
         _;
     }
 
     modifier inactiveAsset(uint32 _underlying) {
-        require(assetIdMap[_underlying].active == false, "Asset is active");
+        require(assetIdMap[_underlying]._active == false, "Asset is active");
         _;
     }
 
     modifier validAssetPair(uint32 _pairId) {
-        require(pairIdMap[_pairId].active == true, "Invalid Asset pair");
+        require(pairIdMap[_pairId]._active == true, "Invalid Asset pair");
         _;
     }
 
     modifier inactiveAssetPair(uint32 _pairId) {
-        require(pairIdMap[_pairId].active == false, "Asset pair is active");
+        require(pairIdMap[_pairId]._active == false, "Asset pair is active");
         _;
+    }
+
+    function getAssetAddressByName(bytes32 _name) public view returns (address asset) {
+        require(_name != "", "invalid asset name");
+        require(assetNameMap[_name]._address != address(0), "Invalid asset address");
+        asset = assetNameMap[_name]._address;
+    }
+
+    function getStatusOfPair(uint32 _pairId) public view returns (bool status) {
+        status = pairIdMap[_pairId]._active;
+    }
+
+    function getAsset(uint32 _assetId) public view returns (Asset memory asset) {
+        asset = assetIdMap[_assetId];
+    }
+
+    function getPair(uint32 _pairId) public view returns (AssetPair memory pair) {
+        pair = pairIdMap[_pairId];
+    }
+
+    function getPrimaryFromPair(uint32 _pairId) public view returns (uint32 primary) {
+        primary = pairIdMap[_pairId]._primary;
+    }
+
+    function getStrikeFromPair(uint32 _pairId) public view returns (uint32 strike) {
+        strike = pairIdMap[_pairId]._strike;
+    }
+
+    function getAssetName(uint32 _assetId) public view returns (bytes32 name) {
+        name = assetIdMap[_assetId]._name;
+    }
+
+    function getPrecision(uint32 _assetId) public view returns (uint256 precision) {
+        precision = assetIdMap[_assetId]._precision;
     }
 
     /**
      * @notice Used for adding the new asset
      * @param _name Name for the underlying asset
+     * @param _address Address of the underlying asset
      * @param _precision Precision for the underlying asset
      * @return assetId Asset id
      */
-    function addAsset(bytes32 _name, uint256 _precision) external override onlyOwner returns (uint32 assetId) {
-        require(assetNameMap[_name].name == "", "Asset already present");
+    function addAsset(
+        bytes32 _name,
+        address _address,
+        uint256 _precision
+    ) external override onlyOwner returns (uint32 assetId) {
+        require(assetNameMap[_name]._name == "", "Asset already present");
+        require(_address != address(0), "invalid address");
 
         assetId = uint32(assets.length);
-        Asset memory asset = Asset({ id: assetId, name: _name, active: true, precision: _precision });
+        Asset memory asset =
+            Asset({ _id: assetId, _name: _name, _address: _address, _active: true, _precision: _precision });
         assetNameMap[_name] = asset;
         assetIdMap[assetId] = asset;
         assets.push(asset);
 
-        emit NewAsset(asset.id, asset.name, asset.active);
+        emit NewAsset(asset._id, asset._name, asset._active);
     }
 
     /**
@@ -64,11 +106,11 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = true;
-        status = asset.active;
-        name = asset.name;
+        asset._active = true;
+        status = asset._active;
+        name = asset._name;
 
-        emit AssetActivate(asset.id, asset.name);
+        emit AssetActivate(asset._id, asset._name);
     }
 
     /**
@@ -85,11 +127,11 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         returns (bytes32 name, bool status)
     {
         Asset storage asset = assetIdMap[_assetId];
-        asset.active = false;
-        status = asset.active;
-        name = asset.name;
+        asset._active = false;
+        status = asset._active;
+        name = asset._name;
 
-        emit AssetDeactivate(asset.id, asset.name);
+        emit AssetDeactivate(asset._id, asset._name);
     }
 
     /**
@@ -105,15 +147,15 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         validAsset(_strike)
         returns (uint32 pairId)
     {
-        require(pairMap[_primary][_strike].primary == 0, "Asset pair already present");
+        require(pairMap[_primary][_strike]._primary == 0, "Asset pair already present");
 
         pairId = uint32(pairs.length);
-        AssetPair memory pair = AssetPair({ id: pairId, primary: _primary, strike: _strike, active: true });
+        AssetPair memory pair = AssetPair({ _id: pairId, _primary: _primary, _strike: _strike, _active: true });
         pairIdMap[pairId] = pair;
         pairs.push(pair);
         pairMap[_primary][_strike] = pair;
 
-        emit NewAssetPair(pair.id, pair.primary, pair.strike, pair.active);
+        emit NewAssetPair(pair._id, pair._primary, pair._strike, pair._active);
     }
 
     /**
@@ -129,11 +171,11 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         returns (uint32 pairId, bool status)
     {
         AssetPair storage pair = pairIdMap[_pairId];
-        pair.active = true;
-        status = pair.active;
-        pairId = pair.id;
+        pair._active = true;
+        status = pair._active;
+        pairId = pair._id;
 
-        emit AssetActivatePair(pair.id, pair.primary, pair.strike);
+        emit AssetActivatePair(pair._id, pair._primary, pair._strike);
     }
 
     /**
@@ -149,10 +191,10 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         returns (uint32 pairId, bool status)
     {
         AssetPair storage pair = pairIdMap[_pairId];
-        pair.active = false;
-        status = pair.active;
-        pairId = pair.id;
+        pair._active = false;
+        status = pair._active;
+        pairId = pair._id;
 
-        emit AssetDeactivatePair(pair.id, pair.primary, pair.strike);
+        emit AssetDeactivatePair(pair._id, pair._primary, pair._strike);
     }
 }

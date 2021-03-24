@@ -2,14 +2,16 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool, OddzToken } from "../typechain";
+import { OddzLiquidityPool, OddzToken, DexManager, OddzAssetManager } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
+import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 
 const { deployContract } = waffle;
 
-describe("Oddz Option Manager Unit tests", function () {
+describe("Oddz Liquidity Pool Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -26,7 +28,18 @@ describe("Oddz Option Manager Unit tests", function () {
 
   describe("Oddz Liquidity Pool", function () {
     beforeEach(async function () {
+      this.oddzAssetManager = (await deployContract(
+        this.signers.admin,
+        OddzAssetManagerArtifact,
+        [],
+      )) as OddzAssetManager;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+        this.oddzAssetManager.address,
+      ])) as DexManager;
+
       const totalSupply = 1000000000000000;
+
       this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
         "USD coin",
         "USDC",
@@ -38,7 +51,9 @@ describe("Oddz Option Manager Unit tests", function () {
 
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
+        this.dexManager.address,
       ])) as OddzLiquidityPool;
+
       await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
       await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
