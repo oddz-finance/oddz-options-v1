@@ -8,8 +8,8 @@ import "../Oracle/OddzPriceOracleManager.sol";
 import "../Oracle/OddzIVOracleManager.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
+import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
-import "../Libs/BlackScholes.sol";
 import "./IERC20Extented.sol";
 import "hardhat/console.sol";
 
@@ -22,17 +22,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzLiquidityPool public pool;
     OddzPriceOracleManager public oracle;
     OddzIVOracleManager public volatility;
+    OddzOptionPremiumManager public premiumManager;
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
     Option[] public options;
     uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
-
-    /**
-     * @dev The percentage precision. (100000 = 100%)
-     */
-    uint256 internal constant PERCENTAGE_PRECISION = 100000;
 
     /**
      * @dev Transaction Fee definitions
@@ -52,13 +48,23 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     uint32 public maxDeadline;
 
+    struct OptionDetails {
+        uint256 _strike;
+        uint256 _amount;
+        uint256 _expiration;
+        uint32 _pair;
+        bytes32 _optionModel;
+        OptionType _optionType;
+    }
+
     constructor(
         OddzPriceOracleManager _oracle,
         OddzIVOracleManager _iv,
         IOddzStaking _staking,
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
-        OddzAssetManager _assetManager
+        OddzAssetManager _assetManager,
+        OddzOptionPremiumManager _premiumManager
     ) {
         pool = _pool;
         oracle = _oracle;
@@ -67,6 +73,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         createdAt = block.timestamp;
         token = _token;
         assetManager = _assetManager;
+        premiumManager = _premiumManager;
     }
 
     modifier validOptionType(OptionType _optionType) {
@@ -209,8 +216,22 @@ contract OddzOptionManager is IOddzOption, Ownable {
         settlementFeePerc = _feePerc;
     }
 
+    function getLockAmount(
+        uint256 _cp,
+        uint256 _iv,
+        uint256 _strike,
+        uint32 _pair,
+        uint8 _ivDecimal,
+        OptionType _optionType
+    ) private returns (uint256 lockAmount) {
+        (uint256 minStrikePrice, uint256 maxStrikePrice) =
+            getAssetStrikePriceRange(_cp, _iv, _strike, _pair, _ivDecimal);
+        lockAmount = _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice;
+    }
+
     function buy(
         uint32 _pair,
+        bytes32 _optionModel,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
@@ -223,69 +244,91 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validAssetPair(_pair)
         returns (uint256 optionId)
     {
-        optionId = createOption(_strike, _amount, _expiration, _pair, _optionType);
+        OptionDetails memory optionDetails =
+            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
+
+        uint256 optionPremium;
+        uint256 txnFee;
+        (optionId, optionPremium, txnFee) = createOption(optionDetails);
+
+        txnFeeAggregate = txnFeeAggregate.add(txnFee);
+
+        token.safeTransferFrom(msg.sender, address(pool), optionPremium);
+        token.safeTransferFrom(msg.sender, address(this), txnFee);
+
+        emit Buy(
+            optionId,
+            msg.sender,
+            optionDetails._optionModel,
+            txnFee,
+            optionPremium.add(txnFee),
+            optionDetails._pair
+        );
     }
 
     /**
      * @notice Create option
-     * @param _strike Strike price of the option
-     * @param _amount Option amount
-     * @param _expiration Option period in unix timestamp
-     * @param _pair Asset Pair
-     * @param _optionType Option Type (Call/Put)
+     * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(
-        uint256 _strike,
-        uint256 _amount,
-        uint256 _expiration,
-        uint32 _pair,
-        OptionType _optionType
-    ) private returns (uint256 optionId) {
-        (uint256 optionPremium, uint256 txnFee, uint256 cp, uint256 iv, uint8 ivDecimal) =
-            getPremium(_pair, _expiration, _amount, _strike, _optionType);
+    function createOption(OptionDetails memory optionDetails)
+        private
+        returns (
+            uint256 optionId,
+            uint256 optionPremium,
+            uint256 txnFee
+        )
+    {
+        uint256 iv;
+        uint8 ivDecimal;
+        (optionPremium, txnFee, iv, ivDecimal) = getPremium(
+            optionDetails._pair,
+            optionDetails._optionModel,
+            optionDetails._expiration,
+            optionDetails._amount,
+            optionDetails._strike,
+            optionDetails._optionType
+        );
+        uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
         validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
 
-        (uint256 minStrikePrice, uint256 maxStrikePrice) = getAssetStrikePriceRange(cp, iv, _strike, _pair, ivDecimal);
-
+        uint256 lockAmount =
+            getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
         optionId = options.length;
         Option memory option =
             Option(
                 State.Active,
                 msg.sender,
-                _strike,
-                _amount,
-                _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice,
+                optionDetails._strike,
+                optionDetails._amount,
+                lockAmount,
                 optionPremium,
-                _expiration.add(block.timestamp),
-                _pair,
-                _optionType
+                optionDetails._expiration.add(block.timestamp),
+                optionDetails._pair,
+                optionDetails._optionType
             );
 
         options.push(option);
-        txnFeeAggregate = txnFeeAggregate.add(txnFee);
-        token.safeTransferFrom(msg.sender, address(pool), optionPremium.add(txnFee));
 
-        pool.lockLiquidity(optionId, option.lockedAmount, option.premium);
-
-        emit Buy(optionId, msg.sender, txnFee, optionPremium.add(txnFee), option.pairId);
+        pool.lockLiquidity(optionId, lockAmount, optionPremium);
     }
 
     /**
      * @notice Used for getting the actual options prices
      * @param _pair Asset Pair
+     * @param _optionModel Option model
      * @param _expiration Option period in unix timestamp
      * @param _amount Option amount
      * @param _strike Strike price of the option
      * @param _optionType Option Type (Call/Put)
      * @return optionPremium Premium to be paid
      * @return txnFee Transaction Fee
-     * @return cp Current price of the underlying asset
      * @return iv implied volatility of the underlying asset
      * @return ivDecimal implied volatility precision
      */
     function getPremium(
         uint32 _pair,
+        bytes32 _optionModel,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
@@ -299,71 +342,50 @@ contract OddzOptionManager is IOddzOption, Ownable {
         returns (
             uint256 optionPremium,
             uint256 txnFee,
-            uint256 cp,
             uint256 iv,
             uint8 ivDecimal
         )
     {
-        (optionPremium, cp, iv, ivDecimal) = getPremiumBlackScholes(_pair, _expiration, _strike, _optionType, _amount);
+        OptionDetails memory optionDetails =
+            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
+
+        (ivDecimal, iv, optionPremium) = getOptionPremiumDetails(optionDetails);
 
         txnFee = getTransactionFee(optionPremium);
     }
 
-    /**
-     * @notice Provides black scholes premium price
-     * @param _pair Asset pair id
-     * @param _expiration Option period in unix timestamp
-     * @param _strike Strike price of the option
-     * @param _optionType Option Type (Call/Put)
-     * @param _amount Option amount
-     * @return optionPremium Premium to be paid
-     * @return cp Current price of the underlying asset
-     * @return iv implied volatility of the underlying asset
-     * @return ivDecimal implied volatility precision
-     */
-    function getPremiumBlackScholes(
-        uint32 _pair,
-        uint256 _expiration,
-        uint256 _strike,
-        IOddzOption.OptionType _optionType,
-        uint256 _amount
-    )
+    function getOptionPremiumDetails(OptionDetails memory optionDetails)
         private
         view
         returns (
-            uint256 optionPremium,
-            uint256 cp,
+            uint8 ivDecimal,
             uint256 iv,
-            uint8 ivDecimal
+            uint256 optionPremium
         )
     {
-        IOddzAsset.AssetPair memory pair = assetManager.getPair(_pair);
-        uint256 precision = assetManager.getPrecision(pair._primary);
-        cp = getCurrentPrice(pair);
+        IOddzAsset.AssetPair memory pair = assetManager.getPair(optionDetails._pair);
+
         (iv, ivDecimal) = volatility.calculateIv(
             assetManager.getAssetName(pair._primary),
             assetManager.getAssetName(pair._strike),
-            _optionType,
-            _expiration,
-            _amount,
-            _strike
+            optionDetails._optionType,
+            optionDetails._expiration,
+            optionDetails._amount,
+            optionDetails._strike
         );
 
-        optionPremium = BlackScholes.getOptionPrice(
-            _optionType == IOddzOption.OptionType.Call ? true : false,
-            _strike,
-            cp,
-            precision,
-            _expiration,
+        optionPremium = premiumManager.getPremium(
+            optionDetails._optionType == IOddzOption.OptionType.Call ? true : false,
+            assetManager.getPrecision(pair._primary),
+            getCurrentPrice(pair),
+            optionDetails._strike,
+            optionDetails._expiration,
+            optionDetails._amount,
             iv,
-            0,
-            0,
-            PERCENTAGE_PRECISION
+            optionDetails._optionModel
         );
-        // _amount in wei
-        optionPremium = optionPremium.mul(_amount).div(1e18);
         // convert to USD price precision
-        optionPremium = optionPremium.mul(10**token.decimals()).div(precision);
+        optionPremium = optionPremium.mul(10**token.decimals()).div(10**assetManager.getPrecision(pair._primary));
     }
 
     /**

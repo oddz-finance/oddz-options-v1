@@ -57,7 +57,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     await expect(
-      oddzOptionManager.getPremium(1, getExpiry(1), BigNumber.from(100), BigNumber.from(1234), OptionType.Call),
+      oddzOptionManager.getPremium(
+        1,
+        utils.formatBytes32String("B_S"),
+        getExpiry(1),
+        BigNumber.from(100),
+        BigNumber.from(1234),
+        OptionType.Call,
+      ),
     ).to.be.revertedWith("Invalid Asset pair");
   });
 
@@ -76,6 +83,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.getPremium(
         pairId,
+        utils.formatBytes32String("B_S"),
         getExpiry(1),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(160000000000),
@@ -85,6 +93,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzAssetManager.activateAssetPair(pairId);
     const option = await oddzOptionManager.getPremium(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(160000000000),
@@ -108,16 +117,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     const option = await oddzOptionManager.getPremium(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const { optionPremium, txnFee, cp, iv } = option;
+    const { optionPremium, txnFee, iv, ivDecimal } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
     expect(BigNumber.from(txnFee).div(1e10)).to.equal(332658431);
-    expect(cp.toNumber()).to.equal(161200000000);
     await expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
   });
 
@@ -134,16 +143,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     const option = await oddzOptionManager.getPremium(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(7),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const { optionPremium, txnFee, cp, iv } = option;
+    const { optionPremium, txnFee, iv, ivDecimal } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(16536825618);
     expect(BigNumber.from(txnFee).div(1e10)).to.equal(826841280);
-    expect(cp.toNumber()).to.equal(161200000000);
   });
 
   it("should throw Expiration cannot be less than 1 days error when the expiry is less than a day", async function () {
@@ -151,6 +160,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
+        utils.formatBytes32String("B_S"),
         getExpiry(0),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(123400000000),
@@ -164,6 +174,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
+        utils.formatBytes32String("B_S"),
         getExpiry(31),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(123400000000),
@@ -177,6 +188,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         1,
+        utils.formatBytes32String("B_S"),
         getExpiry(1),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(123400000000),
@@ -199,6 +211,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         pairId,
+        utils.formatBytes32String("B_S"),
         getExpiry(10),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(160000000000),
@@ -225,6 +238,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         pairId,
+        utils.formatBytes32String("B_S"),
         getExpiry(10),
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(122000000000),
@@ -251,6 +265,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -286,6 +301,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(150000000000),
@@ -319,6 +335,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(160000000000),
@@ -342,6 +359,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(160000000000),
@@ -367,6 +385,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
       BigNumber.from(160000000000),
@@ -375,6 +394,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const op0 = await oddzOptionManager.options(0);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
       BigNumber.from(160000000000),
@@ -383,6 +403,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const op1 = await oddzOptionManager.options(1);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
       BigNumber.from(160000000000),
@@ -416,6 +437,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
@@ -424,6 +446,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(14),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
@@ -487,6 +510,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(await oddzOptionManager.txnFeePerc()).to.equal(2);
     const option = await oddzOptionManager.getPremium(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(134100000000),
@@ -512,6 +536,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -548,6 +573,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -590,6 +616,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -632,6 +659,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -668,6 +696,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -710,6 +739,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -749,6 +779,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(170000000000),
@@ -780,6 +811,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect((await oddzOptionManager.settlementFeePerc()).toNumber()).to.equal(5);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -820,6 +852,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(170000000000),
@@ -855,6 +888,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(170000000000),
@@ -882,6 +916,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(170000000000),
@@ -918,6 +953,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
@@ -948,11 +984,13 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.buy(
       pairId,
+      utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
+
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("12.71409331")),
     );

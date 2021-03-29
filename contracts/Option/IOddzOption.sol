@@ -17,6 +17,7 @@ interface IOddzOption {
     event Buy(
         uint256 indexed _optionId,
         address indexed _account,
+        bytes32 indexed _model,
         uint256 _transactionFee,
         uint256 _totalFee,
         uint32 _pairId
@@ -40,6 +41,7 @@ interface IOddzOption {
     /**
      * @notice Buy a new option
      * @param _pair Underlying asset
+     * @param _optionModel Option Model e.g. B_S (for BlackScholes)
      * @param _expiration Option expiration in unix timestamp
      * @param _amount Option amount in wei
      * @param _strike Strike price expressed in wei
@@ -48,6 +50,7 @@ interface IOddzOption {
      */
     function buy(
         uint32 _pair,
+        bytes32 _optionModel,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
