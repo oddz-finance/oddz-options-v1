@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { utils } from "ethers";
 
 export function shouldBehaveLikeOddzAssetManager(): void {
   it("should add new asset", async function () {

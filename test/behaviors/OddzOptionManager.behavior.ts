@@ -123,7 +123,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const { optionPremium, txnFee, iv, ivDecimal } = option;
+    const { optionPremium, txnFee, iv } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
     expect(BigNumber.from(txnFee).div(1e10)).to.equal(332658431);
@@ -149,7 +149,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const { optionPremium, txnFee, iv, ivDecimal } = option;
+    const { optionPremium, txnFee, iv } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(16536825618);
     expect(BigNumber.from(txnFee).div(1e10)).to.equal(826841280);
