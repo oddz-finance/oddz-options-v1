@@ -22,8 +22,8 @@ const getAssetPair = async (
   ethToken: OddzToken,
 ) => {
   const oam = await oddzAssetManager.connect(admin);
-  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, BigNumber.from(1e8));
-  await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, BigNumber.from(1e8));
+  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
+  await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
   await oam.addAssetPair(1, 0);
 
   await oddzPriceOracleManager

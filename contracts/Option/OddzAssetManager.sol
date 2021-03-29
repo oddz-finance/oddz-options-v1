@@ -63,7 +63,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         name = assetIdMap[_assetId]._name;
     }
 
-    function getPrecision(uint32 _assetId) public view returns (uint256 precision) {
+    function getPrecision(uint32 _assetId) public view returns (uint8 precision) {
         precision = assetIdMap[_assetId]._precision;
     }
 
@@ -77,7 +77,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     function addAsset(
         bytes32 _name,
         address _address,
-        uint256 _precision
+        uint8 _precision
     ) external override onlyOwner returns (uint32 assetId) {
         require(assetNameMap[_name]._name == "", "Asset already present");
         require(_address != address(0), "invalid address");

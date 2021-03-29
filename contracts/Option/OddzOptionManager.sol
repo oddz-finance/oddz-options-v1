@@ -100,9 +100,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _strike,
         uint256 _minPrice,
         uint256 _maxPrice,
-        uint256 _decimal
+        uint8 _decimal
     ) private view {
-        _strike = _strike.mul(10**token.decimals()).div(_decimal);
+        _strike = _strike.mul(10**token.decimals()).div(10**_decimal);
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
@@ -132,7 +132,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         oc = _cp.add(_cp.mul(_iv).div(10**_ivDecimal));
         oc = oc.min(_cp.add(_cp));
         // convert to usd decimals
-        oc = oc.mul(10**token.decimals()).div(_decimal);
+        oc = oc.mul(10**token.decimals()).div(10**_decimal);
     }
 
     /**
@@ -151,7 +151,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     ) private view returns (uint256 oc) {
         oc = (_cp.mul(_iv).div(10**_ivDecimal)).sub(_cp);
         // convert to usd decimals
-        oc = oc.mul(10**token.decimals()).div(_decimal);
+        oc = oc.mul(10**token.decimals()).div(10**_decimal);
     }
 
     /**
@@ -165,8 +165,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
 
-        if (10**decimal > primary._precision) cp = cp.div((10**decimal).div(primary._precision));
-        else cp = cp.mul(primary._precision).div(10**decimal);
+        if (decimal > primary._precision) cp = cp.div((10**decimal).div(10**primary._precision));
+        else cp = cp.mul(10**primary._precision).div(10**decimal);
     }
 
     /**
@@ -439,7 +439,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit.div(1e18);
 
         // convert profit to usd decimals
-        profit = profit.mul(10**token.decimals()).div(assetManager.getPrecision(pair._primary));
+        profit = profit.mul(10**token.decimals()).div(10**assetManager.getPrecision(pair._primary));
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = profit.mul(settlementFeePerc).div(100);
