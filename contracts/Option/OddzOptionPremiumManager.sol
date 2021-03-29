@@ -11,7 +11,6 @@ contract OddzOptionPremiumManager is AccessControl {
 
     struct PremiumModel {
         bool _active;
-        bytes32 _name;
         IOddzPremium _model;
     }
 
@@ -84,7 +83,7 @@ contract OddzOptionPremiumManager is AccessControl {
     {
         require(address(_modelAddress).isContract(), "Invalid exchange");
 
-        premiumModelMap[_name] = PremiumModel(true, _name, _modelAddress);
+        premiumModelMap[_name] = PremiumModel(true, _modelAddress);
 
         emit NewOptionPremiumModel(_name, true, _modelAddress);
     }
@@ -99,7 +98,7 @@ contract OddzOptionPremiumManager is AccessControl {
 
         data._active = true;
 
-        emit EnableOptionPremiumModel(data._name);
+        emit EnableOptionPremiumModel(_name);
     }
 
     /**
@@ -112,7 +111,7 @@ contract OddzOptionPremiumManager is AccessControl {
 
         data._active = false;
 
-        emit DisableOptionPremiumModel(data._name);
+        emit DisableOptionPremiumModel(_name);
     }
 
     /**
