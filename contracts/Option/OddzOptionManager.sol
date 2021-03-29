@@ -255,16 +255,16 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(OptionDetails memory optionDetails) private returns (uint256 optionId)
-    {
-        (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) = getPremium(
-            optionDetails._pair,
-            optionDetails._optionModel,
-            optionDetails._expiration,
-            optionDetails._amount,
-            optionDetails._strike,
-            optionDetails._optionType
-        );
+    function createOption(OptionDetails memory optionDetails) private returns (uint256 optionId) {
+        (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) =
+            getPremium(
+                optionDetails._pair,
+                optionDetails._optionModel,
+                optionDetails._expiration,
+                optionDetails._amount,
+                optionDetails._strike,
+                optionDetails._optionType
+            );
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
         validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
 
