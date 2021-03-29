@@ -247,23 +247,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         OptionDetails memory optionDetails =
             OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
 
-        uint256 optionPremium;
-        uint256 txnFee;
-        (optionId, optionPremium, txnFee) = createOption(optionDetails);
-
-        txnFeeAggregate = txnFeeAggregate.add(txnFee);
-
-        token.safeTransferFrom(msg.sender, address(pool), optionPremium);
-        token.safeTransferFrom(msg.sender, address(this), txnFee);
-
-        emit Buy(
-            optionId,
-            msg.sender,
-            optionDetails._optionModel,
-            txnFee,
-            optionPremium.add(txnFee),
-            optionDetails._pair
-        );
+        optionId = createOption(optionDetails);
     }
 
     /**
@@ -271,17 +255,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(OptionDetails memory optionDetails)
-        private
-        returns (
-            uint256 optionId,
-            uint256 optionPremium,
-            uint256 txnFee
-        )
+    function createOption(OptionDetails memory optionDetails) private returns (uint256 optionId)
     {
-        uint256 iv;
-        uint8 ivDecimal;
-        (optionPremium, txnFee, iv, ivDecimal) = getPremium(
+        (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) = getPremium(
             optionDetails._pair,
             optionDetails._optionModel,
             optionDetails._expiration,
@@ -309,8 +285,20 @@ contract OddzOptionManager is IOddzOption, Ownable {
             );
 
         options.push(option);
-
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
+        txnFeeAggregate = txnFeeAggregate.add(txnFee);
+
+        token.safeTransferFrom(msg.sender, address(pool), optionPremium);
+        token.safeTransferFrom(msg.sender, address(this), txnFee);
+
+        emit Buy(
+            optionId,
+            msg.sender,
+            optionDetails._optionModel,
+            txnFee,
+            optionPremium.add(txnFee),
+            optionDetails._pair
+        );
     }
 
     /**
