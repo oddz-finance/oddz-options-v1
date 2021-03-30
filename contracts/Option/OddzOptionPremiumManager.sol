@@ -19,22 +19,16 @@ contract OddzOptionPremiumManager is AccessControl {
     /**
      * @dev Emitted when the new option premium model is added
      * @param _name option premium model name
-     * @param _active model status
      * @param _address Address of the option premium pricing contract
      */
-    event NewOptionPremiumModel(bytes32 indexed _name, bool indexed _active, IOddzPremium _address);
+    event NewOptionPremiumModel(bytes32 indexed _name, IOddzPremium _address);
 
     /**
-     * @dev Emitted when the option premium model is enabled
+     * @dev Emitted when the option premium model status is updated
      * @param _name option premium model name
+     * @param _active model status
      */
-    event EnableOptionPremiumModel(bytes32 indexed _name);
-
-    /**
-     * @dev Emitted when the option premium model is diabled
-     * @param _name option premium model name
-     */
-    event DisableOptionPremiumModel(bytes32 indexed _name);
+    event OptionPremiumModelStatusUpdate(bytes32 indexed _name, bool indexed _active);
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
@@ -61,12 +55,11 @@ contract OddzOptionPremiumManager is AccessControl {
     }
 
     function setManager(address _address) public {
-        require(_address != address(0), "invalid address");
+        require(_address != address(0) && _address.isContract(), "Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
 
     function removeManager(address _address) public {
-        require(_address != address(0), "invalid address");
         revokeRole(MANAGER_ROLE, _address);
     }
 
@@ -85,7 +78,7 @@ contract OddzOptionPremiumManager is AccessControl {
 
         premiumModelMap[_name] = PremiumModel(true, _modelAddress);
 
-        emit NewOptionPremiumModel(_name, true, _modelAddress);
+        emit NewOptionPremiumModel(_name, _modelAddress);
     }
 
     /**
@@ -98,7 +91,7 @@ contract OddzOptionPremiumManager is AccessControl {
 
         data._active = true;
 
-        emit EnableOptionPremiumModel(_name);
+        emit OptionPremiumModelStatusUpdate(_name, true);
     }
 
     /**
@@ -111,7 +104,7 @@ contract OddzOptionPremiumManager is AccessControl {
 
         data._active = false;
 
-        emit DisableOptionPremiumModel(_name);
+        emit OptionPremiumModelStatusUpdate(_name, false);
     }
 
     /**
