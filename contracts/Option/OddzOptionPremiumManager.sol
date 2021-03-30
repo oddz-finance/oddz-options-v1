@@ -1,4 +1,5 @@
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "./IOddzPremium.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -122,6 +123,7 @@ contract OddzOptionPremiumManager is AccessControl {
     function getPremium(
         bool _isCallOption,
         uint8 _precision,
+        uint8 _ivDecimal,
         uint256 _currentPrice,
         uint256 _strikePrice,
         uint256 _expiration,
@@ -129,14 +131,17 @@ contract OddzOptionPremiumManager is AccessControl {
         uint256 _iv,
         bytes32 _model
     ) public view onlyManager(msg.sender) returns (uint256 premium) {
-        premium = premiumModelMap[_model]._model.getPremium(
-            _isCallOption,
-            _precision,
-            _currentPrice,
-            _strikePrice,
-            _expiration,
-            _amount,
-            _iv
-        );
+        IOddzPremium.PremiumDetails memory premiumDetails =
+            IOddzPremium.PremiumDetails(
+                _isCallOption,
+                _precision,
+                _ivDecimal,
+                _currentPrice,
+                _strikePrice,
+                _expiration,
+                _amount,
+                _iv
+            );
+        premium = premiumModelMap[_model]._model.getPremium(premiumDetails);
     }
 }

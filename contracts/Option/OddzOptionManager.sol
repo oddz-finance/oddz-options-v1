@@ -365,6 +365,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         optionPremium = premiumManager.getPremium(
             optionDetails._optionType == IOddzOption.OptionType.Call ? true : false,
             assetManager.getPrecision(pair._primary),
+            ivDecimal,
             getCurrentPrice(pair),
             optionDetails._strike,
             optionDetails._expiration,
