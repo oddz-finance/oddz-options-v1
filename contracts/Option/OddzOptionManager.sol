@@ -26,7 +26,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
     Option[] public options;
-    uint256 public createdAt;
     uint256 public maxExpiry = 30 days;
     uint256 public minExpiry = 1 days;
 
@@ -70,7 +69,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
         oracle = _oracle;
         volatility = _iv;
         stakingBenficiary = _staking;
-        createdAt = block.timestamp;
         token = _token;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
