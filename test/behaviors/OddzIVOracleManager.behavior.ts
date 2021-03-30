@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { utils } from "ethers";
+import { BigNumber, utils } from "ethers";
+import { OptionType, getExpiry } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -108,5 +109,20 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const { iv, decimals } = await mockIVManager.calculateIv();
     expect(iv).to.equal(180000);
     expect(decimals).to.equal(5);
+  });
+
+  it("Should throw caller has no access to the method while calling calculate IV", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await expect(
+      oracleManager.calculateIv(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        OptionType.Call,
+        getExpiry(1),
+        BigNumber.from(160000000000),
+        BigNumber.from(170000000000),
+      ),
+    ).to.be.revertedWith("caller has no access to the method");
   });
 }
