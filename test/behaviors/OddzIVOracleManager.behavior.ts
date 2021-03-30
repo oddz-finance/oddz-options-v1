@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry } from "../../test-utils";
+import { utils } from "ethers";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -73,17 +72,8 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
   });
 
   it("Should not return underlying price and throw No aggregator message when no aggregator is set", async function () {
-    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    await expect(
-      oracleManager.calculateIv(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        OptionType.Call,
-        getExpiry(1),
-        BigNumber.from(160000000000),
-        BigNumber.from(170000000000),
-      ),
-    ).to.be.revertedWith("No aggregator");
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+    await expect(mockIVManager.calculateIv()).to.be.revertedWith("No aggregator");
   });
 
   it("Should return underlying price when an aggregator is set", async function () {
@@ -113,15 +103,10 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         this.oddzIVOracle.address,
       );
 
-    const { iv, decimal } = await oracleManager.calculateIv(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      OptionType.Call,
-      getExpiry(1),
-      BigNumber.from(160000000000),
-      BigNumber.from(170000000000),
-    );
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    const { iv, decimals } = await mockIVManager.calculateIv();
     expect(iv).to.equal(180000);
-    expect(decimal).to.equal(5);
+    expect(decimals).to.equal(5);
   });
 }
