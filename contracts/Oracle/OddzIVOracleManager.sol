@@ -46,12 +46,14 @@ contract OddzIVOracleManager is Ownable {
      * @param _strike Id of the strike asset.
      * @param _aggregator Address of the oddz aggregator.
      * @param _aggregatorPriceContract Address of the price oracle aggregator
+     * @param _aggregatorPeriod IV period (e.g. 1 day IV, 2 day IV, 14 day IV)
      */
     function addIVAggregator(
         bytes32 _underlying,
         bytes32 _strike,
         IOddzVolatilityOracle _aggregator,
-        address _aggregatorPriceContract
+        address _aggregatorPriceContract,
+        uint8 _aggregatorPeriod
     ) public onlyOwner returns (bytes32 agHash) {
         require(_underlying != _strike, "Invalid assets");
         require(address(_aggregator).isContract(), "Invalid aggregator");
@@ -60,7 +62,7 @@ contract OddzIVOracleManager is Ownable {
         agHash = keccak256(abi.encode(_underlying, _strike, address(_aggregator)));
         aggregatorIVMap[agHash] = data;
 
-        _aggregator.setPairContract(_underlying, _strike, _aggregatorPriceContract);
+        _aggregator.setPairContract(_underlying, _strike, _aggregatorPriceContract, _aggregatorPeriod);
 
         emit NewIVAggregator(_underlying, _strike, _aggregator);
     }

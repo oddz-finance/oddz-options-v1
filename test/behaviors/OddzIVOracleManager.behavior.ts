@@ -11,6 +11,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.oddzIVOracle.address,
         this.oddzIVOracle.address,
+        1,
       ),
     )
       .to.emit(oracleManager, "NewIVAggregator")
@@ -25,6 +26,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.oddzIVOracle.address,
         this.oddzIVOracle.address,
+        1,
       ),
     ).to.be.revertedWith("Invalid assets");
   });
@@ -65,6 +67,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.accounts.admin,
         this.accounts.admin,
+        1,
       ),
     ).to.be.revertedWith("Invalid aggregator");
   });
@@ -91,6 +94,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       utils.formatBytes32String("USD"),
       this.oddzIVOracle.address,
       this.oddzIVOracle.address,
+      1,
     );
 
     const hash = utils.keccak256(

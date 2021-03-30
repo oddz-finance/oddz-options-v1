@@ -14,12 +14,14 @@ interface IOddzVolatilityOracle {
      * @param _strike Address of the strike asset.
      * @param _oddzAggregator Address of the oddz aggregator.
      * @param _aggregator Address of the IV aggregator.
+     * @param _aggregatorPeriod IV period (e.g. 1 day IV, 2 day IV, 14 day IV)
      */
     event AddAssetPairIVAggregator(
         bytes32 indexed _underlying,
         bytes32 indexed _strike,
         address _oddzAggregator,
-        address _aggregator
+        address _aggregator,
+        uint8 _aggregatorPeriod
     );
 
     /**
@@ -47,10 +49,12 @@ interface IOddzVolatilityOracle {
      * @param _underlying Underlying Asset
      * @param _strike Strike Asset
      * @param _aggregator Address of the aggregator.
+     * @param _aggregatorPeriod IV period (e.g. 1 day IV, 2 day IV, 14 day IV)
      */
     function setPairContract(
         bytes32 _underlying,
         bytes32 _strike,
-        address _aggregator
+        address _aggregator,
+        uint8 _aggregatorPeriod
     ) external;
 }

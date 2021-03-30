@@ -85,6 +85,7 @@ describe("Oddz Option Manager Unit tests", function () {
         utils.formatBytes32String("USD"),
         oddzVolatility.address,
         oddzVolatility.address,
+        1,
       );
 
       const hash = utils.keccak256(

@@ -22,6 +22,7 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
     function setPairContract(
         bytes32 _underlying,
         bytes32 _strike,
-        address _aggregator
+        address _aggregator,
+        uint8 _aggregatorPeriod
     ) public override {}
 }
