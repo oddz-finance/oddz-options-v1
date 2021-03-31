@@ -10,9 +10,9 @@ contract MockIVManager {
         ivManager = _ivManager;
     }
 
-    function calculateIv() public view returns (uint256 iv, uint8 decimals) {
+    function calculateIv(uint256 _time) public view returns (uint256 iv, uint8 decimals) {
         uint256 cp = 1600 * (10**8);
         uint256 sp = 1700 * (10**8);
-        (iv, decimals) = ivManager.calculateIv("ETH", "USD", IOddzOption.OptionType.Call, 86400, cp, sp);
+        (iv, decimals) = ivManager.calculateIv("ETH", "USD", IOddzOption.OptionType.Call, _time, cp, sp);
     }
 }

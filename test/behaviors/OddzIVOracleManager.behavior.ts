@@ -74,7 +74,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
 
   it("Should not return underlying price and throw No aggregator message when no aggregator is set", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
-    await expect(mockIVManager.calculateIv()).to.be.revertedWith("No aggregator");
+    await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("No aggregator");
   });
 
   it("Should return underlying price when an aggregator is set", async function () {
@@ -106,7 +106,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
 
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv();
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1));
     expect(iv).to.equal(180000);
     expect(decimals).to.equal(5);
   });

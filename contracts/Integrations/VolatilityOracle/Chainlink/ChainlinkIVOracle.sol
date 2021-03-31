@@ -32,6 +32,15 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
 
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        // Add default IV aggregation periods
+        addAllowedPeriods(1);
+        addAllowedPeriods(2);
+        addAllowedPeriods(7);
+        addAllowedPeriods(14);
+        addAllowedPeriods(21);
+        addAllowedPeriods(28);
+
+        // Add default pair map for Day with IV Agg period
         createPeriodMap(1, 1);
         createPeriodMap(2, 2);
         createPeriodMap(3, 2);
@@ -69,6 +78,10 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         ivPeriodMap[_day] = _ivAgg;
     }
 
+    function addAllowedPeriods(uint8 _ivAgg) public onlyOwner(msg.sender) {
+        allowedPeriods[_ivAgg] = true;
+    }
+
     function setManager(address _address) public {
         require(_address != address(0) && _address.isContract(), "Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
@@ -89,7 +102,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 _expirationDay = (_expiration / 1 days);
         require(ivPeriodMap[_expirationDay] != 0, "Chainlink IV: Invalid expiration");
 
-        bytes32 agHash = keccak256(abi.encode(_underlying, _strike, _expirationDay));
+        bytes32 agHash = keccak256(abi.encode(_underlying, _strike, ivPeriodMap[_expirationDay]));
         address aggregator = addressMap[agHash];
         require(aggregator != address(0), "No aggregator");
 
