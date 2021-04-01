@@ -249,4 +249,25 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     expect(iv).to.equal(10759000000);
     expect(decimals).to.equal(8);
   });
+
+  it("Should successfully add allow periods", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+
+    await chainlinkIVOracle.addAllowedPeriods(10);
+
+    expect(await chainlinkIVOracle.allowedPeriods(10)).to.be.true;
+  });
+
+  it("Should successfully map days to IV periods", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    await chainlinkIVOracle.addAllowedPeriods(10);
+    await chainlinkIVOracle.mapDaysToIVPeriod(10, 10);
+
+    expect(await chainlinkIVOracle.ivPeriodMap(10)).to.be.equal(10);
+  });
+
+  it("Should throw Invalid aggregator period while mapping days to IV periods", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    await expect(chainlinkIVOracle.mapDaysToIVPeriod(10, 10)).to.be.revertedWith("Invalid aggregator period");
+  });
 }
