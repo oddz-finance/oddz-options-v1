@@ -41,40 +41,40 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         addAllowedPeriods(28);
 
         // Add default pair map for Day with IV Agg period
-        createPeriodMap(1, 1);
-        createPeriodMap(2, 2);
-        createPeriodMap(3, 2);
-        createPeriodMap(4, 2);
-        createPeriodMap(5, 7);
-        createPeriodMap(6, 7);
-        createPeriodMap(7, 7);
-        createPeriodMap(8, 7);
-        createPeriodMap(9, 7);
-        createPeriodMap(10, 7);
-        createPeriodMap(11, 14);
-        createPeriodMap(12, 14);
-        createPeriodMap(13, 14);
-        createPeriodMap(14, 14);
-        createPeriodMap(15, 14);
-        createPeriodMap(16, 14);
-        createPeriodMap(17, 14);
-        createPeriodMap(18, 21);
-        createPeriodMap(19, 21);
-        createPeriodMap(20, 21);
-        createPeriodMap(21, 21);
-        createPeriodMap(22, 21);
-        createPeriodMap(23, 21);
-        createPeriodMap(24, 21);
-        createPeriodMap(25, 28);
-        createPeriodMap(26, 28);
-        createPeriodMap(27, 28);
-        createPeriodMap(28, 28);
-        createPeriodMap(29, 28);
-        createPeriodMap(30, 28);
-        createPeriodMap(31, 28);
+        mapDaysToIVPeriod(1, 1);
+        mapDaysToIVPeriod(2, 2);
+        mapDaysToIVPeriod(3, 2);
+        mapDaysToIVPeriod(4, 2);
+        mapDaysToIVPeriod(5, 7);
+        mapDaysToIVPeriod(6, 7);
+        mapDaysToIVPeriod(7, 7);
+        mapDaysToIVPeriod(8, 7);
+        mapDaysToIVPeriod(9, 7);
+        mapDaysToIVPeriod(10, 7);
+        mapDaysToIVPeriod(11, 14);
+        mapDaysToIVPeriod(12, 14);
+        mapDaysToIVPeriod(13, 14);
+        mapDaysToIVPeriod(14, 14);
+        mapDaysToIVPeriod(15, 14);
+        mapDaysToIVPeriod(16, 14);
+        mapDaysToIVPeriod(17, 14);
+        mapDaysToIVPeriod(18, 21);
+        mapDaysToIVPeriod(19, 21);
+        mapDaysToIVPeriod(20, 21);
+        mapDaysToIVPeriod(21, 21);
+        mapDaysToIVPeriod(22, 21);
+        mapDaysToIVPeriod(23, 21);
+        mapDaysToIVPeriod(24, 21);
+        mapDaysToIVPeriod(25, 28);
+        mapDaysToIVPeriod(26, 28);
+        mapDaysToIVPeriod(27, 28);
+        mapDaysToIVPeriod(28, 28);
+        mapDaysToIVPeriod(29, 28);
+        mapDaysToIVPeriod(30, 28);
+        mapDaysToIVPeriod(31, 28);
     }
 
-    function createPeriodMap(uint256 _day, uint8 _ivAgg) public onlyOwner(msg.sender) {
+    function mapDaysToIVPeriod(uint256 _day, uint8 _ivAgg) public onlyOwner(msg.sender) allowedPeriod(_ivAgg) {
         ivPeriodMap[_day] = _ivAgg;
     }
 
