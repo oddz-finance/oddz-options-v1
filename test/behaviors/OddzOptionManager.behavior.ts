@@ -5,7 +5,7 @@ import { waffle } from "hardhat";
 import {
   OddzLiquidityPool,
   OddzAssetManager,
-  OddzToken,
+  MockERC20,
   OddzPriceOracleManager,
   MockOddzPriceOracle,
 } from "../../typechain";
@@ -18,8 +18,8 @@ const getAssetPair = async (
   admin: Signer,
   oddzPriceOracleManager: OddzPriceOracleManager,
   oracleAddress: MockOddzPriceOracle,
-  usdcToken: OddzToken,
-  ethToken: OddzToken,
+  usdcToken: MockERC20,
+  ethToken: MockERC20,
 ) => {
   const oam = await oddzAssetManager.connect(admin);
   await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);

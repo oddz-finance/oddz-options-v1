@@ -18,7 +18,7 @@ import {
   MockOddzPriceOracle,
   MockOddzVolatility,
   MockOddzStaking,
-  OddzToken,
+  MockERC20,
   OddzLiquidityPool,
   OddzPriceOracleManager,
   OddzAssetManager,
@@ -31,7 +31,7 @@ import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
-import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
+import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 
 const { deployContract } = waffle;
 
@@ -104,17 +104,17 @@ describe("Oddz Option Manager Unit tests", function () {
       const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
 
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
-      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "USD coin",
         "USDC",
         totalSupply,
-      ])) as OddzToken;
+      ])) as MockERC20;
 
-      this.ethToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+      this.ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "ETH Token",
         "ETH",
         totalSupply,
-      ])) as OddzToken;
+      ])) as MockERC20;
 
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [

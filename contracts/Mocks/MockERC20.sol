@@ -6,10 +6,10 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 
 /**
- * @title Oddz Token
- * @dev Oddz ERC20 Token
+ * @title Mock ERC20 Token
+ * @dev Mock ERC20 Token
  */
-contract OddzToken is ERC20, ERC20Permit, Ownable {
+contract MockERC20 is ERC20, ERC20Permit, Ownable {
     event RescueExcessTokens(address indexed token, address indexed destination, uint256 indexed amount);
 
     constructor(
@@ -22,7 +22,7 @@ contract OddzToken is ERC20, ERC20Permit, Ownable {
 
     /**
      * @notice Function to rescue funds
-     * Owner is assumed to be governance or Oddz trusted party for helping users
+     * Owner is assumed to be governance or Mock ERC20 trusted party for helping users
      * Function can be disabled by destroying ownership via `renounceOwnership` function
      * @param token Address of token to be rescued
      * @param destination User address
