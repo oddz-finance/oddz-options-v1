@@ -89,6 +89,7 @@ describe("Oddz Option Manager Unit tests", function () {
         utils.formatBytes32String("USD"),
         oddzVolatility.address,
         oddzVolatility.address,
+        1,
       );
 
       const hash = utils.keccak256(
@@ -137,6 +138,7 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzOptionPremiumManager.address,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.transferOwnership(this.oddzOptionManager.address);
+      await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
