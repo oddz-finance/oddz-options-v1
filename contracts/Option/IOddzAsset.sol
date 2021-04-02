@@ -8,10 +8,16 @@ interface IOddzAsset {
     event AssetActivate(uint32 indexed _id, bytes32 indexed _name);
     event AssetDeactivate(uint32 indexed _id, bytes32 indexed _name);
 
-    event NewAssetPair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, bool _status);
+    event NewAssetPair(
+        uint32 indexed _id,
+        uint32 indexed _primary,
+        uint32 indexed _strike,
+        bool _status,
+        uint256 _limit
+    );
     event AssetActivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
     event AssetDeactivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
-    event SetPurchaseLimit(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, uint32 _limit);
+    event SetPurchaseLimit(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, uint256 _limit);
 
     struct Asset {
         uint32 _id;
@@ -26,7 +32,7 @@ interface IOddzAsset {
         uint32 _primary;
         uint32 _strike;
         bool _active;
-        uint32 _limit;
+        uint256 _limit;
     }
 
     /**
@@ -68,7 +74,7 @@ interface IOddzAsset {
     function addAssetPair(
         uint32 _primary,
         uint32 _strike,
-        uint32 _limit
+        uint256 _limit
     ) external returns (uint32 pairId);
 
     /**
@@ -92,5 +98,5 @@ interface IOddzAsset {
      * @param _pairId ID of an valid asset pair
      * @param _limit Purchase limit for an asset pair
      */
-    function setPurchaseLimit(uint32 _pairId, uint32 _limit) external;
+    function setPurchaseLimit(uint32 _pairId, uint256 _limit) external;
 }

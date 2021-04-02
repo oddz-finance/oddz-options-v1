@@ -67,7 +67,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         precision = assetIdMap[_assetId]._precision;
     }
 
-    function getPurchaseLimit(uint32 _pairId) public view returns (uint32 limit) {
+    function getPurchaseLimit(uint32 _pairId) public view returns (uint256 limit) {
         limit = pairIdMap[_pairId]._limit;
     }
 
@@ -147,7 +147,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     function addAssetPair(
         uint32 _primary,
         uint32 _strike,
-        uint32 _limit
+        uint256 _limit
     ) external override onlyOwner validAsset(_primary) validAsset(_strike) returns (uint32 pairId) {
         require(pairMap[_primary][_strike]._primary == 0, "Asset pair already present");
 
@@ -158,7 +158,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         pairs.push(pair);
         pairMap[_primary][_strike] = pair;
 
-        emit NewAssetPair(pair._id, pair._primary, pair._strike, pair._active);
+        emit NewAssetPair(pair._id, pair._primary, pair._strike, pair._active, _limit);
     }
 
     /**
@@ -203,7 +203,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         emit AssetDeactivatePair(pair._id, pair._primary, pair._strike);
     }
 
-    function setPurchaseLimit(uint32 _pairId, uint32 _limit) external override onlyOwner validAssetPair(_pairId) {
+    function setPurchaseLimit(uint32 _pairId, uint256 _limit) external override onlyOwner validAssetPair(_pairId) {
         AssetPair storage pair = pairIdMap[_pairId];
         pair._limit = _limit;
 
