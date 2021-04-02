@@ -75,7 +75,7 @@ contract OddzOptionPremiumManager is AccessControl {
         validModelName(_name)
         returns (bytes32 exHash)
     {
-        require(address(_modelAddress).isContract(), "Invalid exchange");
+        require(address(_modelAddress).isContract(), "Invalid premium model address");
 
         premiumModelMap[_name] = PremiumModel(true, _modelAddress);
 

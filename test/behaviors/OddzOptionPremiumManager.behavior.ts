@@ -24,14 +24,14 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
     ).to.be.revertedWith("caller has no access to the method");
   });
 
-  it("Should throw Invalid exchange", async function () {
+  it("Should throw Invalid premium model address", async function () {
     const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
     await expect(
       optionPremiumManager.addOptionPremiumModel(
         utils.formatBytes32String("B_S"),
         "0x0000000000000000000000000000000000000000",
       ),
-    ).to.be.revertedWith("Invalid exchange");
+    ).to.be.revertedWith("Invalid premium model address");
   });
 
   it("Should throw model name already used", async function () {
