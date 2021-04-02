@@ -67,7 +67,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         precision = assetIdMap[_assetId]._precision;
     }
 
-    function getPurchaseLimit(uint32 _pairId) public view returns (uint256 limit){
+    function getPurchaseLimit(uint32 _pairId) public view returns (uint32 limit){
         limit = pairIdMap[_pairId]._limit;
     }
 
@@ -144,7 +144,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @param _strike ID of the strike asset
      * @return pairId Asset pair ID
      */
-    function addAssetPair(uint32 _primary, uint32 _strike, uint256 _limit)
+    function addAssetPair(uint32 _primary, uint32 _strike, uint32 _limit)
         external
         override
         onlyOwner
@@ -211,7 +211,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         emit AssetDeactivatePair(pair._id, pair._primary, pair._strike);
     }
 
-    function setPurchaseLimit(uint32 _pairId, uint256 _limit) 
+    function setPurchaseLimit(uint32 _pairId, uint32 _limit) 
         external
         override 
         onlyOwner
