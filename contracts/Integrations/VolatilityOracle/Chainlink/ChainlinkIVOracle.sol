@@ -74,10 +74,19 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         mapDaysToIVPeriod(31, 28);
     }
 
+    /**
+     @notice Add/update allowed Option expiry preiod to IV period map
+     @param _day option expiry days
+     @param _ivAgg IV aggregation period
+     */
     function mapDaysToIVPeriod(uint256 _day, uint8 _ivAgg) public onlyOwner(msg.sender) allowedPeriod(_ivAgg) {
         ivPeriodMap[_day] = _ivAgg;
     }
 
+    /**
+     @notice Add/update allowed IV period map
+     @param _ivAgg IV aggregation period
+     */
     function addAllowedPeriods(uint8 _ivAgg) public onlyOwner(msg.sender) {
         allowedPeriods[_ivAgg] = true;
     }
