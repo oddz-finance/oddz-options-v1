@@ -24,7 +24,7 @@ const getAssetPair = async (
   const oam = await oddzAssetManager.connect(admin);
   await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, BigNumber.from(1e8));
   await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, BigNumber.from(1e8));
-  await oam.addAssetPair(1, 0);
+  await oam.addAssetPair(1, 0, 100);
 
   await oddzPriceOracleManager
     .connect(admin)
@@ -196,6 +196,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     await expect(
       oddzOptionManager.buy(
         pairId,
@@ -971,5 +972,55 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
 
     await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller");
+  });
+
+  it("should revert buy for more than purchase limit", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        getExpiry(2),
+        BigNumber.from(utils.parseEther("101")), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.be.revertedWith("amount greater than purchase limit");
+  });
+
+  it("should set more limit and buy option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    await oddzAssetManager.setPurchaseLimit(pairId, 200);
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        getExpiry(2),
+        BigNumber.from(utils.parseEther("200")), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.emit(oddzOptionManager, "Buy");
   });
 }

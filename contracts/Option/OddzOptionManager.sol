@@ -85,10 +85,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
-    modifier validAmount(uint32 _pairId, uint256 _amount){
+    modifier validAmount(uint32 _pairId, uint256 _amount) {
         require(
-            _amount.div(token.decimals()) <= assetManager.getPurchaseLimit(_pairId), 
-            "amount greater than purchase limit");
+            _amount.div(10**token.decimals()) <= assetManager.getPurchaseLimit(_pairId),
+            "amount greater than purchase limit"
+        );
         _;
     }
 

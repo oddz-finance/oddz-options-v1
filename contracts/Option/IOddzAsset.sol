@@ -65,7 +65,11 @@ interface IOddzAsset {
      * @param _limit Purchase limit for the pair
      * @return pairId Asset pair ID
      */
-    function addAssetPair(uint32 _primary, uint32 _strike, uint32 _limit) external returns (uint32 pairId);
+    function addAssetPair(
+        uint32 _primary,
+        uint32 _strike,
+        uint32 _limit
+    ) external returns (uint32 pairId);
 
     /**
      * @notice Activate an asset pair
@@ -87,6 +91,6 @@ interface IOddzAsset {
      * @notice Set purchase limit
      * @param _pairId ID of an valid asset pair
      * @param _limit Purchase limit for an asset pair
-    */
-    function setPurchaseLimit(uint32 _pairId, uint32 _limit) external; 
+     */
+    function setPurchaseLimit(uint32 _pairId, uint32 _limit) external;
 }
