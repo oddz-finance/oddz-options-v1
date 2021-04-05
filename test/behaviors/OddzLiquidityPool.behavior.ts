@@ -51,7 +51,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(liquidityManager1.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
     const withdrawalAmount = 1001;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "LP: Amount is too large",
+      "LP Error: Amount is too large",
     );
   });
 
@@ -72,7 +72,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const depositAmount = 1000;
     await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
     await expect(liquidityManager.updatePremiumEligibility(Math.round(Date.now() / 1000))).to.be.revertedWith(
-      "LP: Invalid Date",
+      "LP Error: Invalid Date",
     );
   });
 }
