@@ -220,7 +220,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint32 _pair,
         uint8 _ivDecimal,
         OptionType _optionType
-    ) private returns (uint256 lockAmount) {
+    ) private view returns (uint256 lockAmount) {
         (uint256 minStrikePrice, uint256 maxStrikePrice) =
             getAssetStrikePriceRange(_cp, _iv, _strike, _pair, _ivDecimal);
         lockAmount = _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice;

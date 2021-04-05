@@ -11,7 +11,7 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
-    ) public view override returns (uint256 iv, uint8 decimals) {
+    ) public pure override returns (uint256 iv, uint8 decimals) {
         iv = 180000;
         decimals = 5;
     }

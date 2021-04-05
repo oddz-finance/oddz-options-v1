@@ -4,21 +4,21 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
 contract EthIVSevenDays is AggregatorV3Interface {
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 8;
     }
 
-    function description() public view override returns (string memory) {
+    function description() public pure override returns (string memory) {
         return "ETH 7 days IV";
     }
 
-    function version() public view override returns (uint256) {
+    function version() public pure override returns (uint256) {
         return 1;
     }
 
     function getRoundData(uint80 _roundId)
         public
-        view
+        pure
         override
         returns (
             uint80 roundId,
@@ -37,7 +37,7 @@ contract EthIVSevenDays is AggregatorV3Interface {
 
     function latestRoundData()
         public
-        view
+        pure
         override
         returns (
             uint80 roundId,
