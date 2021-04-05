@@ -2,7 +2,7 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
-import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
+import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
     using SafeMath for uint256;
-    using BokkyPooBahsDateTimeLibrary for uint256;
     using SafeERC20 for IERC20;
 
     /**
@@ -415,8 +414,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     }
 
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = BokkyPooBahsDateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = BokkyPooBahsDateTimeLibrary.timestampFromDate(year, month, day);
+        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
+        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 
     function divisionCeiling(uint256 _numerator, uint256 _denominator) internal pure returns (uint256) {
