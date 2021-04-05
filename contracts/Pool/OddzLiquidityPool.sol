@@ -413,23 +413,41 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         return token.balanceOf(address(this)).sub(balanceOf(address(this)));
     }
 
+    /**
+     @dev sets the manager for the liqudity pool contract
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     @dev removes the manager for the liqudity pool contract for valid managers
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     * @dev get day based on the timestamp
+     */
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
         (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 
+    /**
+     * @dev Ceil division
+     * @param _numerator division numerator
+     * @param _denominator division denominator
+     */
     function divisionCeiling(uint256 _numerator, uint256 _denominator) internal pure returns (uint256) {
-        uint256 result = _numerator.div(_denominator, "Invalid Denominator");
+        uint256 result = _numerator.div(_denominator, "LP Error: Invalid Denominator");
         if (_numerator.mod(_denominator) != 0) result = result + 1;
         return result;
-    }
-
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
-
-    function removeManager(address _address) public {
-        revokeRole(MANAGER_ROLE, _address);
     }
 }
