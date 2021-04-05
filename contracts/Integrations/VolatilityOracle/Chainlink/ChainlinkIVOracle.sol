@@ -30,7 +30,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         _;
     }
 
-    constructor()  {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // Add default IV aggregation periods
         addAllowedPeriods(1);

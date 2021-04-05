@@ -18,7 +18,7 @@ contract MockAggregatorV3 is AggregatorV3Interface {
         uint8 _decimals,
         string memory _description,
         uint256 _version
-    )  {
+    ) {
         symbolA = _symbolA;
         symbolB = _symbolB;
         idecimals = _decimals;

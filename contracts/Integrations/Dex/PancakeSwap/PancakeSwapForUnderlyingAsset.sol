@@ -14,7 +14,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
 
     IPancakeSwap pancakeSwap;
 
-    constructor(address _pancakeSwap)  {
+    constructor(address _pancakeSwap) {
         pancakeSwap = IPancakeSwap(_pancakeSwap);
     }
 

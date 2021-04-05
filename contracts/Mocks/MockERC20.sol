@@ -16,7 +16,7 @@ contract MockERC20 is ERC20, ERC20Permit, Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply
-    )  ERC20(name, symbol) ERC20Permit(name) {
+    ) ERC20(name, symbol) ERC20Permit(name) {
         _mint(msg.sender, totalSupply * (10**decimals()));
     }
 
