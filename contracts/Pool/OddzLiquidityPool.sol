@@ -2,12 +2,13 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
-import "hardhat/console.sol";
 import "../Swap/DexManager.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
-contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
+contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
+    using Address for address;
     using SafeMath for uint256;
     using BokkyPooBahsDateTimeLibrary for uint256;
     using SafeERC20 for IERC20;
@@ -50,7 +51,26 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(uint256 => uint256) internal daysExercise;
     mapping(address => uint256) public lpPremium;
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
+
+    /**
+     * @dev DEX manager
+     */
     DexManager public dexManager;
+
+    /**
+     * @dev Access control specific data definitions
+     */
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
+        _;
+    }
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
@@ -59,6 +79,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     }
 
     constructor(IERC20 _token, DexManager _dexManager) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
         dexManager = _dexManager;
     }
@@ -114,7 +135,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         uint256 _amount,
         uint256 _premium
-    ) public override onlyOwner {
+    ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP: Invalid id");
         require(
             lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
@@ -127,7 +148,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _mint(address(this), _premium);
     }
 
-    function unlockLiquidity(uint256 _id) public override onlyOwner validLiquidty(_id) {
+    function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         ll.locked = false;
         lockedAmount = lockedAmount.sub(ll.amount);
@@ -141,7 +162,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         address payable _account,
         uint256 _amount
-    ) public override onlyOwner validLiquidty(_id) {
+    ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
@@ -156,7 +177,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline
-    ) public override onlyOwner validLiquidty(_id) {
+    ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
         // Transfer Funds
@@ -402,5 +423,14 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 result = _numerator.div(_denominator, "Invalid Denominator");
         if (_numerator.mod(_denominator) != 0) result = result + 1;
         return result;
+    }
+
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
     }
 }
