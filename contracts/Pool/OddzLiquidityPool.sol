@@ -13,7 +13,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     using SafeERC20 for IERC20;
 
     /**
-     * @dev reqBalance represents minum required balance and will be range between 5 and 9
+     * @dev reqBalance represents minimum required balance out of 10
+     * Range between 6 and 9
+     * e.g. 8 represents 80% of the balance
      */
     uint8 public reqBalance = 8;
 
@@ -74,6 +76,11 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         require(ll.locked, "LP Error: LockedLiquidity with given id has already been unlocked");
+        _;
+    }
+
+    modifier reqBalanceValidRange(uint8 _reqBalance) {
+        require(_reqBalance >= 6 && _reqBalance <= 9, "LP Error: required balance valid range [6 - 9]");
         _;
     }
 
@@ -430,6 +437,15 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      */
     function removeManager(address _address) public {
         revokeRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     @dev sets required balance
+     @param _reqBalance required balance between 6 and 9
+     Note: This can be called only by the owner
+     */
+    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
+        reqBalance = _reqBalance;
     }
 
     /**
