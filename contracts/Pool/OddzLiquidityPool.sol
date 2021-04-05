@@ -135,9 +135,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         uint256 _amount,
         uint256 _premium
     ) public override onlyManager(msg.sender) {
-        require(_id == lockedLiquidity.length, "LP: Invalid id");
+        require(_id == lockedLiquidity.length, "LP Error: Invalid id");
         require(
-            lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
+            lockedAmount.add(_amount) <= totalBalance().sub(_premium),
             "LP Error: Amount is too large."
         );
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
