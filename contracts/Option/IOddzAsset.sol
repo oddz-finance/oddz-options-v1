@@ -24,7 +24,7 @@ interface IOddzAsset {
         bytes32 _name;
         address _address;
         bool _active;
-        uint256 _precision;
+        uint8 _precision;
     }
 
     struct AssetPair {
@@ -45,7 +45,7 @@ interface IOddzAsset {
     function addAsset(
         bytes32 _name,
         address _address,
-        uint256 _precision
+        uint8 _precision
     ) external returns (uint32 assetId);
 
     /**
