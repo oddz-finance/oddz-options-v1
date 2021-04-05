@@ -1,13 +1,12 @@
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./IOddzPremium.sol";
 import "../Libs/BlackScholes.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract OddzPremiumBlackScholes is IOddzPremium, Ownable {
-    using SafeMath for uint256;
+   // using SafeMath for uint256;
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
@@ -32,6 +31,6 @@ contract OddzPremiumBlackScholes is IOddzPremium, Ownable {
             10**_premiumDetails.ivDecimal
         );
         // _amount in wei
-        optionPremium = optionPremium.mul(_premiumDetails.amount).div(1e18);
+        optionPremium = optionPremium * (_premiumDetails.amount) / (1e18);
     }
 }

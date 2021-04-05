@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 import "./IOddzAsset.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title Oddz Call and Put Options

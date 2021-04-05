@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 import "../Oracle/OddzIVOracleManager.sol";
 import "../Option/IOddzOption.sol";

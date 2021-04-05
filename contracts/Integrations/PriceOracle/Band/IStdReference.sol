@@ -1,5 +1,5 @@
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
+
 
 interface IStdReference {
     /// A structure returned whenever someone requests for standard reference data.

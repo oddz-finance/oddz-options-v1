@@ -1,6 +1,6 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.0;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPancakeSwap.sol";
@@ -11,11 +11,10 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
     uint256 amountOutMin = 0;
-    mapping(bytes32 => address) public assetAddresses;
 
     IPancakeSwap pancakeSwap;
 
-    constructor(address _pancakeSwap) public {
+    constructor(address _pancakeSwap)  {
         pancakeSwap = IPancakeSwap(_pancakeSwap);
     }
 

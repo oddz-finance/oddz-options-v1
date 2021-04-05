@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 import "../../../Oracle/IOddzVolatilityOracle.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -30,7 +30,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         _;
     }
 
-    constructor() public {
+    constructor()  {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // Add default IV aggregation periods
         addAllowedPeriods(1);

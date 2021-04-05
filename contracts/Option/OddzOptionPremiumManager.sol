@@ -1,5 +1,4 @@
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./IOddzPremium.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -51,7 +50,7 @@ contract OddzOptionPremiumManager is AccessControl {
         _;
     }
 
-    constructor() public {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma experimental ABIEncoderV2;
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
@@ -14,7 +13,7 @@ import "./IERC20Extented.sol";
 import "hardhat/console.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
-    using SafeMath for uint256;
+    //using SafeMath for uint256;
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
 
@@ -107,7 +106,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _maxPrice,
         uint8 _decimal
     ) private view {
-        _strike = _strike.mul(10**token.decimals()).div(10**_decimal);
+        _strike = _strike * (10**token.decimals()) / (10**_decimal);
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
@@ -134,10 +133,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = _cp.add(_cp.mul(_iv).div(10**_ivDecimal));
-        oc = oc.min(_cp.add(_cp));
+        oc = _cp + ((_cp * (_iv) / (10**_ivDecimal)));
+        oc = oc.min(_cp + (_cp));
         // convert to usd decimals
-        oc = oc.mul(10**token.decimals()).div(10**_decimal);
+        oc = oc * (10**token.decimals()) / (10**_decimal);
     }
 
     /**
@@ -154,9 +153,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = (_cp.mul(_iv).div(10**_ivDecimal)).sub(_cp);
+        oc = ((_cp * (_iv) / (10**_ivDecimal))) - (_cp);
         // convert to usd decimals
-        oc = oc.mul(10**token.decimals()).div(10**_decimal);
+        oc = oc * (10**token.decimals()) / (10**_decimal);
     }
 
     /**
@@ -170,8 +169,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
 
-        if (decimal > primary._precision) cp = cp.div((10**decimal).div(10**primary._precision));
-        else cp = cp.mul(10**primary._precision).div(10**decimal);
+        if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
+        else cp = cp * (10**primary._precision) / (10**decimal);
     }
 
     /**
@@ -264,7 +263,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 optionDetails._optionType
             );
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
+        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium + (txnFee));
 
         uint256 lockAmount =
             getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
@@ -272,19 +271,19 @@ contract OddzOptionManager is IOddzOption, Ownable {
         Option memory option =
             Option(
                 State.Active,
-                msg.sender,
+                payable(msg.sender),
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
                 optionPremium,
-                optionDetails._expiration.add(block.timestamp),
+                optionDetails._expiration + (block.timestamp),
                 optionDetails._pair,
                 optionDetails._optionType
             );
 
         options.push(option);
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
-        txnFeeAggregate = txnFeeAggregate.add(txnFee);
+        txnFeeAggregate = txnFeeAggregate + (txnFee);
 
         token.safeTransferFrom(msg.sender, address(pool), optionPremium);
         token.safeTransferFrom(msg.sender, address(this), txnFee);
@@ -294,7 +293,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             msg.sender,
             optionDetails._optionModel,
             txnFee,
-            optionPremium.add(txnFee),
+            optionPremium + (txnFee),
             optionDetails._pair
         );
     }
@@ -372,7 +371,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             optionDetails._optionModel
         );
         // convert to USD price precision
-        optionPremium = optionPremium.mul(10**token.decimals()).div(10**assetManager.getPrecision(pair._primary));
+        optionPremium = optionPremium * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
     }
 
     /**
@@ -381,7 +380,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @return txnFee Transaction Fee
      */
     function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
-        txnFee = _amount.mul(txnFeePerc).div(100);
+        txnFee = _amount * (txnFeePerc) / (100);
     }
 
     /**
@@ -439,21 +438,21 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         if (option.optionType == OptionType.Call) {
             require(option.strike <= _cp, "Call option: Current price is too low");
-            profit = _cp.sub(option.strike).mul(option.amount);
+            profit = (_cp - (option.strike)) * (option.amount);
         } else {
             require(option.strike >= _cp, "Put option: Current price is too high");
-            profit = option.strike.sub(_cp).mul(option.amount);
+            profit = (option.strike - (_cp)) * (option.amount);
         }
         // amount in wei
-        profit = profit.div(1e18);
+        profit = profit / (1e18);
 
         // convert profit to usd decimals
-        profit = profit.mul(10**token.decimals()).div(10**assetManager.getPrecision(pair._primary));
+        profit = profit * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-        settlementFee = profit.mul(settlementFeePerc).div(100);
-        settlementFeeAggregate = settlementFeeAggregate.add(settlementFee);
-        profit = profit.sub(settlementFee);
+        settlementFee = profit * (settlementFeePerc) / (100);
+        settlementFeeAggregate = settlementFeeAggregate + settlementFee;
+        profit = profit - settlementFee;
     }
 
     /**
