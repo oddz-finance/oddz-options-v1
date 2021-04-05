@@ -1027,6 +1027,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         pairId,
+        utils.formatBytes32String("B_S"),
         getExpiry(2),
         BigNumber.from(utils.parseEther("0.001")), // number of options
         BigNumber.from(170000000000),
@@ -1054,6 +1055,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(
         pairId,
+        utils.formatBytes32String("B_S"),
         getExpiry(2),
         BigNumber.from(utils.parseEther("0.002")), // number of options
         BigNumber.from(170000000000),

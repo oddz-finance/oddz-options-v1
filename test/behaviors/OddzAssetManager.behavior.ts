@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber,utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 export function shouldBehaveLikeOddzAssetManager(): void {
   it("should add new asset", async function () {
@@ -70,7 +70,6 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await expect(oddzAssetManager.addAssetPair(1, 0, BigNumber.from(utils.parseEther("0.01"))))
       .to.emit(oddzAssetManager, "NewAssetPair")
       .withArgs(0, 1, 0, true, BigNumber.from(utils.parseEther("0.01")));
-   
   });
 
   it("should fail with message Asset pair already present", async function () {
