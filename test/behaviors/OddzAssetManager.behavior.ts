@@ -117,6 +117,27 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       .withArgs(0, 1, 0);
   });
 
+  it("should revert while deactivate asset pair", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, 8);
+    await oddzAssetManager.addAssetPair(1, 0, BigNumber.from(utils.parseEther("0.01")));
+    const pair = await oddzAssetManager.pairs(0);
+    const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
+    await expect(oddzAssetManager1.deactivateAssetPair(pair._id)).to.be.revertedWith("caller is not the owner");
+  });
+
+  it("should revert while activate asset pair", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), this.ethToken.address, 8);
+    await oddzAssetManager.addAssetPair(1, 0, BigNumber.from(utils.parseEther("0.01")));
+    const pair = await oddzAssetManager.pairs(0);
+    await oddzAssetManager.deactivateAssetPair(pair._id);
+    const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
+    await expect(oddzAssetManager1.activateAssetPair(pair._id)).to.be.revertedWith("caller is not the owner");
+  });
+
   it("should fail with message Invalid asset pair", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
     await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
