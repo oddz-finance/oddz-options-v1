@@ -99,7 +99,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         // User premium update
         uint256 premium = transferEligiblePremium(date, msg.sender);
         burn = burn + premium;
-        _amount = _amount + (totalBalance() * premium / totalSupply());
+        _amount = _amount + ((totalBalance() * premium) / totalSupply());
         updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
 
         _burn(msg.sender, burn);
@@ -172,7 +172,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @return Liquidity provider's balance in USD
      */
     function usdBalanceOf(address account) external view returns (uint256 share) {
-        if (totalSupply() > 0) share = totalBalance() * balanceOf(account) / totalSupply();
+        if (totalSupply() > 0) share = (totalBalance() * balanceOf(account)) / totalSupply();
         else share = 0;
     }
 

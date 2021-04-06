@@ -135,7 +135,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         oc = _cp + ((_cp * _iv) / (10**_ivDecimal));
         oc = oc.min(_cp + _cp);
         // convert to usd decimals
-        oc = oc * (10**token.decimals()) / (10**_decimal);
+        oc = (oc * (10**token.decimals())) / (10**_decimal);
     }
 
     /**
@@ -154,7 +154,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     ) private view returns (uint256 oc) {
         oc = ((_cp * _iv) / (10**_ivDecimal)) - _cp;
         // convert to usd decimals
-        oc = oc * (10**token.decimals()) / (10**_decimal);
+        oc = (oc * (10**token.decimals())) / (10**_decimal);
     }
 
     /**
@@ -169,7 +169,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
 
         if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
-        else cp = cp * (10**primary._precision) / (10**decimal);
+        else cp = (cp * (10**primary._precision)) / (10**decimal);
     }
 
     /**
@@ -287,14 +287,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         token.safeTransferFrom(msg.sender, address(pool), optionPremium);
         token.safeTransferFrom(msg.sender, address(this), txnFee);
 
-        emit Buy(
-            optionId,
-            msg.sender,
-            optionDetails._optionModel,
-            txnFee,
-            optionPremium + txnFee,
-            optionDetails._pair
-        );
+        emit Buy(optionId, msg.sender, optionDetails._optionModel, txnFee, optionPremium + txnFee, optionDetails._pair);
     }
 
     /**
@@ -370,7 +363,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             optionDetails._optionModel
         );
         // convert to USD price precision
-        optionPremium = optionPremium * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
+        optionPremium = (optionPremium * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
     }
 
     /**
@@ -379,7 +372,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @return txnFee Transaction Fee
      */
     function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
-        txnFee = _amount * txnFeePerc / 100;
+        txnFee = (_amount * txnFeePerc) / 100;
     }
 
     /**
@@ -446,10 +439,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit / 1e18;
 
         // convert profit to usd decimals
-        profit = profit * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
+        profit = (profit * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-        settlementFee = profit * settlementFeePerc / 100;
+        settlementFee = (profit * settlementFeePerc) / 100;
         settlementFeeAggregate = settlementFeeAggregate + settlementFee;
         profit = profit - settlementFee;
     }
