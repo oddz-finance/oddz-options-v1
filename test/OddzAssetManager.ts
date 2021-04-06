@@ -1,9 +1,9 @@
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import OddzTokenArtifact from "../artifacts/contracts/OddzToken.sol/OddzToken.json";
+import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import { Accounts, Signers } from "../types";
-import { OddzAssetManager, OddzToken } from "../typechain";
+import { OddzAssetManager, MockERC20 } from "../typechain";
 import { shouldBehaveLikeOddzAssetManager } from "./behaviors/OddzAssetManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 
@@ -33,23 +33,23 @@ describe("Oddz Asset Manager Unit tests", function () {
       )) as OddzAssetManager;
       const totalSupply = 1000000000000000;
 
-      this.usdcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "USD coin",
         "USDC",
         totalSupply,
-      ])) as OddzToken;
+      ])) as MockERC20;
 
-      this.ethToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+      this.ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "Eth Token",
         "ETH",
         totalSupply,
-      ])) as OddzToken;
+      ])) as MockERC20;
 
-      this.btcToken = (await deployContract(this.signers.admin, OddzTokenArtifact, [
+      this.btcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "BTC Token",
         "BTC",
         totalSupply,
-      ])) as OddzToken;
+      ])) as MockERC20;
     });
     shouldBehaveLikeOddzAssetManager();
   });

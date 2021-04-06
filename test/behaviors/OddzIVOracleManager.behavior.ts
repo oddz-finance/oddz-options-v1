@@ -11,6 +11,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.oddzIVOracle.address,
         this.oddzIVOracle.address,
+        1,
       ),
     )
       .to.emit(oracleManager, "NewIVAggregator")
@@ -25,6 +26,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.oddzIVOracle.address,
         this.oddzIVOracle.address,
+        1,
       ),
     ).to.be.revertedWith("Invalid assets");
   });
@@ -65,22 +67,14 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("USD"),
         this.accounts.admin,
         this.accounts.admin,
+        1,
       ),
     ).to.be.revertedWith("Invalid aggregator");
   });
 
   it("Should not return underlying price and throw No aggregator message when no aggregator is set", async function () {
-    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    await expect(
-      oracleManager.calculateIv(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        OptionType.Call,
-        getExpiry(1),
-        BigNumber.from(160000000000),
-        BigNumber.from(170000000000),
-      ),
-    ).to.be.revertedWith("No aggregator");
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+    await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("No aggregator");
   });
 
   it("Should return underlying price when an aggregator is set", async function () {
@@ -91,6 +85,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       utils.formatBytes32String("USD"),
       this.oddzIVOracle.address,
       this.oddzIVOracle.address,
+      1,
     );
 
     const hash = utils.keccak256(
@@ -109,15 +104,25 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         this.oddzIVOracle.address,
       );
 
-    const { iv, decimal } = await oracleManager.calculateIv(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      OptionType.Call,
-      getExpiry(1),
-      BigNumber.from(160000000000),
-      BigNumber.from(170000000000),
-    );
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1));
     expect(iv).to.equal(180000);
-    expect(decimal).to.equal(5);
+    expect(decimals).to.equal(5);
+  });
+
+  it("Should throw caller has no access to the method while calling calculate IV", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await expect(
+      oracleManager.calculateIv(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        OptionType.Call,
+        getExpiry(1),
+        BigNumber.from(160000000000),
+        BigNumber.from(170000000000),
+      ),
+    ).to.be.revertedWith("caller has no access to the method");
   });
 }
