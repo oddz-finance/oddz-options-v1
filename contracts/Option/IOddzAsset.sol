@@ -8,9 +8,16 @@ interface IOddzAsset {
     event AssetActivate(uint32 indexed _id, bytes32 indexed _name);
     event AssetDeactivate(uint32 indexed _id, bytes32 indexed _name);
 
-    event NewAssetPair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, bool _status);
+    event NewAssetPair(
+        uint32 indexed _id,
+        uint32 indexed _primary,
+        uint32 indexed _strike,
+        bool _status,
+        uint256 _limit
+    );
     event AssetActivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
     event AssetDeactivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
+    event SetPurchaseLimit(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, uint256 _limit);
 
     struct Asset {
         uint32 _id;
@@ -25,6 +32,7 @@ interface IOddzAsset {
         uint32 _primary;
         uint32 _strike;
         bool _active;
+        uint256 _limit;
     }
 
     /**
@@ -60,13 +68,18 @@ interface IOddzAsset {
      * @notice Add trade asset pair
      * @param _primary ID of the primary asset
      * @param _strike ID of the strike asset
+     * @param _limit Purchase limit for the pair
      * @return pairId Asset pair ID
      */
-    function addAssetPair(uint32 _primary, uint32 _strike) external returns (uint32 pairId);
+    function addAssetPair(
+        uint32 _primary,
+        uint32 _strike,
+        uint256 _limit
+    ) external returns (uint32 pairId);
 
     /**
      * @notice Activate an asset pair
-     * @param _pairId ID of an valid asset
+     * @param _pairId ID of an valid asset pair
      * @return pairId Asset symbol
      * @return status Asset Status
      */
@@ -74,9 +87,16 @@ interface IOddzAsset {
 
     /**
      * @notice Deactivate an asset pair
-     * @param _pairId ID of an valid asset
+     * @param _pairId ID of an valid asset pair
      * @return pairId Asset symbol
      * @return status Asset Status
      */
     function deactivateAssetPair(uint32 _pairId) external returns (uint32 pairId, bool status);
+
+    /**
+     * @notice Set purchase limit
+     * @param _pairId ID of an valid asset pair
+     * @param _limit Purchase limit for an asset pair
+     */
+    function setPurchaseLimit(uint32 _pairId, uint256 _limit) external;
 }
