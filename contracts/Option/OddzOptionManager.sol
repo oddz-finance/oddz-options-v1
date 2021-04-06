@@ -90,6 +90,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
+    modifier validAmount(uint32 _pairId, uint256 _amount) {
+        require(_amount >= assetManager.getPurchaseLimit(_pairId), "amount less than purchase limit");
+        _;
+    }
+
     function setMaxDeadline(uint32 _deadline) public onlyOwner {
         maxDeadline = _deadline;
     }
@@ -240,6 +245,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validOptionType(_optionType)
         validExpiration(_expiration)
         validAssetPair(_pair)
+        validAmount(_pair, _amount)
         returns (uint256 optionId)
     {
         OptionDetails memory optionDetails =
