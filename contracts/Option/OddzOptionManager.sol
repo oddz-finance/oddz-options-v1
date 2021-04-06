@@ -13,7 +13,6 @@ import "./IERC20Extented.sol";
 import "hardhat/console.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
-    //using SafeMath for uint256;
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
 
@@ -133,10 +132,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = _cp + (((_cp * (_iv)) / (10**_ivDecimal)));
-        oc = oc.min(_cp + (_cp));
+        oc = _cp + ((_cp * _iv) / (10**_ivDecimal));
+        oc = oc.min(_cp + _cp);
         // convert to usd decimals
-        oc = (oc * (10**token.decimals())) / (10**_decimal);
+        oc = oc * (10**token.decimals()) / (10**_decimal);
     }
 
     /**
@@ -153,9 +152,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = (((_cp * (_iv)) / (10**_ivDecimal))) - (_cp);
+        oc = ((_cp * _iv) / (10**_ivDecimal)) - _cp;
         // convert to usd decimals
-        oc = (oc * (10**token.decimals())) / (10**_decimal);
+        oc = oc * (10**token.decimals()) / (10**_decimal);
     }
 
     /**
@@ -170,7 +169,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
 
         if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
-        else cp = (cp * (10**primary._precision)) / (10**decimal);
+        else cp = cp * (10**primary._precision) / (10**decimal);
     }
 
     /**
@@ -263,7 +262,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 optionDetails._optionType
             );
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium + (txnFee));
+        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium + txnFee);
 
         uint256 lockAmount =
             getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
@@ -276,14 +275,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 optionDetails._amount,
                 lockAmount,
                 optionPremium,
-                optionDetails._expiration + (block.timestamp),
+                optionDetails._expiration + block.timestamp,
                 optionDetails._pair,
                 optionDetails._optionType
             );
 
         options.push(option);
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
-        txnFeeAggregate = txnFeeAggregate + (txnFee);
+        txnFeeAggregate = txnFeeAggregate + txnFee;
 
         token.safeTransferFrom(msg.sender, address(pool), optionPremium);
         token.safeTransferFrom(msg.sender, address(this), txnFee);
@@ -293,7 +292,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             msg.sender,
             optionDetails._optionModel,
             txnFee,
-            optionPremium + (txnFee),
+            optionPremium + txnFee,
             optionDetails._pair
         );
     }
@@ -371,7 +370,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
             optionDetails._optionModel
         );
         // convert to USD price precision
-        optionPremium = (optionPremium * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
+        optionPremium = optionPremium * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
     }
 
     /**
@@ -380,7 +379,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @return txnFee Transaction Fee
      */
     function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
-        txnFee = (_amount * (txnFeePerc)) / (100);
+        txnFee = _amount * txnFeePerc / 100;
     }
 
     /**
@@ -438,19 +437,19 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         if (option.optionType == OptionType.Call) {
             require(option.strike <= _cp, "Call option: Current price is too low");
-            profit = (_cp - (option.strike)) * (option.amount);
+            profit = (_cp - option.strike) * option.amount;
         } else {
             require(option.strike >= _cp, "Put option: Current price is too high");
-            profit = (option.strike - (_cp)) * (option.amount);
+            profit = (option.strike - _cp) * option.amount;
         }
         // amount in wei
-        profit = profit / (1e18);
+        profit = profit / 1e18;
 
         // convert profit to usd decimals
-        profit = (profit * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
+        profit = profit * (10**token.decimals()) / (10**assetManager.getPrecision(pair._primary));
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-        settlementFee = (profit * (settlementFeePerc)) / (100);
+        settlementFee = profit * settlementFeePerc / 100;
         settlementFeeAggregate = settlementFeeAggregate + settlementFee;
         profit = profit - settlementFee;
     }

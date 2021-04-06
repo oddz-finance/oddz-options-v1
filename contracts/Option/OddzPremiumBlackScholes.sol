@@ -31,6 +31,6 @@ contract OddzPremiumBlackScholes is IOddzPremium, Ownable {
             10**_premiumDetails.ivDecimal
         );
         // _amount in wei
-        optionPremium = (optionPremium * (_premiumDetails.amount)) / (1e18);
+        optionPremium = optionPremium * _premiumDetails.amount / 1e18;
     }
 }
