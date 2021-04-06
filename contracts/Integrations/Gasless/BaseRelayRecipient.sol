@@ -10,7 +10,7 @@ abstract contract BaseRelayRecipient is IRelayRecipient {
     /*
      * Forwarder singleton we accept calls from
      */
-    
+
     address public trustedForwarder;
 
     /*

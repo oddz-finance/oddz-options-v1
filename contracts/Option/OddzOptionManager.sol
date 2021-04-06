@@ -66,8 +66,6 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         OddzAssetManager _assetManager,
         OddzOptionPremiumManager _premiumManager,
         address _trustedForwarder
-        
-        
     ) {
         pool = _pool;
         oracle = _oracle;
@@ -111,6 +109,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
             return msg.sender;
         }
     }
+
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
         _;
