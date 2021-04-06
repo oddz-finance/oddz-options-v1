@@ -1,4 +1,5 @@
-pragma solidity =0.8.3;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IERC20Extented is IERC20 {

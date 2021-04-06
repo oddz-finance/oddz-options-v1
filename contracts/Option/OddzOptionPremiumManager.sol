@@ -1,4 +1,5 @@
-pragma solidity =0.8.3;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 
 import "./IOddzPremium.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
