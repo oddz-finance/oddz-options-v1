@@ -12,9 +12,9 @@ import "../Pool/OddzLiquidityPool.sol";
 import "../Libs/BlackScholes.sol";
 import "./IERC20Extented.sol";
 import "hardhat/console.sol";
-import "../Integrations/Biconomy/BaseRelayRecipient.sol";
+import "../Integrations/MetaTransaction/BaseRelayRecipient.sol";
 
-contract OddzOptionManager is IOddzOption, Ownable {
+contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     using SafeMath for uint256;
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
@@ -59,8 +59,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzStaking _staking,
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
+        OddzAssetManager _assetManager,
         address _trustedForwarder
-        OddzAssetManager _assetManager
+        
     ) {
         pool = _pool;
         oracle = _oracle;
@@ -103,6 +104,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         } else {
             return msg.sender;
         }
+    }
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
         _;
