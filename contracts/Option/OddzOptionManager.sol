@@ -12,7 +12,7 @@ import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
 import "hardhat/console.sol";
-import "../Integrations/MetaTransaction/BaseRelayRecipient.sol";
+import "../Integrations/Gasless/BaseRelayRecipient.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     using SafeMath for uint256;
@@ -64,9 +64,10 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
+        OddzOptionPremiumManager _premiumManager,
         address _trustedForwarder
         
-        OddzOptionPremiumManager _premiumManager
+        
     ) {
         pool = _pool;
         oracle = _oracle;
@@ -289,7 +290,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
                 optionDetails._optionType
             );
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium.add(txnFee));
+        validateOptionAmount(token.allowance(_msgSender(), address(this)), optionPremium.add(txnFee));
 
         uint256 lockAmount =
             getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
@@ -297,7 +298,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         Option memory option =
             Option(
                 State.Active,
-                msg.sender,
+                _msgSender(),
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
@@ -311,12 +312,12 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
         txnFeeAggregate = txnFeeAggregate.add(txnFee);
 
-        token.safeTransferFrom(msg.sender, address(pool), optionPremium);
-        token.safeTransferFrom(msg.sender, address(this), txnFee);
+        token.safeTransferFrom(_msgSender(), address(pool), optionPremium);
+        token.safeTransferFrom(_msgSender(), address(this), txnFee);
 
         emit Buy(
             optionId,
-            msg.sender,
+            _msgSender(),
             optionDetails._optionModel,
             txnFee,
             optionPremium.add(txnFee),
