@@ -1048,9 +1048,19 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
-
-    await oddzAssetManager.setPurchaseLimit(pairId, BigNumber.from(utils.parseEther("0.001")));
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    const purchaseLimit = await oddzAssetManager.getPurchaseLimit(pairId);
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        utils.formatBytes32String("B_S"),
+        getExpiry(2),
+        BigNumber.from(purchaseLimit / 10), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.be.revertedWith("amount less than purchase limit");
+    await oddzAssetManager.setPurchaseLimit(pairId, BigNumber.from(purchaseLimit / 10));
 
     await expect(
       oddzOptionManager.buy(
