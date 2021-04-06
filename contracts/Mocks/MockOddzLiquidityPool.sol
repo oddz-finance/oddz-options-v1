@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.8.0;
+pragma solidity =0.8.3;
 
 import "../Pool/IOddzLiquidityPool.sol";
 

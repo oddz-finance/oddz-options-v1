@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity =0.8.3;
 
 import "./IOddzPremium.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
