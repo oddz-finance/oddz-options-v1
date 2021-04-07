@@ -24,7 +24,7 @@ const getAssetPair = async (
   const oam = await oddzAssetManager.connect(admin);
   await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
   await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
-  await oam.addAssetPair(1, 0);
+  await oam.addAssetPair(1, 0, BigNumber.from(utils.parseEther("0.01")));
 
   await oddzPriceOracleManager
     .connect(admin)
@@ -208,6 +208,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     await expect(
       oddzOptionManager.buy(
         pairId,
@@ -672,7 +673,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
     await expect(oddzLiquidityPool.transferPremium()).to.be.revertedWith(
-      "LP: Address not eligible for premium collection",
+      "LP Error: Address not eligible for premium collection",
     );
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
@@ -894,7 +895,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await expect(oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(1))).to.be.revertedWith(
-      "LP: Invalid Date",
+      "LP Error: Invalid Date",
     );
   });
 
@@ -929,7 +930,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(2));
     await expect(oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(2))).to.be.revertedWith(
-      "LP: Premium eligibilty already updated for the date",
+      "LP Error: Premium eligibilty already updated for the date",
     );
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
@@ -1008,5 +1009,67 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
 
     await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller");
+  });
+
+  it("should revert buy for less than purchase limit", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        utils.formatBytes32String("B_S"),
+        getExpiry(2),
+        BigNumber.from(utils.parseEther("0.001")), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.be.revertedWith("amount less than purchase limit");
+  });
+
+  it("should set less limit and buy option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+
+    const pairId = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    const purchaseLimit = await oddzAssetManager.getPurchaseLimit(pairId);
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        utils.formatBytes32String("B_S"),
+        getExpiry(2),
+        BigNumber.from(purchaseLimit / 10), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.be.revertedWith("amount less than purchase limit");
+    await oddzAssetManager.setPurchaseLimit(pairId, BigNumber.from(purchaseLimit / 10));
+
+    await expect(
+      oddzOptionManager.buy(
+        pairId,
+        utils.formatBytes32String("B_S"),
+        getExpiry(2),
+        BigNumber.from(utils.parseEther("0.002")), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+      ),
+    ).to.emit(oddzOptionManager, "Buy");
   });
 }

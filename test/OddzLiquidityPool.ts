@@ -2,12 +2,22 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
-import { OddzLiquidityPool, MockERC20, DexManager, OddzAssetManager } from "../typechain";
+import {
+  OddzLiquidityPool,
+  MockERC20,
+  DexManager,
+  OddzAssetManager,
+  MockOptionManager,
+  MockOddzDex,
+} from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
+import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
+import MockOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
+import { BigNumber, utils } from "ethers";
 
 const { deployContract } = waffle;
 
@@ -34,32 +44,63 @@ describe("Oddz Liquidity Pool Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
+      const totalSupply = "100000000";
+      this.transderTokenAmout = "10000000";
+      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "USD coin",
+        "USDC",
+        BigNumber.from(utils.parseEther(totalSupply)),
+      ])) as MockERC20;
+
+      const ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "Eth Token",
+        "ETH",
+        totalSupply,
+      ])) as MockERC20;
+
+      await this.oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
+      await this.oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
+
+      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
 
-      const totalSupply = 1000000000000000;
+      await this.dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        mockOddzDex.address,
+      );
 
-      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-        "USD coin",
-        "USDC",
-        totalSupply,
-      ])) as MockERC20;
+      const hash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), mockOddzDex.address],
+        ),
+      );
 
-      const usdcToken = await this.usdcToken.connect(this.signers.admin);
+      await this.dexManager.setActiveExchange(hash);
+
+      this.usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
         this.dexManager.address,
       ])) as OddzLiquidityPool;
+      this.dexManager.setSwapper(this.oddzLiquidityPool.address);
 
-      await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
-      await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
-      await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
+      this.mockOptionManager = (await deployContract(this.signers.admin, MockOptionManagerArtifact, [
+        this.oddzLiquidityPool.address,
+      ])) as MockOptionManager;
+
+      await this.usdcToken.approve(this.oddzLiquidityPool.address, BigNumber.from(utils.parseEther(totalSupply)));
+      await usdcToken1.approve(this.oddzLiquidityPool.address, BigNumber.from(utils.parseEther(totalSupply)));
+      await this.usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
       await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
-      await usdcToken.transfer(this.accounts.admin, totalSupply * 0.1);
-      await usdcToken.transfer(this.accounts.admin1, totalSupply * 0.1);
+      await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+      await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transderTokenAmout)));
     });
     shouldBehaveLikeOddzLiquidityPool();
   });

@@ -6,7 +6,6 @@ import "../Option/OddzAssetManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 contract DexManager is AccessControl {
     using Address for address;

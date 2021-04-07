@@ -10,7 +10,6 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
-import "hardhat/console.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
@@ -85,6 +84,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
+        _;
+    }
+
+    modifier validAmount(uint32 _pairId, uint256 _amount) {
+        require(_amount >= assetManager.getPurchaseLimit(_pairId), "amount less than purchase limit");
         _;
     }
 
@@ -238,6 +242,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validOptionType(_optionType)
         validExpiration(_expiration)
         validAssetPair(_pair)
+        validAmount(_pair, _amount)
         returns (uint256 optionId)
     {
         OptionDetails memory optionDetails =

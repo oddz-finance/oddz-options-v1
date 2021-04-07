@@ -5,7 +5,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPancakeSwap.sol";
-import "hardhat/console.sol";
 import "../../../Swap/ISwapUnderlyingAsset.sol";
 
 contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
