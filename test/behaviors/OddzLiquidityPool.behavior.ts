@@ -184,5 +184,4 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(mockOptionManager.unlock()).to.be.ok;
     await expect(mockOptionManager.unlock()).to.be.revertedWith("revert");
   });
-  
 }
