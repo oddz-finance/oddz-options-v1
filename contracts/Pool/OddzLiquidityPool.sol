@@ -2,18 +2,20 @@
 pragma solidity ^0.7.0;
 
 import "./IOddzLiquidityPool.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "../Libs/BokkyPooBahsDateTimeLibrary.sol";
-import "hardhat/console.sol";
+import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
-contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
+contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
+    using Address for address;
     using SafeMath for uint256;
-    using BokkyPooBahsDateTimeLibrary for uint256;
     using SafeERC20 for IERC20;
 
     /**
-     * @dev reqBalance represents minum required balance and will be range between 5 and 9
+     * @dev reqBalance represents minimum required balance out of 10
+     * Range between 6 and 9
+     * e.g. 8 represents 80% of the balance
      */
     uint8 public reqBalance = 8;
 
@@ -50,15 +52,40 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     mapping(uint256 => uint256) internal daysExercise;
     mapping(address => uint256) public lpPremium;
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
+
+    /**
+     * @dev DEX manager
+     */
     DexManager public dexManager;
+
+    /**
+     * @dev Access control specific data definitions
+     */
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "LP Error: caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "LP Error: caller has no access to the method");
+        _;
+    }
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
-        require(ll.locked, "LockedLiquidity with given id has already been unlocked");
+        require(ll.locked, "LP Error: LockedLiquidity with given id has already been unlocked");
+        _;
+    }
+
+    modifier reqBalanceValidRange(uint8 _reqBalance) {
+        require(_reqBalance >= 6 && _reqBalance <= 9, "LP Error: required balance valid range [6 - 9]");
         _;
     }
 
     constructor(IERC20 _token, DexManager _dexManager) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
         dexManager = _dexManager;
     }
@@ -66,7 +93,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
         mint = _amount;
 
-        require(mint > 0, "LP: Amount is too small");
+        require(mint > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
         // transfer user eligible premium
         transferEligiblePremium(date, msg.sender);
@@ -90,8 +117,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
 
         burn = divisionCeiling(_amount.mul(totalSupply()), totalBalance());
 
-        require(burn <= balanceOf(msg.sender), "LP: Amount is too large");
-        require(burn > 0, "LP: Amount is too small");
+        require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
+        require(burn > 0, "LP Error: Amount is too small");
 
         uint256 date = getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.REMOVE);
@@ -114,12 +141,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         uint256 _amount,
         uint256 _premium
-    ) public override onlyOwner {
-        require(_id == lockedLiquidity.length, "LP: Invalid id");
-        require(
-            lockedAmount.add(_amount).mul(10) <= totalBalance().sub(_premium).mul(reqBalance),
-            "LP Error: Amount is too large."
-        );
+    ) public override onlyManager(msg.sender) {
+        require(_id == lockedLiquidity.length, "LP Error: Invalid id");
+        require(lockedAmount.add(_amount) <= totalBalance().sub(_premium), "LP Error: Amount is too large.");
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
         lockedAmount = lockedAmount.add(_amount);
 
@@ -127,7 +151,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         _mint(address(this), _premium);
     }
 
-    function unlockLiquidity(uint256 _id) public override onlyOwner validLiquidty(_id) {
+    function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         ll.locked = false;
         lockedAmount = lockedAmount.sub(ll.amount);
@@ -141,7 +165,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _id,
         address payable _account,
         uint256 _amount
-    ) public override onlyOwner validLiquidty(_id) {
+    ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
@@ -156,7 +180,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline
-    ) public override onlyOwner validLiquidty(_id) {
+    ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
         // Transfer Funds
@@ -211,9 +235,9 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @param _date Epoch time for 00:00:00 hours of the date
      */
     function updatePremiumEligibility(uint256 _date) public {
-        require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
+        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
-        require(!premium.enabled, "LP: Premium eligibilty already updated for the date");
+        require(!premium.enabled, "LP Error: Premium eligibilty already updated for the date");
         premium.enabled = true;
         premium.eligible = premium.collected.add(surplus).sub(daysExercise[_date]);
         surplus = 0;
@@ -227,8 +251,8 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
     function distributePremiumPerLP(uint256 _date, address _lp) private {
         LPBalance[] storage lpBalance = lpBalanceMap[_lp];
         uint256 len = lpBalance.length;
-        require(len > 0, "LP: Invalid liquidity provider");
-        require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP: Premium already distributed for the provider");
+        require(len > 0, "LP Error: Invalid liquidity provider");
+        require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP Error: Premium already distributed for the provider");
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len = len.sub(1);
         }
@@ -247,14 +271,14 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
      * @param _lps List of the active liquidity provider addresses
      */
     function distributePremium(uint256 _date, address[] memory _lps) public {
-        require(_date < getPresentDayTimestamp(), "LP: Invalid Date");
+        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
         }
-        require(premiumDayPool[_date].eligible > 0, "LP: No premium collected for the date");
+        require(premiumDayPool[_date].eligible > 0, "LP Error: No premium collected for the date");
         require(
             premiumDayPool[_date].eligible > premiumDayPool[_date].distributed,
-            "LP: Premium already distributed for this date"
+            "LP Error: Premium already distributed for this date"
         );
         for (uint256 lpid = 0; lpid < _lps.length; lpid++) {
             distributePremiumPerLP(_date, _lps[lpid]);
@@ -265,7 +289,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 date = getPresentDayTimestamp();
         require(
             date.sub(latestLiquidityDateMap[msg.sender]) > premiumLockupDuration,
-            "LP: Address not eligible for premium collection"
+            "LP Error: Address not eligible for premium collection"
         );
         transferEligiblePremium(date, msg.sender);
     }
@@ -355,7 +379,7 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         uint256 _amount
     ) private returns (uint256 lockedPremium, uint256 transferAmount) {
         LockedLiquidity storage ll = lockedLiquidity[_lid];
-        require(_account != address(0), "Invalid address");
+        require(_account != address(0), "LP Error: Invalid address");
 
         ll.locked = false;
         uint256 date = getPresentDayTimestamp();
@@ -393,13 +417,49 @@ contract OddzLiquidityPool is Ownable, IOddzLiquidityPool, ERC20("Oddz USD LP to
         return token.balanceOf(address(this)).sub(balanceOf(address(this)));
     }
 
-    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = BokkyPooBahsDateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = BokkyPooBahsDateTimeLibrary.timestampFromDate(year, month, day);
+    /**
+     @dev sets the manager for the liqudity pool contract
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
     }
 
+    /**
+     @dev removes the manager for the liqudity pool contract for valid managers
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     @dev sets required balance
+     @param _reqBalance required balance between 6 and 9
+     Note: This can be called only by the owner
+     */
+    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
+        reqBalance = _reqBalance;
+    }
+
+    /**
+     * @dev get day based on the timestamp
+     */
+    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
+        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
+        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
+    }
+
+    /**
+     * @dev Ceil division
+     * @param _numerator division numerator
+     * @param _denominator division denominator
+     */
     function divisionCeiling(uint256 _numerator, uint256 _denominator) internal pure returns (uint256) {
-        uint256 result = _numerator.div(_denominator, "Invalid Denominator");
+        uint256 result = _numerator.div(_denominator, "LP Error: Invalid Denominator");
         if (_numerator.mod(_denominator) != 0) result = result + 1;
         return result;
     }

@@ -11,7 +11,6 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
-import "hardhat/console.sol";
 import "../Integrations/Gasless/BaseRelayRecipient.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
