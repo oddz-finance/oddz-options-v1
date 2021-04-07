@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
@@ -140,7 +140,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         uint256 _id,
         uint256 _amount,
         uint256 _premium
-    ) public override onlyManager {
+    ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
         require(
             (lockedAmount + _amount) * 10 <= (totalBalance() - _premium) * reqBalance,

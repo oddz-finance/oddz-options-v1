@@ -73,7 +73,6 @@ contract OddzOptionPremiumManager is AccessControl {
         public
         onlyOwner(msg.sender)
         validModelName(_name)
-        returns (bytes32 exHash)
     {
         require(address(_modelAddress).isContract(), "Invalid premium model address");
 
