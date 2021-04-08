@@ -142,10 +142,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         uint256 _premium
     ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
-        require(
-            (lockedAmount + _amount) * 10 <= (totalBalance() - _premium) * reqBalance,
-            "LP Error: Amount is too large."
-        );
+        require((lockedAmount + _amount) <= (totalBalance() - _premium), "LP Error: Amount is too large.");
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true));
         lockedAmount = lockedAmount + _amount;
 
@@ -363,7 +360,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             uint256 stDate = latestLiquidityEvent;
             while (stDate <= _date) {
                 daysActiveLiquidity[stDate] = daysActiveLiquidity[latestLiquidityEvent];
-                stDate = stDate + (1 days);
+                stDate = stDate + 1 days;
             }
         }
         _liquidity = daysActiveLiquidity[_date];
@@ -461,7 +458,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      */
     function divisionCeiling(uint256 _numerator, uint256 _denominator) internal pure returns (uint256) {
         uint256 result = _numerator / _denominator;
-        if ((_numerator % (_denominator)) != 0) result++;
+        if ((_numerator % _denominator) != 0) result++;
         return result;
     }
 }
