@@ -118,6 +118,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         (, int256 answer, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
+        // converting iv from percentage to value
+        iv = iv / 100;
         decimals = AggregatorV3Interface(aggregator).decimals();
     }
 
