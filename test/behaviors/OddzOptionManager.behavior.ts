@@ -14,7 +14,7 @@ import { Signer } from "@ethersproject/abstract-signer";
 const provider = waffle.provider;
 let snapshotCount = 0;
 
-const getPremiumWithSlippage = async (
+const getPremiumWithSlippageAndBuy = async (
   oddzOptionManager: OddzOptionManager,
   pairId: number,
   model: string,
@@ -23,6 +23,7 @@ const getPremiumWithSlippage = async (
   strike: BigNumber,
   type: number,
   slippage: any,
+  isBuy: boolean,
 ) => {
   const premium: any = await oddzOptionManager.getPremium(
     pairId,
@@ -32,8 +33,20 @@ const getPremiumWithSlippage = async (
     strike,
     type,
   );
-  Number(premium.optionPremium * (1 + slippage / 100));
-  return premium.optionPremium * (1 + slippage / 100);
+  const premiumWithSlippage = Number(premium.optionPremium * (1 + slippage / 100));
+  if (isBuy) {
+    await oddzOptionManager.buy(
+      pairId,
+      model,
+      BigNumber.from(utils.parseEther((premiumWithSlippage / 1e18).toString())),
+      expiry,
+      amount, // number of options
+      strike,
+      type,
+    );
+  } else {
+    return premium.optionPremium * (1 + slippage / 100);
+  }
 };
 const getAssetPair = async (
   oddzAssetManager: OddzAssetManager,
@@ -235,7 +248,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -244,6 +257,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
       0.05,
+      false,
     );
 
     await expect(
@@ -271,7 +285,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -280,6 +294,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(122000000000),
       OptionType.Call,
       0.05,
+      false,
     );
 
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
@@ -313,7 +328,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -322,17 +337,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await expect(oddzOptionManager.exercise(0))
@@ -357,29 +364,21 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
+      BigNumber.from(150000000000),
+      OptionType.Put,
       0.05,
+      true,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(150000000000),
-      OptionType.Put,
-    );
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Put option: Current price is too high");
     await oddzPriceOracle.setUnderlyingPrice(145000000000);
     await expect(oddzOptionManager.exercise(0))
@@ -405,8 +404,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
-      this.oddzOptionManager,
+    await getPremiumWithSlippageAndBuy(
+      oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
@@ -414,18 +413,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
     const oddzOptionManager1 = await this.oddzOptionManager.connect(this.signers.admin1);
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(160000000000),
-      OptionType.Call,
-    );
+
     await expect(oddzOptionManager1.exercise(0)).to.be.revertedWith("Wrong msg.sender");
   });
 
@@ -442,7 +434,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -451,17 +443,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(160000000000),
-      OptionType.Call,
-    );
     await expect(oddzOptionManager.exercise(0)).to.emit(oddzOptionManager, "Exercise");
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Wrong state");
   });
@@ -479,7 +463,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -488,37 +472,34 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("10")), // number of options
-      BigNumber.from(160000000000),
-      OptionType.Call,
-    );
+
     const op0 = await oddzOptionManager.options(0);
-    await oddzOptionManager.buy(
+    await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
       BigNumber.from(160000000000),
       OptionType.Call,
+      0.05,
+      true,
     );
     const op1 = await oddzOptionManager.options(1);
-    await oddzOptionManager.buy(
+    await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
       BigNumber.from(160000000000),
       OptionType.Call,
+      0.05,
+      true,
     );
     const op2 = await oddzOptionManager.options(2);
     const premiums = BigNumber.from(op0.premium).add(BigNumber.from(op1.premium)).add(BigNumber.from(op2.premium));
@@ -544,29 +525,21 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(145000000000),
-      OptionType.Call,
-    );
 
-    const premiumWithSlippage1 = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -575,17 +548,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(145000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage1),
-      getExpiry(14),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(145000000000),
-      OptionType.Call,
-    );
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
@@ -669,7 +634,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -678,17 +643,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await oddzOptionManager.unlock(0);
@@ -717,7 +674,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -726,18 +683,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
@@ -773,7 +723,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -782,16 +732,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
@@ -827,7 +770,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -836,16 +779,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await oddzOptionManager.unlock(0);
@@ -875,7 +811,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -884,16 +820,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await oddzOptionManager.unlock(0);
@@ -929,7 +858,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -938,16 +867,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await oddzOptionManager.unlock(0);
@@ -980,7 +902,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -989,16 +911,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
-    );
-
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
+      true,
     );
 
     await provider.send("evm_snapshot", []);
@@ -1024,7 +937,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await oddzOptionManager.setSettlementFeePerc(5);
     expect((await oddzOptionManager.settlementFeePerc()).toNumber()).to.equal(5);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1033,17 +946,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
 
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await expect(oddzOptionManager.exercise(0))
@@ -1077,8 +982,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
-      this.oddzOptionManager,
+    await getPremiumWithSlippageAndBuy(
+      oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
@@ -1086,16 +991,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
@@ -1124,8 +1022,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
-      this.oddzOptionManager,
+    await getPremiumWithSlippageAndBuy(
+      oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
@@ -1133,16 +1031,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await expect(oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(1))).to.be.revertedWith(
       "LP Error: Invalid Date",
     );
@@ -1163,7 +1054,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1172,16 +1063,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(1),
-      BigNumber.from(utils.parseEther("1")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
@@ -1211,7 +1095,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1220,16 +1104,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      true,
     );
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
-    );
+
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await oddzOptionManager.exercise(0);
@@ -1252,7 +1129,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1261,16 +1138,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
-    );
-
-    await oddzOptionManager.buy(
-      pairId,
-      utils.formatBytes32String("B_S"),
-      BigInt(premiumWithSlippage),
-      getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
-      OptionType.Call,
+      true,
     );
 
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
@@ -1305,7 +1173,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
 
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1314,6 +1182,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      false,
     );
 
     await expect(
@@ -1343,7 +1212,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const purchaseLimit = await oddzAssetManager.getPurchaseLimit(pairId);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1352,6 +1221,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      false,
     );
     await expect(
       oddzOptionManager.buy(
@@ -1365,7 +1235,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       ),
     ).to.be.revertedWith("amount less than purchase limit");
     await oddzAssetManager.setPurchaseLimit(pairId, BigNumber.from(purchaseLimit / 10));
-    const premiumWithSlippage1 = await getPremiumWithSlippage(
+    const premiumWithSlippage1 = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1374,6 +1244,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.05,
+      false,
     );
 
     await expect(
@@ -1389,7 +1260,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.emit(oddzOptionManager, "Buy");
   });
 
-  it.only("should revert buy when premium crosses slippage limit of 5%", async function () {
+  it("should revert buy when premium crosses slippage limit of 5%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
@@ -1402,7 +1273,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1411,6 +1282,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       5,
+      false,
     );
     await oddzVolatility.setIv(3600000, 5);
     await expect(
@@ -1426,7 +1298,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
 
-  it.only("should revert buy when premium crosses slippage limit of 3%", async function () {
+  it("should revert buy when premium crosses slippage limit of 3%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
@@ -1439,7 +1311,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1448,6 +1320,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       3,
+      false,
     );
     await oddzVolatility.setIv(3600000, 5);
     await expect(
@@ -1462,7 +1335,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       ),
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
-  it.only("should revert buy when premium crosses slippage limit of 1%", async function () {
+  it("should revert buy when premium crosses slippage limit of 1%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
@@ -1475,7 +1348,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1484,6 +1357,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       1,
+      false,
     );
     await oddzVolatility.setIv(3600000, 5);
     await expect(
@@ -1499,7 +1373,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
 
-  it.only("should revert buy when premium crosses slippage limit of 0.5%", async function () {
+  it("should revert buy when premium crosses slippage limit of 0.5%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
@@ -1512,7 +1386,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const premiumWithSlippage = await getPremiumWithSlippage(
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
       utils.formatBytes32String("B_S"),
@@ -1521,6 +1395,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(170000000000),
       OptionType.Call,
       0.5,
+      false,
     );
     await oddzVolatility.setIv(3600000, 5);
     await expect(
