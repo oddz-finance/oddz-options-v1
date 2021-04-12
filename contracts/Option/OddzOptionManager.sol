@@ -10,8 +10,9 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
+import "../Integrations/Gasless/BaseRelayRecipient.sol";
 
-contract OddzOptionManager is IOddzOption, Ownable {
+contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
 
@@ -60,13 +61,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
-        OddzOptionPremiumManager _premiumManager
+        OddzOptionPremiumManager _premiumManager,
+        address _trustedForwarder
     ) {
         pool = _pool;
         oracle = _oracle;
         volatility = _iv;
         stakingBenficiary = _staking;
         token = _token;
+        trustedForwarder = _trustedForwarder;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
     }
@@ -80,6 +83,28 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(_expiration <= maxExpiry, "Expiration cannot be more than 30 days");
         require(_expiration >= minExpiry, "Expiration cannot be less than 1 days");
         _;
+    }
+
+    function setTrustedForwarder(address forwarderAddress) public {
+        require(forwarderAddress != address(0), "Forwarder Address cannot be 0");
+        trustedForwarder = forwarderAddress;
+    }
+
+    function versionRecipient() external view virtual override returns (string memory) {
+        return "1";
+    }
+
+    function _msgSender() internal view virtual override(BaseRelayRecipient, Context) returns (address payable ret) {
+        if (msg.data.length >= 24 && isTrustedForwarder(msg.sender)) {
+            // At this point we know that the sender is a trusted forwarder,
+            // so we trust that the last bytes of msg.data are the verified sender address.
+            // extract sender address from the end of msg.data
+            assembly {
+                ret := shr(96, calldataload(sub(calldatasize(), 20)))
+            }
+        } else {
+            return msg.sender;
+        }
     }
 
     modifier validAssetPair(uint32 _pairId) {
@@ -267,7 +292,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 optionDetails._optionType
             );
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(msg.sender, address(this)), optionPremium + txnFee);
+        validateOptionAmount(token.allowance(_msgSender(), address(this)), optionPremium + txnFee );
 
         uint256 lockAmount =
             getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
@@ -275,7 +300,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         Option memory option =
             Option(
                 State.Active,
-                payable(msg.sender),
+                _msgSender(),
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
@@ -289,10 +314,17 @@ contract OddzOptionManager is IOddzOption, Ownable {
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
         txnFeeAggregate = txnFeeAggregate + txnFee;
 
-        token.safeTransferFrom(msg.sender, address(pool), optionPremium);
-        token.safeTransferFrom(msg.sender, address(this), txnFee);
+        token.safeTransferFrom(_msgSender(), address(pool), optionPremium);
+        token.safeTransferFrom(_msgSender(), address(this), txnFee);
 
-        emit Buy(optionId, msg.sender, optionDetails._optionModel, txnFee, optionPremium + txnFee, optionDetails._pair);
+        emit Buy(
+            optionId,
+            _msgSender(),
+            optionDetails._optionModel,
+            txnFee,
+            optionPremium + txnFee,
+            optionDetails._pair
+        );
     }
 
     /**

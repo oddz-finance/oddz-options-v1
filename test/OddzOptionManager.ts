@@ -109,6 +109,7 @@ describe("Oddz Option Manager Unit tests", function () {
         "USDC",
         totalSupply,
       ])) as MockERC20;
+      const bscForwarder = "0xFcE240fABBF8D5FdefD3B565E414151F2B9f153b";
 
       this.ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "ETH Token",
@@ -136,6 +137,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.usdcToken.address,
         this.oddzAssetManager.address,
         oddzOptionPremiumManager.address,
+        bscForwarder,
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
