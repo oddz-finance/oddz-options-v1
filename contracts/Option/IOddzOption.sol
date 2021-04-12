@@ -2,7 +2,6 @@
 pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**

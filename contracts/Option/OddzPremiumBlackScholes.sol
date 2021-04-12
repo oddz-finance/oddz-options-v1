@@ -4,10 +4,8 @@ pragma solidity 0.8.3;
 import "./IOddzPremium.sol";
 import "../Libs/BlackScholes.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract OddzPremiumBlackScholes is IOddzPremium, Ownable {
-    // using SafeMath for uint256;
     /**
      * @dev The percentage precision. (100000 = 100%)
      */
