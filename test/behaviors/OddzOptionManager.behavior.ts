@@ -571,7 +571,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pairId,
       utils.formatBytes32String("B_S"),
       getExpiry(14),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
       OptionType.Call,
       0.05,
@@ -582,7 +582,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       utils.formatBytes32String("B_S"),
       BigInt(premiumWithSlippage1),
       getExpiry(14),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(145000000000),
       OptionType.Call,
     );
@@ -611,7 +611,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     // After premium lockup period lp premium is transferred from liquidity pool to LP
     await expect(BigNumber.from(await oddzLiquidityPool.balanceOf(this.accounts.admin))).to.equal(
-      utils.parseEther("100169.486989423"),
+      utils.parseEther("1000476.10566199"),
     );
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
 
@@ -1389,7 +1389,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.emit(oddzOptionManager, "Buy");
   });
 
-  it.only("should buy with slippage limit", async function () {
+  it.only("should revert buy when crossing slippage limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
