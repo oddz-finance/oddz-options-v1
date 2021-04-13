@@ -1437,6 +1437,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       3,
       false,
     );
+    // increae iv
     await oddzVolatility.setIv(182831, 5);
     await expect(
       oddzOptionManager.buy(
@@ -1449,7 +1450,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         OptionType.Call,
       ),
     ).to.be.revertedWith("Premium crossed slippage tolerance");
-
+    // reset IV to original
+    await oddzVolatility.setIv(180000, 5);
     const premiumWithSlippage1 = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       pairId,
@@ -1461,6 +1463,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       3.1,
       false,
     );
+    // increase iv
     await oddzVolatility.setIv(182831, 5);
     await expect(
       oddzOptionManager.buy(
