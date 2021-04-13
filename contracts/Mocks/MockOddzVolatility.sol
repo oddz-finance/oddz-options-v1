@@ -4,6 +4,9 @@ pragma solidity 0.8.3;
 import "../Oracle/IOddzVolatilityOracle.sol";
 
 contract MockOddzVolatility is IOddzVolatilityOracle {
+    uint256 iv = 180000;
+    uint8 decimals = 5;
+
     function getIv(
         bytes32 _undelying,
         bytes32 _strike,
@@ -11,9 +14,13 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
-    ) public pure override returns (uint256 iv, uint8 decimals) {
-        iv = 180000;
-        decimals = 5;
+    ) public view override returns (uint256, uint8) {
+        return (iv, decimals);
+    }
+
+    function setIv(uint256 _iv, uint8 _decimals) public {
+        iv = _iv;
+        decimals = _decimals;
     }
 
     function setPairContract(

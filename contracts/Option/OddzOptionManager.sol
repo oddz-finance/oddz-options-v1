@@ -42,7 +42,6 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     /**
      * @dev Max Deadline in seconds
      */
-
     uint32 public maxDeadline;
 
     struct OptionDetails {
@@ -257,6 +256,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     function buy(
         uint32 _pair,
         bytes32 _optionModel,
+        uint256 _premiumWithSlippage,
         uint256 _expiration,
         uint256 _amount,
         uint256 _strike,
@@ -273,7 +273,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         OptionDetails memory optionDetails =
             OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
 
-        optionId = createOption(optionDetails);
+        optionId = createOption(optionDetails, _premiumWithSlippage);
     }
 
     /**
@@ -281,7 +281,10 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(OptionDetails memory optionDetails) private returns (uint256 optionId) {
+    function createOption(OptionDetails memory optionDetails, uint256 _premiumWithSlippage)
+        private
+        returns (uint256 optionId)
+    {
         (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) =
             getPremium(
                 optionDetails._pair,
@@ -291,6 +294,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
                 optionDetails._strike,
                 optionDetails._optionType
             );
+        require(_premiumWithSlippage >= optionPremium, "Premium crossed slippage tolerance");
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
         validateOptionAmount(token.allowance(msgSender(), address(this)), optionPremium + txnFee);
 

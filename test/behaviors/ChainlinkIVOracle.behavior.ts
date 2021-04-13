@@ -6,7 +6,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1));
-    expect(iv).to.equal(8379000000);
+    expect(iv).to.equal(83790000);
     expect(decimals).to.equal(8);
   });
 
@@ -14,7 +14,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(2));
-    expect(iv).to.equal(9237000000);
+    expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
 
@@ -22,7 +22,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(3));
-    expect(iv).to.equal(9237000000);
+    expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
 
@@ -30,7 +30,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(4));
-    expect(iv).to.equal(9237000000);
+    expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
 
@@ -38,7 +38,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(5));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -46,7 +46,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(6));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -54,7 +54,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(7));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -62,7 +62,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(8));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -70,7 +70,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(9));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -78,7 +78,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(10));
-    expect(iv).to.equal(10154000000);
+    expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
 
@@ -86,7 +86,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(11));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -94,7 +94,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(12));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -102,7 +102,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(13));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -110,7 +110,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(14));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -118,7 +118,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(15));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -126,7 +126,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(16));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -134,7 +134,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(17));
-    expect(iv).to.equal(10472000000);
+    expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
 
@@ -142,7 +142,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(18));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -150,7 +150,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(19));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -158,7 +158,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(20));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -166,7 +166,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(21));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -174,7 +174,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(22));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -182,7 +182,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(23));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -190,7 +190,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(24));
-    expect(iv).to.equal(10586000000);
+    expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
 
@@ -198,7 +198,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(25));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -206,7 +206,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(26));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -214,7 +214,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(27));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -222,7 +222,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(28));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -230,7 +230,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(29));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -238,7 +238,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(30));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
@@ -246,7 +246,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(31));
-    expect(iv).to.equal(10759000000);
+    expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
 
