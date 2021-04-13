@@ -73,7 +73,7 @@ describe("Oddz Option Manager Unit tests", function () {
       )) as OddzPriceOracleManager;
       await this.oddzPriceOracle.transferOwnership(this.oddzPriceOracleManager.address);
 
-      const oddzVolatility = (await deployContract(
+      this.oddzVolatility = (await deployContract(
         this.signers.admin,
         MockOddzVolatilityArtifact,
       )) as MockOddzVolatility;
@@ -87,15 +87,15 @@ describe("Oddz Option Manager Unit tests", function () {
       await oddzIVOracleManager.addIVAggregator(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        oddzVolatility.address,
-        oddzVolatility.address,
+        this.oddzVolatility.address,
+        this.oddzVolatility.address,
         1,
       );
 
       const hash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), oddzVolatility.address],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzVolatility.address],
         ),
       );
 
