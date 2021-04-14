@@ -256,10 +256,6 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
     );
-
-    const addr = (await oddzAssetManager.pairMap(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")))
-      ._address;
-
     await expect(
       oddzAssetManager.setPurchaseLimit(address0(), BigNumber.from(utils.parseEther("0.01"))),
     ).to.be.revertedWith("Invalid Asset pair");
