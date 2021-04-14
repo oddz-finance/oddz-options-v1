@@ -48,7 +48,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         uint256 _strike;
         uint256 _amount;
         uint256 _expiration;
-        uint32 _pair;
+        address _pairAddr;
         bytes32 _optionModel;
         OptionType _optionType;
     }
@@ -106,13 +106,13 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         }
     }
 
-    modifier validAssetPair(uint32 _pairId) {
-        require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
+    modifier validAssetPair(address _pairAddr) {
+        require(assetManager.getStatusOfPair(_pairAddr) == true, "Invalid Asset pair");
         _;
     }
 
-    modifier validAmount(uint32 _pairId, uint256 _amount) {
-        require(_amount >= assetManager.getPurchaseLimit(_pairId), "amount less than purchase limit");
+    modifier validAmount(address _pairAddr, uint256 _amount) {
+        require(_amount >= assetManager.getPurchaseLimit(_pairAddr), "amount less than purchase limit");
         _;
     }
 
@@ -194,7 +194,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         uint8 decimal;
         // retrieving struct if more than one field is used, to reduce gas for memory storage
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
-        (cp, decimal) = oracle.getUnderlyingPrice(primary._name, assetManager.getAssetName(_pair._strike));
+        (cp, decimal) = oracle.getUnderlyingPrice(primary._name, _pair._strike);
 
         if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
         else cp = (cp * (10**primary._precision)) / (10**decimal);
@@ -205,7 +205,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      * @param _cp current price of the underlying asset
      * @param _iv implied volatility of the underlying asset
      * @param _strike strike price provided by the option buyer
-     * @param _pair Asset pair
+     * @param _pairAddr Asset pair
      * @return minAssetPrice - minimum allowed strike price for the underlying asset
      * @return maxAssetPrice - maxium allowed strike price for the underlying asset
      */
@@ -213,10 +213,10 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
-        uint32 _pair,
+        address _pairAddr,
         uint8 _ivDecimal
     ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
-        IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pair));
+        IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pairAddr));
         minAssetPrice = getPutOverColl(_cp, _iv, primary._precision, _ivDecimal);
         maxAssetPrice = getCallOverColl(_cp, _iv, primary._precision, _ivDecimal);
         validStrike(_strike, minAssetPrice, maxAssetPrice, primary._precision);
@@ -244,17 +244,17 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
-        uint32 _pair,
+        address _pairAddr,
         uint8 _ivDecimal,
         OptionType _optionType
     ) private view returns (uint256 lockAmount) {
         (uint256 minStrikePrice, uint256 maxStrikePrice) =
-            getAssetStrikePriceRange(_cp, _iv, _strike, _pair, _ivDecimal);
+            getAssetStrikePriceRange(_cp, _iv, _strike, _pairAddr, _ivDecimal);
         lockAmount = _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice;
     }
 
     function buy(
-        uint32 _pair,
+        address _pairAddr,
         bytes32 _optionModel,
         uint256 _premiumWithSlippage,
         uint256 _expiration,
@@ -266,12 +266,12 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         override
         validOptionType(_optionType)
         validExpiration(_expiration)
-        validAssetPair(_pair)
-        validAmount(_pair, _amount)
+        validAssetPair(_pairAddr)
+        validAmount(_pairAddr, _amount)
         returns (uint256 optionId)
     {
         OptionDetails memory optionDetails =
-            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
+            OptionDetails(_strike, _amount, _expiration, _pairAddr, _optionModel, _optionType);
 
         optionId = createOption(optionDetails, _premiumWithSlippage);
     }
@@ -287,7 +287,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     {
         (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) =
             getPremium(
-                optionDetails._pair,
+                optionDetails._pairAddr,
                 optionDetails._optionModel,
                 optionDetails._expiration,
                 optionDetails._amount,
@@ -295,11 +295,11 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
                 optionDetails._optionType
             );
         require(_premiumWithSlippage >= optionPremium, "Premium crossed slippage tolerance");
-        uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
+        uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pairAddr));
         validateOptionAmount(token.allowance(msgSender(), address(this)), optionPremium + txnFee);
 
         uint256 lockAmount =
-            getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
+            getLockAmount(cp, iv, optionDetails._strike, optionDetails._pairAddr, ivDecimal, optionDetails._optionType);
         optionId = options.length;
         Option memory option =
             Option(
@@ -310,7 +310,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
                 lockAmount,
                 optionPremium,
                 optionDetails._expiration + block.timestamp,
-                optionDetails._pair,
+                optionDetails._pairAddr,
                 optionDetails._optionType
             );
 
@@ -327,13 +327,13 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
             optionDetails._optionModel,
             txnFee,
             optionPremium + txnFee,
-            optionDetails._pair
+            optionDetails._pairAddr
         );
     }
 
     /**
      * @notice Used for getting the actual options prices
-     * @param _pair Asset Pair
+     * @param _pairAddr Asset Pair
      * @param _optionModel Option model
      * @param _expiration Option period in unix timestamp
      * @param _amount Option amount
@@ -345,7 +345,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      * @return ivDecimal implied volatility precision
      */
     function getPremium(
-        uint32 _pair,
+        address _pairAddr,
         bytes32 _optionModel,
         uint256 _expiration,
         uint256 _amount,
@@ -356,7 +356,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         view
         validOptionType(_optionType)
         validExpiration(_expiration)
-        validAssetPair(_pair)
+        validAssetPair(_pairAddr)
         returns (
             uint256 optionPremium,
             uint256 txnFee,
@@ -365,7 +365,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         )
     {
         OptionDetails memory optionDetails =
-            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
+            OptionDetails(_strike, _amount, _expiration, _pairAddr, _optionModel, _optionType);
 
         (ivDecimal, iv, optionPremium) = getOptionPremiumDetails(optionDetails);
 
@@ -381,11 +381,11 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
             uint256 optionPremium
         )
     {
-        IOddzAsset.AssetPair memory pair = assetManager.getPair(optionDetails._pair);
+        IOddzAsset.AssetPair memory pair = assetManager.getPair(optionDetails._pairAddr);
 
         (iv, ivDecimal) = volatility.calculateIv(
-            assetManager.getAssetName(pair._primary),
-            assetManager.getAssetName(pair._strike),
+            pair._primary,
+            pair._strike,
             optionDetails._optionType,
             optionDetails._expiration,
             optionDetails._amount,
@@ -447,15 +447,8 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
 
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
-        IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
-        pool.sendUA(
-            _optionId,
-            option.holder,
-            profit,
-            assetManager.getAssetName(pair._primary),
-            assetManager.getAssetName(pair._strike),
-            _deadline
-        );
+        IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairAddr);
+        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -466,7 +459,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      */
     function getProfit(uint256 _optionId) internal returns (uint256 profit, uint256 settlementFee) {
         Option memory option = options[_optionId];
-        IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairId);
+        IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pairAddr);
         uint256 _cp = getCurrentPrice(pair);
 
         if (option.optionType == OptionType.Call) {

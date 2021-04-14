@@ -19,7 +19,7 @@ interface IOddzOption {
         bytes32 indexed _model,
         uint256 _transactionFee,
         uint256 _totalFee,
-        uint32 _pairId
+        address _pairAddr
     );
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
@@ -33,13 +33,13 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
-        uint32 pairId;
+        address pairAddr;
         OptionType optionType;
     }
 
     /**
      * @notice Buy a new option
-     * @param _pair Underlying asset
+     * @param _pairAddr Underlying asset
      * @param _optionModel Option Model e.g. B_S (for BlackScholes)
      * @param _premiumWithSlippage Option premium amount with slippage
      * @param _expiration Option expiration in unix timestamp
@@ -49,7 +49,7 @@ interface IOddzOption {
      * @return optionId Created option ID
      */
     function buy(
-        uint32 _pair,
+        address _pairAddr,
         bytes32 _optionModel,
         uint256 _premiumWithSlippage,
         uint256 _expiration,
