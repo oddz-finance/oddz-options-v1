@@ -93,7 +93,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         return "1";
     }
 
-    function msgSender() internal view virtual override returns (address payable ret) {
+    function msgSender() internal view virtual override returns (address  ret) {
         if (msg.data.length >= 24 && isTrustedForwarder(msg.sender)) {
             // At this point we know that the sender is a trusted forwarder,
             // so we trust that the last bytes of msg.data are the verified sender address.
@@ -102,7 +102,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
                 ret := shr(96, calldataload(sub(calldatasize(), 20)))
             }
         } else {
-            return payable(msg.sender);
+            return msg.sender;
         }
     }
 
@@ -304,7 +304,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         Option memory option =
             Option(
                 State.Active,
-                msgSender(),
+                payable(msgSender()),
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
