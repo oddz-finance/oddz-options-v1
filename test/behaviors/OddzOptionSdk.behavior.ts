@@ -611,6 +611,38 @@ export function shouldBehaveLikeOddzOptionSdk(): void {
     ).to.emit(oddzOptionSdk, "BuySdk");
   });
 
+  it("should  revert for invalid address while add liquidity", async function () {
+    const oddzOptionSdk = await this.oddzOptionSdk.connect(this.signers.admin);
+    const depositAmount = 1000;
+    await expect(
+      oddzOptionSdk.addLiquidity(depositAmount, "0x0000000000000000000000000000000000000000"),
+    ).to.be.revertedWith("invalid provider address");
+  });
+
+  it("should  revert for invalid address while buying option", async function () {
+    const oddzOptionSdk = await this.oddzOptionSdk.connect(this.signers.admin);
+    const pairId = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await expect(
+      oddzOptionSdk.buy(
+        pairId,
+        utils.formatBytes32String("B_S"),
+        BigNumber.from(utils.parseEther("1")),
+        getExpiry(1),
+        BigNumber.from(utils.parseEther("1")), // number of options
+        BigNumber.from(170000000000),
+        OptionType.Call,
+        "0x0000000000000000000000000000000000000000",
+      ),
+    ).to.revertedWith("invalid provider address");
+  });
+
   it("should  emit AddLiquidity event ", async function () {
     const oddzOptionSdk = await this.oddzOptionSdk.connect(this.signers.admin);
     const depositAmount = 1000;
@@ -620,12 +652,50 @@ export function shouldBehaveLikeOddzOptionSdk(): void {
     );
   });
 
-  it("should  revert for invalid buyer ", async function () {
+  it("should  get liquidity count of provider ", async function () {
     const oddzOptionSdk = await this.oddzOptionSdk.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(oddzOptionSdk.addLiquidity(depositAmount, this.oddzOptionManager.address)).to.emit(
+    await expect(oddzOptionSdk.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
       oddzOptionSdk,
       "AddLiquiditySdk",
     );
+
+    expect(await oddzOptionSdk.liquidityCount(this.accounts.admin)).to.equal(1);
+  });
+  it("should  get option count of provider ", async function () {
+    const oddzOptionSdk = await this.oddzOptionSdk.connect(this.signers.admin);
+
+    const pairId = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionSdk,
+      pairId,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      3,
+      this.accounts.admin,
+      false,
+    );
+    await oddzOptionSdk.buy(
+      pairId,
+      utils.formatBytes32String("B_S"),
+      BigInt(premiumWithSlippage),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+      this.accounts.admin,
+    );
+    expect(await oddzOptionSdk.optionCount(this.accounts.admin)).to.equal(1);
   });
 }

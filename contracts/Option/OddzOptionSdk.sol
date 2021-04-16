@@ -10,6 +10,7 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
     OddzOptionManager public optionManager;
     OddzLiquidityPool public pool;
     mapping(address => uint256) public optionCount;
+    mapping(address => uint256) public liquidityCount;
 
     constructor(
         OddzOptionManager _optionManager,
@@ -53,9 +54,11 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
         IOddzOption.OptionType _optionType,
         address _provider
     ) public override returns (uint256 optionId) {
+        require(_provider != address(0), "invalid provider address");
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_pair, _optionModel, _expiration, _amount, _strike, _optionType);
         optionId = optionManager.buy(option, _premiumWithSlippage, msgSender());
+        optionCount[_provider] += 1;
 
         emit BuySdk(optionId, msgSender(), _optionModel, _provider);
     }
@@ -87,7 +90,10 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
     }
 
     function addLiquidity(uint256 _amount, address _provider) external override returns (uint256 mint) {
+        require(_provider != address(0), "invalid provider address");
+
         mint = pool.addLiquidity(_amount, msg.sender);
+        liquidityCount[_provider] += 1;
 
         emit AddLiquiditySdk(msg.sender, _provider, _amount, mint);
     }
