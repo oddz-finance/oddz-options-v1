@@ -10,9 +10,8 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
-import "../Integrations/Gasless/BaseRelayRecipient.sol";
 
-contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
+contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
 
@@ -44,14 +43,16 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      */
     uint32 public maxDeadline;
 
-    struct OptionDetails {
-        uint256 _strike;
-        uint256 _amount;
-        uint256 _expiration;
-        uint32 _pair;
-        bytes32 _optionModel;
-        OptionType _optionType;
-    }
+    // struct OptionDetails {
+    //     uint256 _strike;
+    //     uint256 _amount;
+    //     uint256 _expiration;
+    //     uint32 _pair;
+    //     bytes32 _optionModel;
+    //     OptionType _optionType;
+    //     address _buyer;
+        
+    // }
 
     constructor(
         OddzPriceOracleManager _oracle,
@@ -60,15 +61,13 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         IOddzLiquidityPool _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
-        OddzOptionPremiumManager _premiumManager,
-        address _trustedForwarder
+        OddzOptionPremiumManager _premiumManager
     ) {
         pool = _pool;
         oracle = _oracle;
         volatility = _iv;
         stakingBenficiary = _staking;
         token = _token;
-        trustedForwarder = _trustedForwarder;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
     }
@@ -84,27 +83,6 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         _;
     }
 
-    function setTrustedForwarder(address forwarderAddress) public {
-        require(forwarderAddress != address(0), "Forwarder Address cannot be 0");
-        trustedForwarder = forwarderAddress;
-    }
-
-    function versionRecipient() external view virtual override returns (string memory) {
-        return "1";
-    }
-
-    function msgSender() internal view virtual override returns (address ret) {
-        if (msg.data.length >= 24 && isTrustedForwarder(msg.sender)) {
-            // At this point we know that the sender is a trusted forwarder,
-            // so we trust that the last bytes of msg.data are the verified sender address.
-            // extract sender address from the end of msg.data
-            assembly {
-                ret := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
-        } else {
-            return msg.sender;
-        }
-    }
 
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
@@ -254,26 +232,19 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     }
 
     function buy(
-        uint32 _pair,
-        bytes32 _optionModel,
-        uint256 _premiumWithSlippage,
-        uint256 _expiration,
-        uint256 _amount,
-        uint256 _strike,
-        OptionType _optionType
+        OptionDetails memory _option,
+        address _buyer
     )
         external
         override
-        validOptionType(_optionType)
-        validExpiration(_expiration)
-        validAssetPair(_pair)
-        validAmount(_pair, _amount)
+        validOptionType(_option._optionType)
+        validExpiration(_option._expiration)
+        validAssetPair(_option._pair)
+        validAmount(_option._pair, _option._amount)
         returns (uint256 optionId)
     {
-        OptionDetails memory optionDetails =
-            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
-
-        optionId = createOption(optionDetails, _premiumWithSlippage);
+        
+        optionId = createOption(_option, _buyer);
     }
 
     /**
@@ -281,22 +252,17 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
      * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(OptionDetails memory optionDetails, uint256 _premiumWithSlippage)
+    function createOption(OptionDetails memory optionDetails, address _buyer)
         private
         returns (uint256 optionId)
     {
         (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) =
             getPremium(
-                optionDetails._pair,
-                optionDetails._optionModel,
-                optionDetails._expiration,
-                optionDetails._amount,
-                optionDetails._strike,
-                optionDetails._optionType
+                optionDetails
             );
-        require(_premiumWithSlippage >= optionPremium, "Premium crossed slippage tolerance");
+        require(optionDetails._premiumWithSlippage >= optionPremium, "Premium crossed slippage tolerance");
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(msgSender(), address(this)), optionPremium + txnFee);
+        validateOptionAmount(token.allowance(_buyer, address(this)), optionPremium + txnFee);
 
         uint256 lockAmount =
             getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
@@ -304,7 +270,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         Option memory option =
             Option(
                 State.Active,
-                payable(msgSender()),
+                payable(_buyer),
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
@@ -318,12 +284,12 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         pool.lockLiquidity(optionId, lockAmount, optionPremium);
         txnFeeAggregate = txnFeeAggregate + txnFee;
 
-        token.safeTransferFrom(msgSender(), address(pool), optionPremium);
-        token.safeTransferFrom(msgSender(), address(this), txnFee);
+        token.safeTransferFrom(_buyer, address(pool), optionPremium);
+        token.safeTransferFrom(_buyer, address(this), txnFee);
 
         emit Buy(
             optionId,
-            msgSender(),
+            _buyer,
             optionDetails._optionModel,
             txnFee,
             optionPremium + txnFee,
@@ -333,30 +299,20 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
 
     /**
      * @notice Used for getting the actual options prices
-     * @param _pair Asset Pair
-     * @param _optionModel Option model
-     * @param _expiration Option period in unix timestamp
-     * @param _amount Option amount
-     * @param _strike Strike price of the option
-     * @param _optionType Option Type (Call/Put)
+     * @param _option Option details
      * @return optionPremium Premium to be paid
      * @return txnFee Transaction Fee
      * @return iv implied volatility of the underlying asset
      * @return ivDecimal implied volatility precision
      */
     function getPremium(
-        uint32 _pair,
-        bytes32 _optionModel,
-        uint256 _expiration,
-        uint256 _amount,
-        uint256 _strike,
-        OptionType _optionType
+       OptionDetails memory _option
     )
         public
         view
-        validOptionType(_optionType)
-        validExpiration(_expiration)
-        validAssetPair(_pair)
+        validOptionType(_option._optionType)
+        validExpiration(_option._expiration)
+        validAssetPair(_option._pair)
         returns (
             uint256 optionPremium,
             uint256 txnFee,
@@ -364,10 +320,9 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
             uint8 ivDecimal
         )
     {
-        OptionDetails memory optionDetails =
-            OptionDetails(_strike, _amount, _expiration, _pair, _optionModel, _optionType);
+        
 
-        (ivDecimal, iv, optionPremium) = getOptionPremiumDetails(optionDetails);
+        (ivDecimal, iv, optionPremium) = getOptionPremiumDetails(_option);
 
         txnFee = getTransactionFee(optionPremium);
     }

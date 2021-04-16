@@ -25,9 +25,10 @@ interface IOddzLiquidityPool {
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
      * @param _amount Amount of USD to receive
+     * @param _account Address of the Liquidity Provider
      * @return mint Amount of tokens minted
      */
-    function addLiquidity(uint256 _amount) external returns (uint256 mint);
+    function addLiquidity(uint256 _amount, address _account) external returns (uint256 mint);
 
     /**
      * @notice Provider burns oUSD and receives USD from the pool

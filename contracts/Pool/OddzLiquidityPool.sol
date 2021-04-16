@@ -89,23 +89,23 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         dexManager = _dexManager;
     }
 
-    function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
+    function addLiquidity(uint256 _amount, address _account) external override returns (uint256 mint) {
         mint = _amount;
 
         require(mint > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
         // transfer user eligible premium
-        transferEligiblePremium(date, msg.sender);
+        transferEligiblePremium(date, _account);
 
         updateLiquidity(date, _amount, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date, _amount);
-        latestLiquidityDateMap[msg.sender] = date;
+        latestLiquidityDateMap[_account] = date;
 
-        _mint(msg.sender, mint);
+        _mint(_account, mint);
 
-        emit AddLiquidity(msg.sender, _amount, mint);
+        emit AddLiquidity(_account, _amount, mint);
 
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        token.safeTransferFrom(_account, address(this), _amount);
     }
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
