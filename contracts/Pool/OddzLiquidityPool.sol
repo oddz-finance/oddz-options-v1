@@ -4,6 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
+import "../Option/OddzOptionSdk.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -57,6 +58,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      */
     DexManager public dexManager;
 
+    OddzOptionSdk public sdk;
+
     /**
      * @dev Access control specific data definitions
      */
@@ -83,13 +86,28 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         _;
     }
 
+    modifier validCaller(address _buyer) {
+        require((msg.sender == address(sdk) || msg.sender == _buyer), "invalid buyer");
+        _;
+    }
+
+    function setSdk(address _sdk) public onlyOwner(msg.sender) {
+        require(_sdk.isContract(), "invalid sdk contract address");
+        sdk = OddzOptionSdk(_sdk);
+    }
+
     constructor(IERC20 _token, DexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
         dexManager = _dexManager;
     }
 
-    function addLiquidity(uint256 _amount, address _account) external override returns (uint256 mint) {
+    function addLiquidity(uint256 _amount, address _account)
+        external
+        override
+        validCaller(_account)
+        returns (uint256 mint)
+    {
         mint = _amount;
 
         require(mint > 0, "LP Error: Amount is too small");

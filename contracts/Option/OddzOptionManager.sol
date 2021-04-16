@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
 import "../Oracle/OddzPriceOracleManager.sol";
@@ -10,10 +11,12 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
+import "./OddzOptionSdk.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
+    using Address for address;
 
     OddzAssetManager public assetManager;
     IOddzLiquidityPool public pool;
@@ -43,16 +46,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     uint32 public maxDeadline;
 
-    // struct OptionDetails {
-    //     uint256 _strike;
-    //     uint256 _amount;
-    //     uint256 _expiration;
-    //     uint32 _pair;
-    //     bytes32 _optionModel;
-    //     OptionType _optionType;
-    //     address _buyer;
-        
-    // }
+    OddzOptionSdk public sdk;
 
     constructor(
         OddzPriceOracleManager _oracle,
@@ -83,7 +77,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
-
     modifier validAssetPair(uint32 _pairId) {
         require(assetManager.getStatusOfPair(_pairId) == true, "Invalid Asset pair");
         _;
@@ -94,8 +87,18 @@ contract OddzOptionManager is IOddzOption, Ownable {
         _;
     }
 
+    modifier validCaller(address _buyer) {
+        require((msg.sender == address(sdk) || msg.sender == _buyer), "invalid buyer");
+        _;
+    }
+
     function setMaxDeadline(uint32 _deadline) public onlyOwner {
         maxDeadline = _deadline;
+    }
+
+    function setSdk(address _sdk) public onlyOwner {
+        require(_sdk.isContract(), "invalid sdk contract address");
+        sdk = OddzOptionSdk(_sdk);
     }
 
     /**
@@ -233,6 +236,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     function buy(
         OptionDetails memory _option,
+        uint256 _premiumWithSlippage,
         address _buyer
     )
         external
@@ -241,10 +245,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validExpiration(_option._expiration)
         validAssetPair(_option._pair)
         validAmount(_option._pair, _option._amount)
+        validCaller(_buyer)
         returns (uint256 optionId)
     {
-        
-        optionId = createOption(_option, _buyer);
+        optionId = createOption(_option, _premiumWithSlippage, _buyer);
     }
 
     /**
@@ -252,20 +256,28 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param optionDetails option buy details
      * @return optionId newly created Option Id
      */
-    function createOption(OptionDetails memory optionDetails, address _buyer)
-        private
-        returns (uint256 optionId)
-    {
-        (uint256 optionPremium, uint256 txnFee, uint256 iv, uint8 ivDecimal) =
-            getPremium(
-                optionDetails
-            );
-        require(optionDetails._premiumWithSlippage >= optionPremium, "Premium crossed slippage tolerance");
+    function createOption(
+        OptionDetails memory optionDetails,
+        uint256 _premiumWithSlippage,
+        address _buyer
+    ) private returns (uint256 optionId) {
+        PremiumResult memory premiumResult = getPremium(optionDetails);
+        require(_premiumWithSlippage >= premiumResult.optionPremium, "Premium crossed slippage tolerance");
         uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
-        validateOptionAmount(token.allowance(_buyer, address(this)), optionPremium + txnFee);
+        validateOptionAmount(
+            token.allowance(_buyer, address(this)),
+            premiumResult.optionPremium + premiumResult.txnFee
+        );
 
         uint256 lockAmount =
-            getLockAmount(cp, iv, optionDetails._strike, optionDetails._pair, ivDecimal, optionDetails._optionType);
+            getLockAmount(
+                cp,
+                premiumResult.iv,
+                optionDetails._strike,
+                optionDetails._pair,
+                premiumResult.ivDecimal,
+                optionDetails._optionType
+            );
         optionId = options.length;
         Option memory option =
             Option(
@@ -274,25 +286,25 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
-                optionPremium,
+                premiumResult.optionPremium,
                 optionDetails._expiration + block.timestamp,
                 optionDetails._pair,
                 optionDetails._optionType
             );
 
         options.push(option);
-        pool.lockLiquidity(optionId, lockAmount, optionPremium);
-        txnFeeAggregate = txnFeeAggregate + txnFee;
+        pool.lockLiquidity(optionId, lockAmount, premiumResult.optionPremium);
+        txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
 
-        token.safeTransferFrom(_buyer, address(pool), optionPremium);
-        token.safeTransferFrom(_buyer, address(this), txnFee);
+        token.safeTransferFrom(_buyer, address(pool), premiumResult.optionPremium);
+        token.safeTransferFrom(_buyer, address(this), premiumResult.txnFee);
 
         emit Buy(
             optionId,
             _buyer,
             optionDetails._optionModel,
-            txnFee,
-            optionPremium + txnFee,
+            premiumResult.txnFee,
+            premiumResult.optionPremium + premiumResult.txnFee,
             optionDetails._pair
         );
     }
@@ -300,31 +312,20 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Used for getting the actual options prices
      * @param _option Option details
-     * @return optionPremium Premium to be paid
-     * @return txnFee Transaction Fee
-     * @return iv implied volatility of the underlying asset
-     * @return ivDecimal implied volatility precision
+     * @return premiumResult Premium, iv  Details
+    
      */
-    function getPremium(
-       OptionDetails memory _option
-    )
+    function getPremium(OptionDetails memory _option)
         public
         view
         validOptionType(_option._optionType)
         validExpiration(_option._expiration)
         validAssetPair(_option._pair)
-        returns (
-            uint256 optionPremium,
-            uint256 txnFee,
-            uint256 iv,
-            uint8 ivDecimal
-        )
+        returns (PremiumResult memory premiumResult)
     {
-        
+        (premiumResult.ivDecimal, premiumResult.iv, premiumResult.optionPremium) = getOptionPremiumDetails(_option);
 
-        (ivDecimal, iv, optionPremium) = getOptionPremiumDetails(_option);
-
-        txnFee = getTransactionFee(optionPremium);
+        premiumResult.txnFee = getTransactionFee(premiumResult.optionPremium);
     }
 
     function getOptionPremiumDetails(OptionDetails memory optionDetails)

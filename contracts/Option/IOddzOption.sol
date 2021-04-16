@@ -40,21 +40,29 @@ interface IOddzOption {
     struct OptionDetails {
         uint32 _pair;
         bytes32 _optionModel;
-        uint256 _premiumWithSlippage;
         uint256 _expiration;
         uint256 _amount;
         uint256 _strike;
         OptionType _optionType;
     }
 
+    struct PremiumResult {
+        uint256 optionPremium;
+        uint256 txnFee;
+        uint256 iv;
+        uint8 ivDecimal;
+    }
+
     /**
      * @notice Buy a new option
      * @param _option Options details
+     * @param _premiumWithSlippage Options details
      * @param _buyer Address of buyer
      * @return optionId Created option ID
      */
     function buy(
         OptionDetails memory _option,
+        uint256 _premiumWithSlippage,
         address _buyer
     ) external returns (uint256 optionId);
 

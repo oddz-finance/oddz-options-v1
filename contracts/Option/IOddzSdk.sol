@@ -2,22 +2,10 @@
 pragma solidity 0.8.3;
 import "./IOddzOption.sol";
 
+interface IOddzSdk {
+    event BuySdk(uint256 indexed _optionId, address indexed _account, bytes32 indexed _model, address _provider);
 
-interface IOddzSdk{
-
-    event BuySdk(
-        uint256 indexed _optionId,
-        address indexed _account,
-        bytes32 indexed _model,
-        address _provider
-    );
-
-    event AddLiquiditySdk(
-                        address indexed _account, 
-                        address indexed _provider,
-                        uint256 _amount, 
-                        uint256 _writeAmount
-                        );
+    event AddLiquiditySdk(address indexed _account, address indexed _provider, uint256 _amount, uint256 _writeAmount);
 
     /**
      * @notice Buy a new option
@@ -31,7 +19,7 @@ interface IOddzSdk{
      * @param _provider address of the buyer
      * @return optionId Created option ID
      */
-    function buySdk(
+    function buy(
         uint32 _pair,
         bytes32 _optionModel,
         uint256 _premiumWithSlippage,
@@ -48,10 +36,5 @@ interface IOddzSdk{
      * @param _provider address of the provider
      * @return mint Amount of tokens minted
      */
-    function addLiquiditySdk(uint256 _amount,address _provider) external returns (uint256 mint);
-
-
-    
-   
-
+    function addLiquidity(uint256 _amount, address _provider) external returns (uint256 mint);
 }
