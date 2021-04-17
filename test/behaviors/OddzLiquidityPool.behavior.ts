@@ -201,8 +201,8 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should use msg.sender instead of account sent for add liquidity", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1)).to.emit(
-      liquidityManager, "AddLiquidity",
-    ).withArgs(this.accounts.admin, depositAmount, depositAmount);
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1))
+      .to.emit(liquidityManager, "AddLiquidity")
+      .withArgs(this.accounts.admin, depositAmount, depositAmount);
   });
 }

@@ -621,9 +621,9 @@ export function shouldBehaveLikeOddzSDK(): void {
   it("should  revert for invalid address while add liquidity", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(
-      oddzSDK.addLiquidity(depositAmount, "0x0000000000000000000000000000000000000000"),
-    ).to.be.revertedWith("invalid provider address");
+    await expect(oddzSDK.addLiquidity(depositAmount, "0x0000000000000000000000000000000000000000")).to.be.revertedWith(
+      "invalid provider address",
+    );
   });
 
   it("should  revert for invalid address while buying option", async function () {

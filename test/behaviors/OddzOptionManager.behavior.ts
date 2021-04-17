@@ -1418,15 +1418,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.accounts.admin,
       false,
     );
-    await expect(
-      oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin1),
-    ).to.emit(oddzOptionManager, "Buy").withArgs(
-      0,
-      this.accounts.admin,
-      utils.formatBytes32String("B_S"),
-      BigNumber.from(utils.parseEther("1.392900201")),
-      BigNumber.from(utils.parseEther("29.250904221")),
-      0
-    );
+    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin1))
+      .to.emit(oddzOptionManager, "Buy")
+      .withArgs(
+        0,
+        this.accounts.admin,
+        utils.formatBytes32String("B_S"),
+        BigNumber.from(utils.parseEther("1.392900201")),
+        BigNumber.from(utils.parseEther("29.250904221")),
+        0,
+      );
   });
 }

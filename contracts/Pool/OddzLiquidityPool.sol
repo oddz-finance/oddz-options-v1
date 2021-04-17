@@ -105,11 +105,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         dexManager = _dexManager;
     }
 
-    function addLiquidity(uint256 _amount, address _account)
-        external
-        override
-        returns (uint256 mint)
-    {
+    function addLiquidity(uint256 _amount, address _account) external override returns (uint256 mint) {
         mint = _amount;
         address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
 
