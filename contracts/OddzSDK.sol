@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./OddzOptionManager.sol";
-import "../Pool/OddzLiquidityPool.sol";
-import "./IOddzSdk.sol";
-import "../Integrations/Gasless/BaseRelayRecipient.sol";
+import "./Option/OddzOptionManager.sol";
+import "./Pool/OddzLiquidityPool.sol";
+import "./Integrations/Gasless/BaseRelayRecipient.sol";
 
-contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
+contract OddzSDK is BaseRelayRecipient {
     OddzOptionManager public optionManager;
     OddzLiquidityPool public pool;
     mapping(address => uint256) public optionCount;
@@ -53,14 +52,12 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
         uint256 _strike,
         IOddzOption.OptionType _optionType,
         address _provider
-    ) public override returns (uint256 optionId) {
+    ) external returns (uint256 optionId) {
         require(_provider != address(0), "invalid provider address");
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_pair, _optionModel, _expiration, _amount, _strike, _optionType);
         optionId = optionManager.buy(option, _premiumWithSlippage, msgSender());
         optionCount[_provider] += 1;
-
-        emit BuySdk(optionId, msgSender(), _optionModel, _provider);
     }
 
     function getPremium(
@@ -71,7 +68,7 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
         uint256 _strike,
         IOddzOption.OptionType _optionType
     )
-        public
+        external
         view
         returns (
             uint256 optionPremium,
@@ -89,12 +86,10 @@ contract OddzOptionSdk is IOddzSdk, BaseRelayRecipient {
         ivDecimal = premiumResult.ivDecimal;
     }
 
-    function addLiquidity(uint256 _amount, address _provider) external override returns (uint256 mint) {
+    function addLiquidity(uint256 _amount, address _provider) external returns (uint256 mint) {
         require(_provider != address(0), "invalid provider address");
 
         mint = pool.addLiquidity(_amount, msg.sender);
         liquidityCount[_provider] += 1;
-
-        emit AddLiquiditySdk(msg.sender, _provider, _amount, mint);
     }
 }

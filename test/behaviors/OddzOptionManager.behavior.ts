@@ -1391,9 +1391,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
   });
 
-  it("should revert  with invalid buyer", async function () {
+  it("Should use msg.sender instead of account sent for buy option", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
     const pairId = await getAssetPair(
       this.oddzAssetManager,
@@ -1419,11 +1418,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.accounts.admin,
       false,
     );
-    // increae iv
-    await oddzVolatility.setIv(182831, 5);
-
     await expect(
       oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin1),
-    ).to.be.revertedWith("invalid buyer");
+    ).to.emit(oddzOptionManager, "Buy").withArgs(
+      0,
+      this.accounts.admin,
+      utils.formatBytes32String("B_S"),
+      BigNumber.from(utils.parseEther("1.392900201")),
+      BigNumber.from(utils.parseEther("29.250904221")),
+      0
+    );
   });
 }

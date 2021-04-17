@@ -10,7 +10,7 @@ import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetMan
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
-import OddzOptionSdkArtifact from "../artifacts/contracts/Option/OddzOptionSdk.sol/OddzOptionSdk.json";
+import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -27,9 +27,9 @@ import {
   OddzIVOracleManager,
   OddzOptionPremiumManager,
   OddzPremiumBlackScholes,
-  OddzOptionSdk,
+  OddzSDK,
 } from "../typechain";
-import { shouldBehaveLikeOddzOptionSdk } from "./behaviors/OddzOptionSdk.behavior";
+import { shouldBehaveLikeOddzSDK } from "./behaviors/OddzSDK.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
@@ -141,14 +141,14 @@ describe("Oddz Option Sdk Unit tests", function () {
       ])) as OddzOptionManager;
       await this.oddzLiquidityPool.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
-      this.oddzOptionSdk = (await deployContract(this.signers.admin, OddzOptionSdkArtifact, [
+      this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
         this.oddzLiquidityPool.address,
         bscForwarder,
-      ])) as OddzOptionSdk;
+      ])) as OddzSDK;
 
-      await this.oddzOptionManager.setSdk(this.oddzOptionSdk.address);
-      await this.oddzLiquidityPool.setSdk(this.oddzOptionSdk.address);
+      await this.oddzOptionManager.setSdk(this.oddzSDK.address);
+      await this.oddzLiquidityPool.setSdk(this.oddzSDK.address);
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
@@ -182,6 +182,6 @@ describe("Oddz Option Sdk Unit tests", function () {
       );
       await oddzOptionPremiumManager.setManager(this.oddzOptionManager.address);
     });
-    shouldBehaveLikeOddzOptionSdk();
+    shouldBehaveLikeOddzSDK();
   });
 });

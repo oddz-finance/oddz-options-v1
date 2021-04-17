@@ -198,11 +198,11 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(mockOptionManager.unlock()).to.be.revertedWith("revert");
   });
 
-  it("Should revert for invalid buyer", async function () {
-    const liquidityManager1 = await this.oddzLiquidityPool.connect(this.signers.admin1);
+  it("Should use msg.sender instead of account sent for add liquidity", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager1.addLiquidity(depositAmount, this.accounts.admin)).to.be.revertedWith(
-      "invalid buyer",
-    );
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1)).to.emit(
+      liquidityManager, "AddLiquidity",
+    ).withArgs(this.accounts.admin, depositAmount, depositAmount);
   });
 }

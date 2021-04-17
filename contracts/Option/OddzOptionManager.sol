@@ -11,7 +11,7 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
-import "./OddzOptionSdk.sol";
+import "../OddzSDK.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
@@ -46,7 +46,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     uint32 public maxDeadline;
 
-    OddzOptionSdk public sdk;
+    OddzSDK public sdk;
 
     constructor(
         OddzPriceOracleManager _oracle,
@@ -96,9 +96,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         maxDeadline = _deadline;
     }
 
-    function setSdk(address _sdk) public onlyOwner {
-        require(_sdk.isContract(), "invalid sdk contract address");
-        sdk = OddzOptionSdk(_sdk);
+    function setSdk(OddzSDK _sdk) external onlyOwner {
+        require(address(_sdk).isContract(), "invalid SDK contract address");
+        sdk = _sdk;
     }
 
     /**
@@ -245,10 +245,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validExpiration(_option._expiration)
         validAssetPair(_option._pair)
         validAmount(_option._pair, _option._amount)
-        validCaller(_buyer)
         returns (uint256 optionId)
     {
-        optionId = createOption(_option, _premiumWithSlippage, _buyer);
+        address sender_ = msg.sender == address(sdk) ? _buyer : msg.sender;
+        optionId = createOption(_option, _premiumWithSlippage, sender_);
     }
 
     /**

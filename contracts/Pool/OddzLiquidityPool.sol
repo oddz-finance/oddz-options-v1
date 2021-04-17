@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
-import "../Option/OddzOptionSdk.sol";
+import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -58,7 +58,10 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      */
     DexManager public dexManager;
 
-    OddzOptionSdk public sdk;
+    /**
+     * @dev Oddz SDK
+     */
+    OddzSDK public sdk;
 
     /**
      * @dev Access control specific data definitions
@@ -91,9 +94,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         _;
     }
 
-    function setSdk(address _sdk) public onlyOwner(msg.sender) {
-        require(_sdk.isContract(), "invalid sdk contract address");
-        sdk = OddzOptionSdk(_sdk);
+    function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
+        require(address(_sdk).isContract(), "invalid SDK contract address");
+        sdk = _sdk;
     }
 
     constructor(IERC20 _token, DexManager _dexManager) {
@@ -105,25 +108,25 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     function addLiquidity(uint256 _amount, address _account)
         external
         override
-        validCaller(_account)
         returns (uint256 mint)
     {
         mint = _amount;
+        address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
 
         require(mint > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
         // transfer user eligible premium
-        transferEligiblePremium(date, _account);
+        transferEligiblePremium(date, sender_);
 
         updateLiquidity(date, _amount, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date, _amount);
-        latestLiquidityDateMap[_account] = date;
+        latestLiquidityDateMap[sender_] = date;
 
-        _mint(_account, mint);
+        _mint(sender_, mint);
 
-        emit AddLiquidity(_account, _amount, mint);
+        emit AddLiquidity(sender_, _amount, mint);
 
-        token.safeTransferFrom(_account, address(this), _amount);
+        token.safeTransferFrom(sender_, address(this), _amount);
     }
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
