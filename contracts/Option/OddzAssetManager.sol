@@ -51,10 +51,6 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         primary = getPair(_address)._primary;
     }
 
-    function getStrikeFromPair(address _address) public view returns (bytes32 strike) {
-        strike = getPair(_address)._strike;
-    }
-
     function getStatusOfPair(address _address) public view returns (bool status) {
         status = getPair(_address)._active;
     }
