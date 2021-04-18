@@ -196,12 +196,20 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(txnFee).div(1e10)).to.equal(826841280);
   });
 
-  it("should throw Expiration cannot be less than 1 days error when the expiry is less than a day", async function () {
+  it("should throw Expiration is less than min expiry error when the expiry is less than a day", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
+    const pair = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
     await expect(
       oddzOptionManager.buy(
-        address0(),
+        pair,
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1")),
         getExpiry(0),
@@ -209,14 +217,22 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         BigNumber.from(123400000000),
         OptionType.Call,
       ),
-    ).to.be.revertedWith("Expiration cannot be less than 1 days");
+    ).to.be.revertedWith("Expiration is less than min expiry");
   });
 
-  it("should throw Expiration cannot be more than 30 days error when the expiry is more than a 30 days", async function () {
+  it("should throw Expiration is greater than max expiry error when the expiry is more than a 30 days", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const pair = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
     await expect(
       oddzOptionManager.buy(
-        address0(),
+        pair,
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1")),
         getExpiry(31),
@@ -224,7 +240,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         BigNumber.from(123400000000),
         OptionType.Call,
       ),
-    ).to.be.revertedWith("Expiration cannot be more than 30 days");
+    ).to.be.revertedWith("Expiration is greater than max expiry");
   });
 
   it("should prevent buying options for unsupported asset pair type", async function () {
