@@ -2,7 +2,6 @@
 pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
-import "hardhat/console.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
     mapping(bytes32 => Asset) public assetNameMap;
