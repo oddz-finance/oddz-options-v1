@@ -24,8 +24,6 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     IOddzStaking public stakingBenficiary;
     IERC20Extented public token;
     Option[] public options;
-    uint256 public maxExpiry = 30 days;
-    uint256 public minExpiry = 1 days;
 
     /**
      * @dev Transaction Fee definitions

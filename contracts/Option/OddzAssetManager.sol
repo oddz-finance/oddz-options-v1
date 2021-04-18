@@ -64,17 +64,33 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         limit = getPair(_address)._limit;
     }
 
+    function getMaxPeriod(address _address) public view returns (uint256 maxPeriod) {
+        maxPeriod = getPair(_address)._maxDays;
+    }
+
+    function getMinPeriod(address _address) public view returns (uint256 minPeriod) {
+        minPeriod = getPair(_address)._minDays;
+    }
+
+    function validMaxDays(uint256 _maxDays, uint256 _minDays) private pure {
+        require(_maxDays >= _minDays && _maxDays > 1 days && _maxDays <= 365 days, "Invalid max days");
+    }
+
+    function validMinDays(uint256 _minDays, uint256 _maxDays) private pure {
+        require(_minDays > 1 days && _minDays <= _maxDays, "Invalid min days");
+    }
+
     /**
-     * @notice Used for adding the new asset
-     * @param _name Name for the underlying asset
-     * @param _address Address of the underlying asset
-     * @param _precision Precision for the underlying asset
+     * @notice Add asset
+     * @param _name Symbol of the asset e.g. BTC, ETH
+     * @param _address Address of the asset
+     * @param _precision Percentage precision for the asset
      */
     function addAsset(
         bytes32 _name,
         address _address,
         uint8 _precision
-    ) external override onlyOwner {
+    ) external onlyOwner {
         require(assetNameMap[_name]._name == "", "Asset already present");
         require(_address != address(0), "invalid address");
 
@@ -88,7 +104,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @notice Used for activating the asset
      * @param _asset underlying asset
      */
-    function activateAsset(bytes32 _asset) external override onlyOwner inactiveAsset(_asset) {
+    function activateAsset(bytes32 _asset) external onlyOwner inactiveAsset(_asset) {
         Asset storage asset = assetNameMap[_asset];
         asset._active = true;
 
@@ -99,7 +115,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @notice Used for deactivating the asset
      * @param _asset underlying asset
      */
-    function deactivateAsset(bytes32 _asset) external override onlyOwner validAsset(_asset) {
+    function deactivateAsset(bytes32 _asset) external onlyOwner validAsset(_asset) {
         Asset storage asset = assetNameMap[_asset];
         asset._active = false;
 
@@ -111,27 +127,46 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @param _primary primary asset name
      * @param _strike strike asset name
      * @param _limit purchase limit for the pair
+     * @param _maxDays maximum option period
+     * @param _minDays minimum option period
      */
     function addAssetPair(
         bytes32 _primary,
         bytes32 _strike,
-        uint256 _limit
-    ) external override onlyOwner validAsset(_primary) validAsset(_strike) {
+        uint256 _limit,
+        uint256 _maxDays,
+        uint256 _minDays
+    ) external onlyOwner validAsset(_primary) validAsset(_strike) {
         address pair = address(uint160(uint256(keccak256(abi.encode(_primary, _strike)))));
         require(addressPairMap[pair]._address == address(0), "Asset pair already present");
 
         AssetPair memory assetPair =
-            AssetPair({ _address: pair, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
+            AssetPair({
+                _address: pair,
+                _primary: _primary,
+                _strike: _strike,
+                _limit: _limit,
+                _maxDays: _maxDays,
+                _minDays: _minDays,
+                _active: true
+            });
         addressPairMap[pair] = assetPair;
 
-        emit NewAssetPair(assetPair._address, assetPair._primary, assetPair._strike, _limit);
+        emit NewAssetPair(
+            assetPair._address,
+            assetPair._primary,
+            assetPair._strike,
+            assetPair._limit,
+            assetPair._maxDays,
+            assetPair._minDays
+        );
     }
 
     /**
      * @notice Activate an asset pair
      * @param _address asset pair address
      */
-    function activateAssetPair(address _address) external override onlyOwner inactiveAssetPair(_address) {
+    function activateAssetPair(address _address) external onlyOwner inactiveAssetPair(_address) {
         AssetPair storage pair = addressPairMap[_address];
         pair._active = true;
 
@@ -142,7 +177,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @notice Deactivate an asset pair
      * @param _address asset pair address
      */
-    function deactivateAssetPair(address _address) external override onlyOwner validAssetPair(_address) {
+    function deactivateAssetPair(address _address) external onlyOwner validAssetPair(_address) {
         AssetPair storage pair = addressPairMap[_address];
         pair._active = false;
 
@@ -150,11 +185,37 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     }
 
     /**
+     * @notice Activate an asset pair
+     * @param _address asset pair address
+     * @param _maxDays maximum option period
+     */
+    function updateMaxPeriod(address _address, uint256 _maxDays) external onlyOwner validAssetPair(_address) {
+        AssetPair storage pair = addressPairMap[_address];
+        validMaxDays(_maxDays, pair._minDays);
+        pair._maxDays = _maxDays;
+
+        emit AssetPairMaxPeriodUpdate(pair._address, pair._primary, pair._strike, pair._maxDays);
+    }
+
+    /**
+     * @notice Deactivate an asset pair
+     * @param _address asset pair address
+     * @param _minDays minimum option period
+     */
+    function updateMinPeriod(address _address, uint256 _minDays) external onlyOwner validAssetPair(_address) {
+        AssetPair storage pair = addressPairMap[_address];
+        validMinDays(_minDays, pair._maxDays);
+        pair._minDays = _minDays;
+
+        emit AssetPairMinPeriodUpdate(pair._address, pair._primary, pair._strike, pair._minDays);
+    }
+
+    /**
      * @notice Set purchase limit
      * @param _address asset pair address
-     * @param _limit Purchase limit for an asset pair
+     * @param _limit purchase limit for the pair
      */
-    function setPurchaseLimit(address _address, uint256 _limit) external override onlyOwner validAssetPair(_address) {
+    function setPurchaseLimit(address _address, uint256 _limit) external onlyOwner validAssetPair(_address) {
         AssetPair storage pair = addressPairMap[_address];
         pair._limit = _limit;
 
