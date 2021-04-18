@@ -2,18 +2,19 @@
 pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
+import "hardhat/console.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
     mapping(bytes32 => Asset) public assetNameMap;
     mapping(address => AssetPair) public addressPairMap;
 
-    modifier validAsset(bytes32 _underlying) {
-        require(assetNameMap[_underlying]._active == true, "Invalid Asset");
+    modifier validAsset(bytes32 _asset) {
+        require(assetNameMap[_asset]._active == true, "Invalid Asset");
         _;
     }
 
-    modifier inactiveAsset(bytes32 _underlying) {
-        require(assetNameMap[_underlying]._active == false, "Asset is active");
+    modifier inactiveAsset(bytes32 _asset) {
+        require(assetNameMap[_asset]._active == false, "Asset is active");
         _;
     }
 
@@ -66,6 +67,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     /**
      * @notice Used for adding the new asset
      * @param _name Name for the underlying asset
+     * @param _address Address of the underlying asset
      * @param _precision Precision for the underlying asset
      */
     function addAsset(
@@ -108,20 +110,21 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @notice Add trade asset pair
      * @param _primary primary asset name
      * @param _strike strike asset name
+     * @param _limit purchase limit for the pair
      */
     function addAssetPair(
         bytes32 _primary,
         bytes32 _strike,
         uint256 _limit
     ) external override onlyOwner validAsset(_primary) validAsset(_strike) {
-        address pairAddr = address(uint160(uint256(keccak256(abi.encode(_primary, _strike)))));
-        require(addressPairMap[pairAddr]._address == address(0), "Asset pair already present");
+        address pair = address(uint160(uint256(keccak256(abi.encode(_primary, _strike)))));
+        require(addressPairMap[pair]._address == address(0), "Asset pair already present");
 
-        AssetPair memory pair =
-            AssetPair({ _address: pairAddr, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
-        addressPairMap[pairAddr] = pair;
+        AssetPair memory assetPair =
+            AssetPair({ _address: pair, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
+        addressPairMap[pair] = assetPair;
 
-        emit NewAssetPair(pair._address, pair._primary, pair._strike, _limit);
+        emit NewAssetPair(assetPair._address, assetPair._primary, assetPair._strike, _limit);
     }
 
     /**

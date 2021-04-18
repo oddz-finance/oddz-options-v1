@@ -31,6 +31,7 @@ interface IOddzAsset {
     /**
      * @notice Add asset
      * @param _name Symbol of the asset e.g. BTC, ETH
+     * @param _address Address of the asset
      * @param _precision Percentage precision for the asset
      */
     function addAsset(
@@ -55,7 +56,7 @@ interface IOddzAsset {
      * @notice Add trade asset pair
      * @param _primary primary asset name
      * @param _strike strike asset name
-     * @param _limit Purchase limit for the pair
+     * @param _limit purchase limit for the pair
      */
     function addAssetPair(
         bytes32 _primary,
@@ -78,7 +79,7 @@ interface IOddzAsset {
     /**
      * @notice Set purchase limit
      * @param _address asset pair address
-     * @param _limit Purchase limit for an asset pair
+     * @param _limit purchase limit for the pair
      */
     function setPurchaseLimit(address _address, uint256 _limit) external;
 }
