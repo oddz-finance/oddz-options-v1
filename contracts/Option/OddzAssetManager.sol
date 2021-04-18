@@ -72,11 +72,11 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     }
 
     function validMaxDays(uint256 _maxDays, uint256 _minDays) private pure {
-        require(_maxDays >= _minDays && _maxDays > 1 days && _maxDays <= 365 days, "Invalid max days");
+        require(_maxDays >= _minDays && _maxDays >= 1 days && _maxDays <= 365 days, "Invalid max days");
     }
 
     function validMinDays(uint256 _minDays, uint256 _maxDays) private pure {
-        require(_minDays > 1 days && _minDays <= _maxDays, "Invalid min days");
+        require(_minDays >= 1 days && _minDays <= _maxDays, "Invalid min days");
     }
 
     /**
@@ -138,6 +138,8 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     ) external onlyOwner validAsset(_primary) validAsset(_strike) {
         address pair = address(uint160(uint256(keccak256(abi.encode(_primary, _strike)))));
         require(addressPairMap[pair]._address == address(0), "Asset pair already present");
+        validMaxDays(_maxDays, _minDays);
+        validMinDays(_minDays, _maxDays);
 
         AssetPair memory assetPair =
             AssetPair({
