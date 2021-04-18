@@ -71,17 +71,6 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         premiumManager = _premiumManager;
     }
 
-    modifier validOptionType(OptionType _optionType) {
-        require(_optionType == OptionType.Call || _optionType == OptionType.Put, "Invalid option type");
-        _;
-    }
-
-    modifier validExpiration(uint256 _expiration) {
-        require(_expiration <= maxExpiry, "Expiration cannot be more than 30 days");
-        require(_expiration >= minExpiry, "Expiration cannot be less than 1 days");
-        _;
-    }
-
     function setTrustedForwarder(address forwarderAddress) public {
         require(forwarderAddress != address(0), "Forwarder Address cannot be 0");
         trustedForwarder = forwarderAddress;
@@ -104,16 +93,39 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
         }
     }
 
-    modifier validAssetPair(address _pair) {
-        require(assetManager.getStatusOfPair(_pair) == true, "Invalid Asset pair");
-        _;
-    }
-
-    modifier validAmount(address _pair, uint256 _amount) {
+    modifier validAmount(uint256 _amount, address _pair) {
         require(_amount >= assetManager.getPurchaseLimit(_pair), "amount less than purchase limit");
         _;
     }
 
+    modifier validateOptionParams(
+        OptionType _optionType,
+        address _pair,
+        uint256 _expiration
+    ) {
+        validOptionType(_optionType);
+        validAssetPair(_pair);
+        validExpiration(_expiration, _pair);
+        _;
+    }
+
+    function validOptionType(OptionType _optionType) private pure {
+        require(_optionType == OptionType.Call || _optionType == OptionType.Put, "Invalid option type");
+    }
+
+    function validExpiration(uint256 _expiration, address _pair) private view {
+        require(_expiration <= assetManager.getMaxPeriod(_pair), "Expiration is greater than max expiry");
+        require(_expiration >= assetManager.getMinPeriod(_pair), "Expiration is less than min expiry");
+    }
+
+    function validAssetPair(address _pair) private view {
+        require(assetManager.getStatusOfPair(_pair) == true, "Invalid Asset pair");
+    }
+
+    /**
+     * @notice sets maximum deadline for DEX swap
+     * @param _deadline maximum swap transaction time
+     */
     function setMaxDeadline(uint32 _deadline) public onlyOwner {
         maxDeadline = _deadline;
     }
@@ -262,10 +274,8 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     )
         external
         override
-        validOptionType(_optionType)
-        validExpiration(_expiration)
-        validAssetPair(_pair)
-        validAmount(_pair, _amount)
+        validateOptionParams(_optionType, _pair, _expiration)
+        validAmount(_amount, _pair)
         returns (uint256 optionId)
     {
         OptionDetails memory optionDetails =
@@ -352,9 +362,7 @@ contract OddzOptionManager is IOddzOption, Ownable, BaseRelayRecipient {
     )
         public
         view
-        validOptionType(_optionType)
-        validExpiration(_expiration)
-        validAssetPair(_pair)
+        validateOptionParams(_optionType, _pair, _expiration)
         returns (
             uint256 optionPremium,
             uint256 txnFee,
