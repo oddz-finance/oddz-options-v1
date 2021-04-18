@@ -91,6 +91,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         BigNumber.from(utils.parseEther("0.01")),
+        2592000,
+        86400,
       ),
     ).to.emit(oddzAssetManager, "NewAssetPair");
   });
@@ -103,12 +105,16 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     await expect(
       oddzAssetManager.addAssetPair(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         BigNumber.from(utils.parseEther("0.01")),
+        2592000,
+        86400,
       ),
     ).to.be.revertedWith("Asset pair already present");
   });
@@ -123,6 +129,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         BigNumber.from(utils.parseEther("0.01")),
+        2592000,
+        86400,
       ),
     ).to.be.revertedWith("caller is not the owner");
   });
@@ -135,6 +143,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
 
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
@@ -154,6 +164,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         BigNumber.from(utils.parseEther("0.01")),
+        2592000,
+        86400,
       ),
     ).to.emit(oddzAssetManager, "NewAssetPair");
 
@@ -169,6 +181,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     await expect(oddzAssetManager.deactivateAssetPair(addr))
@@ -184,6 +198,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
@@ -198,6 +214,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     await oddzAssetManager.deactivateAssetPair(addr);
@@ -214,6 +232,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         BigNumber.from(utils.parseEther("0.01")),
+        2592000,
+        86400,
       ),
     ).to.emit(oddzAssetManager, "NewAssetPair");
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
@@ -229,6 +249,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
 
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
@@ -251,6 +273,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     await expect(
       oddzAssetManager.setPurchaseLimit(address0(), BigNumber.from(utils.parseEther("0.01"))),
@@ -265,6 +289,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       BigNumber.from(utils.parseEther("0.01")),
+      2592000,
+      86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);

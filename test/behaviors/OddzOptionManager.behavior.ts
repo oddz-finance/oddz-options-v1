@@ -63,6 +63,8 @@ const getAssetPair = async (
     utils.formatBytes32String("ETH"),
     utils.formatBytes32String("USD"),
     BigNumber.from(utils.parseEther("0.01")),
+    2592000,
+    86400,
   );
 
   await oddzPriceOracleManager
