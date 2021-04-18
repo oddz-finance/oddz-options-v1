@@ -372,9 +372,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(
-      oddzAssetManager1.updateMaxPeriod(addr, 2592000),
-    ).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.updateMaxPeriod(addr, 2592000)).to.be.revertedWith("caller is not the owner");
   });
 
   it("should successfully update max days with value greater to min days", async function () {
@@ -389,8 +387,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
-    await expect(oddzAssetManager.updateMaxPeriod(addr, 86401)).to.emit(oddzAssetManager, "AssetPairMaxPeriodUpdate")
-    .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 86401);
+    await expect(oddzAssetManager.updateMaxPeriod(addr, 86401))
+      .to.emit(oddzAssetManager, "AssetPairMaxPeriodUpdate")
+      .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 86401);
   });
 
   it("should successfully update max days with value equal to min days", async function () {
@@ -405,8 +404,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
-    await expect(oddzAssetManager.updateMaxPeriod(addr, 86400)).to.emit(oddzAssetManager, "AssetPairMaxPeriodUpdate")
-    .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 86400);
+    await expect(oddzAssetManager.updateMaxPeriod(addr, 86400))
+      .to.emit(oddzAssetManager, "AssetPairMaxPeriodUpdate")
+      .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 86400);
   });
 
   it("should revert with message Invalid min days when update min days", async function () {
@@ -452,9 +452,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(
-      oddzAssetManager1.updateMinPeriod(addr, 86500),
-    ).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.updateMinPeriod(addr, 86500)).to.be.revertedWith("caller is not the owner");
   });
 
   it("should successfully update min days with value equal to max days", async function () {
@@ -469,8 +467,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
-    await expect(oddzAssetManager.updateMinPeriod(addr, 2592000)).to.emit(oddzAssetManager, "AssetPairMinPeriodUpdate")
-    .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 2592000);
+    await expect(oddzAssetManager.updateMinPeriod(addr, 2592000))
+      .to.emit(oddzAssetManager, "AssetPairMinPeriodUpdate")
+      .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 2592000);
   });
 
   it("should successfully update min days with value less than max days", async function () {
@@ -485,7 +484,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
-    await expect(oddzAssetManager.updateMinPeriod(addr, 2591999)).to.emit(oddzAssetManager, "AssetPairMinPeriodUpdate")
-    .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 2591999);
+    await expect(oddzAssetManager.updateMinPeriod(addr, 2591999))
+      .to.emit(oddzAssetManager, "AssetPairMinPeriodUpdate")
+      .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 2591999);
   });
 }
