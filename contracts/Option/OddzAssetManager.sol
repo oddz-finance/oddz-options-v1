@@ -114,7 +114,7 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         bytes32 _strike,
         uint256 _limit
     ) external override onlyOwner validAsset(_primary) validAsset(_strike) {
-        address pairAddr = address(uint160(uint256(keccak256(abi.encodePacked(_primary, _strike, _limit)))));
+        address pairAddr = address(uint160(uint256(keccak256(abi.encodePacked(_primary, _strike)))));
         require(addressPairMap[pairAddr]._address == address(0), "Asset pair already present");
 
         AssetPair memory pair =
