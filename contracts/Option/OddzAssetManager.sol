@@ -5,9 +5,7 @@ import "./IOddzAsset.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
     mapping(bytes32 => Asset) public assetNameMap;
-
     mapping(address => AssetPair) public addressPairMap;
-    mapping(bytes32 => mapping(bytes32 => AssetPair)) public pairMap;
 
     modifier validAsset(bytes32 _underlying) {
         require(assetNameMap[_underlying]._active == true, "Invalid Asset");
@@ -116,14 +114,12 @@ contract OddzAssetManager is Ownable, IOddzAsset {
         bytes32 _strike,
         uint256 _limit
     ) external override onlyOwner validAsset(_primary) validAsset(_strike) {
-        require(pairMap[_primary][_strike]._primary == 0, "Asset pair already present");
-
         address pairAddr = address(uint160(uint256(keccak256(abi.encodePacked(_primary, _strike, _limit)))));
+        require(addressPairMap[pairAddr]._address == address(0), "Asset pair already present");
 
         AssetPair memory pair =
             AssetPair({ _address: pairAddr, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
         addressPairMap[pairAddr] = pair;
-        pairMap[_primary][_strike] = pair;
 
         emit NewAssetPair(pair._address, pair._primary, pair._strike, _limit);
     }
