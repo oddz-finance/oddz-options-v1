@@ -2,72 +2,66 @@
 pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
+import "hardhat/console.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
-    Asset[] public assets;
     mapping(bytes32 => Asset) public assetNameMap;
-    mapping(uint32 => Asset) public assetIdMap;
+    mapping(address => AssetPair) public addressPairMap;
 
-    AssetPair[] public pairs;
-    mapping(uint32 => AssetPair) public pairIdMap;
-    mapping(uint32 => mapping(uint32 => AssetPair)) public pairMap;
-
-    modifier validAsset(uint32 _underlying) {
-        require(assetIdMap[_underlying]._active == true, "Invalid Asset");
+    modifier validAsset(bytes32 _asset) {
+        require(assetNameMap[_asset]._active == true, "Invalid Asset");
         _;
     }
 
-    modifier inactiveAsset(uint32 _underlying) {
-        require(assetIdMap[_underlying]._active == false, "Asset is active");
+    modifier inactiveAsset(bytes32 _asset) {
+        require(assetNameMap[_asset]._active == false, "Asset is active");
         _;
     }
 
-    modifier validAssetPair(uint32 _pairId) {
-        require(pairIdMap[_pairId]._active == true, "Invalid Asset pair");
+    modifier validAssetPair(address _address) {
+        require(addressPairMap[_address]._active == true, "Invalid Asset pair");
         _;
     }
 
-    modifier inactiveAssetPair(uint32 _pairId) {
-        require(pairIdMap[_pairId]._active == false, "Asset pair is active");
+    modifier inactiveAssetPair(address _address) {
+        require(addressPairMap[_address]._active == false, "Asset pair is active");
         _;
     }
 
-    function getAssetAddressByName(bytes32 _name) public view returns (address asset) {
-        require(_name != "", "invalid asset name");
-        require(assetNameMap[_name]._address != address(0), "Invalid asset address");
-        asset = assetNameMap[_name]._address;
+    // Asset functions
+    function getAsset(bytes32 _asset) public view returns (Asset memory asset) {
+        asset = assetNameMap[_asset];
     }
 
-    function getStatusOfPair(uint32 _pairId) public view returns (bool status) {
-        status = pairIdMap[_pairId]._active;
+    function getPrecision(bytes32 _asset) public view returns (uint8 precision) {
+        precision = getAsset(_asset)._precision;
     }
 
-    function getAsset(uint32 _assetId) public view returns (Asset memory asset) {
-        asset = assetIdMap[_assetId];
+    function getAssetAddressByName(bytes32 _asset) public view returns (address asset) {
+        require(_asset != "", "invalid asset name");
+        require(getAsset(_asset)._address != address(0), "Invalid asset address");
+        asset = getAsset(_asset)._address;
     }
 
-    function getPair(uint32 _pairId) public view returns (AssetPair memory pair) {
-        pair = pairIdMap[_pairId];
+    // Asset pair functions
+    function getPair(address _address) public view returns (AssetPair memory pair) {
+        pair = addressPairMap[_address];
     }
 
-    function getPrimaryFromPair(uint32 _pairId) public view returns (uint32 primary) {
-        primary = pairIdMap[_pairId]._primary;
+    function getPrimaryFromPair(address _address) public view returns (bytes32 primary) {
+        primary = getPair(_address)._primary;
     }
 
-    function getStrikeFromPair(uint32 _pairId) public view returns (uint32 strike) {
-        strike = pairIdMap[_pairId]._strike;
+    function getStrikeFromPair(address _address) public view returns (bytes32 strike) {
+        strike = getPair(_address)._strike;
     }
 
-    function getAssetName(uint32 _assetId) public view returns (bytes32 name) {
-        name = assetIdMap[_assetId]._name;
+    function getStatusOfPair(address _address) public view returns (bool status) {
+        status = getPair(_address)._active;
     }
 
-    function getPrecision(uint32 _assetId) public view returns (uint8 precision) {
-        precision = assetIdMap[_assetId]._precision;
-    }
-
-    function getPurchaseLimit(uint32 _pairId) public view returns (uint256 limit) {
-        limit = pairIdMap[_pairId]._limit;
+    function getPurchaseLimit(address _address) public view returns (uint256 limit) {
+        limit = getPair(_address)._limit;
     }
 
     /**
@@ -75,137 +69,95 @@ contract OddzAssetManager is Ownable, IOddzAsset {
      * @param _name Name for the underlying asset
      * @param _address Address of the underlying asset
      * @param _precision Precision for the underlying asset
-     * @return assetId Asset id
      */
     function addAsset(
         bytes32 _name,
         address _address,
         uint8 _precision
-    ) external override onlyOwner returns (uint32 assetId) {
+    ) external override onlyOwner {
         require(assetNameMap[_name]._name == "", "Asset already present");
         require(_address != address(0), "invalid address");
 
-        assetId = uint32(assets.length);
-        Asset memory asset =
-            Asset({ _id: assetId, _name: _name, _address: _address, _active: true, _precision: _precision });
+        Asset memory asset = Asset({ _name: _name, _address: _address, _active: true, _precision: _precision });
         assetNameMap[_name] = asset;
-        assetIdMap[assetId] = asset;
-        assets.push(asset);
 
-        emit NewAsset(asset._id, asset._name, asset._active);
+        emit NewAsset(asset._name, asset._address);
     }
 
     /**
      * @notice Used for activating the asset
-     * @param _assetId Id for the underlying asset
-     * @return name of the underlying asset
-     * @return status of the underlying asset
+     * @param _asset underlying asset
      */
-    function activateAsset(uint32 _assetId)
-        external
-        override
-        onlyOwner
-        inactiveAsset(_assetId)
-        returns (bytes32 name, bool status)
-    {
-        Asset storage asset = assetIdMap[_assetId];
+    function activateAsset(bytes32 _asset) external override onlyOwner inactiveAsset(_asset) {
+        Asset storage asset = assetNameMap[_asset];
         asset._active = true;
-        status = asset._active;
-        name = asset._name;
 
-        emit AssetActivate(asset._id, asset._name);
+        emit AssetActivate(asset._name, asset._address);
     }
 
     /**
      * @notice Used for deactivating the asset
-     * @param _assetId Id for the underlying asset
-     * @return name of the underlying asset
-     * @return status of the underlying asset
+     * @param _asset underlying asset
      */
-    function deactivateAsset(uint32 _assetId)
-        external
-        override
-        onlyOwner
-        validAsset(_assetId)
-        returns (bytes32 name, bool status)
-    {
-        Asset storage asset = assetIdMap[_assetId];
+    function deactivateAsset(bytes32 _asset) external override onlyOwner validAsset(_asset) {
+        Asset storage asset = assetNameMap[_asset];
         asset._active = false;
-        status = asset._active;
-        name = asset._name;
 
-        emit AssetDeactivate(asset._id, asset._name);
+        emit AssetDeactivate(asset._name, asset._address);
     }
 
     /**
      * @notice Add trade asset pair
-     * @param _primary ID of the primary asset
-     * @param _strike ID of the strike asset
-     * @return pairId Asset pair ID
+     * @param _primary primary asset name
+     * @param _strike strike asset name
+     * @param _limit purchase limit for the pair
      */
     function addAssetPair(
-        uint32 _primary,
-        uint32 _strike,
+        bytes32 _primary,
+        bytes32 _strike,
         uint256 _limit
-    ) external override onlyOwner validAsset(_primary) validAsset(_strike) returns (uint32 pairId) {
-        require(pairMap[_primary][_strike]._primary == 0, "Asset pair already present");
+    ) external override onlyOwner validAsset(_primary) validAsset(_strike) {
+        address pair = address(uint160(uint256(keccak256(abi.encode(_primary, _strike)))));
+        require(addressPairMap[pair]._address == address(0), "Asset pair already present");
 
-        pairId = uint32(pairs.length);
-        AssetPair memory pair =
-            AssetPair({ _id: pairId, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
-        pairIdMap[pairId] = pair;
-        pairs.push(pair);
-        pairMap[_primary][_strike] = pair;
+        AssetPair memory assetPair =
+            AssetPair({ _address: pair, _primary: _primary, _strike: _strike, _limit: _limit, _active: true });
+        addressPairMap[pair] = assetPair;
 
-        emit NewAssetPair(pair._id, pair._primary, pair._strike, pair._active, _limit);
+        emit NewAssetPair(assetPair._address, assetPair._primary, assetPair._strike, _limit);
     }
 
     /**
      * @notice Activate an asset pair
-     * @param _pairId ID of an valid asset
-     * @return pairId Asset symbol
-     * @return status Asset Status
+     * @param _address asset pair address
      */
-    function activateAssetPair(uint32 _pairId)
-        external
-        override
-        onlyOwner
-        inactiveAssetPair(_pairId)
-        returns (uint32 pairId, bool status)
-    {
-        AssetPair storage pair = pairIdMap[_pairId];
+    function activateAssetPair(address _address) external override onlyOwner inactiveAssetPair(_address) {
+        AssetPair storage pair = addressPairMap[_address];
         pair._active = true;
-        status = pair._active;
-        pairId = pair._id;
 
-        emit AssetActivatePair(pair._id, pair._primary, pair._strike);
+        emit AssetActivatePair(pair._address, pair._primary, pair._strike);
     }
 
     /**
      * @notice Deactivate an asset pair
-     * @param _pairId ID of an valid asset
-     * @return pairId Asset symbol
-     * @return status Asset Status
+     * @param _address asset pair address
      */
-    function deactivateAssetPair(uint32 _pairId)
-        external
-        override
-        onlyOwner
-        validAssetPair(_pairId)
-        returns (uint32 pairId, bool status)
-    {
-        AssetPair storage pair = pairIdMap[_pairId];
+    function deactivateAssetPair(address _address) external override onlyOwner validAssetPair(_address) {
+        AssetPair storage pair = addressPairMap[_address];
         pair._active = false;
-        status = pair._active;
-        pairId = pair._id;
 
-        emit AssetDeactivatePair(pair._id, pair._primary, pair._strike);
+        emit AssetDeactivatePair(pair._address, pair._primary, pair._strike);
     }
 
-    function setPurchaseLimit(uint32 _pairId, uint256 _limit) external override onlyOwner validAssetPair(_pairId) {
-        AssetPair storage pair = pairIdMap[_pairId];
+    /**
+     * @notice Set purchase limit
+     * @param _address asset pair address
+     * @param _limit Purchase limit for an asset pair
+     */
+    function setPurchaseLimit(address _address, uint256 _limit) external override onlyOwner validAssetPair(_address) {
+        AssetPair storage pair = addressPairMap[_address];
         pair._limit = _limit;
 
-        emit SetPurchaseLimit(_pairId, pair._primary, pair._strike, _limit);
+        emit SetPurchaseLimit(pair._address, pair._primary, pair._strike, _limit);
     }
 }

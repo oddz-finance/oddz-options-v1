@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { utils } from "ethers";
+import { address0 } from "../../test-utils";
 
 export function shouldBehaveLikeOddzPriceOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -69,7 +70,7 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
       .withArgs(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        "0x0000000000000000000000000000000000000000",
+        address0(),
         this.oddzPriceOracle.address,
       );
 
