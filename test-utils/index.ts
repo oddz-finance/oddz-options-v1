@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 export const OptionType = {
   Call: 0,
   Put: 1,
@@ -26,4 +27,13 @@ export const getExpiry = (days = 1) => {
 
 export const address0 = () => {
   return "0x0000000000000000000000000000000000000000";
+};
+
+export interface Option {
+  _pair: number;
+  _optionModel: string;
+  _expiration: number;
+  _amount: BigNumber;
+  _strike: BigNumber;
+  _optionType: number;
 };

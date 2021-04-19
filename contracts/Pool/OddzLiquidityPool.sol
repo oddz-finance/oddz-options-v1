@@ -4,6 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Swap/DexManager.sol";
+import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -58,6 +59,11 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     DexManager public dexManager;
 
     /**
+     * @dev Oddz SDK
+     */
+    OddzSDK public sdk;
+
+    /**
      * @dev Access control specific data definitions
      */
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -83,29 +89,40 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         _;
     }
 
+    modifier validCaller(address _buyer) {
+        require((msg.sender == address(sdk) || msg.sender == _buyer), "invalid buyer");
+        _;
+    }
+
+    function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
+        require(address(_sdk).isContract(), "invalid SDK contract address");
+        sdk = _sdk;
+    }
+
     constructor(IERC20 _token, DexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
         dexManager = _dexManager;
     }
 
-    function addLiquidity(uint256 _amount) external override returns (uint256 mint) {
+    function addLiquidity(uint256 _amount, address _account) external override returns (uint256 mint) {
         mint = _amount;
+        address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
 
         require(mint > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
         // transfer user eligible premium
-        transferEligiblePremium(date, msg.sender);
+        transferEligiblePremium(date, sender_);
 
         updateLiquidity(date, _amount, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date, _amount);
-        latestLiquidityDateMap[msg.sender] = date;
+        latestLiquidityDateMap[sender_] = date;
 
-        _mint(msg.sender, mint);
+        _mint(sender_, mint);
 
-        emit AddLiquidity(msg.sender, _amount, mint);
+        emit AddLiquidity(sender_, _amount, mint);
 
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        token.safeTransferFrom(sender_, address(this), _amount);
     }
 
     function removeLiquidity(uint256 _amount) external override returns (uint256 burn) {
@@ -162,7 +179,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
     function send(
         uint256 _id,
-        address payable _account,
+        address _account,
         uint256 _amount
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
@@ -174,7 +191,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
     function sendUA(
         uint256 _id,
-        address payable _account,
+        address _account,
         uint256 _amount,
         bytes32 _underlying,
         bytes32 _strike,
