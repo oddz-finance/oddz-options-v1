@@ -131,7 +131,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await expect(oddzOptionManager.getPremium(optionDetails)).to.be.revertedWith("Invalid Asset pair");
-    await oddzAssetManager.activateAssetPair(pairId);
+    await oddzAssetManager.activateAssetPair(pair);
     const option = await oddzOptionManager.getPremium(optionDetails);
     const { optionPremium, txnFee } = option;
     await expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
@@ -1209,13 +1209,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       false,
     );
 
-    await expect(
-      oddzOptionManager.buy(
-        optionDetails1,
-        BigInt(premiumWithSlippage1),
-        this.accounts.admin,
-      ),
-    ).to.emit(oddzOptionManager, "Buy");
+    await expect(oddzOptionManager.buy(optionDetails1, BigInt(premiumWithSlippage1), this.accounts.admin)).to.emit(
+      oddzOptionManager,
+      "Buy",
+    );
   });
 
   it("should revert buy when premium crosses slippage limit of 5%", async function () {
@@ -1321,11 +1318,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzVolatility.setIv(3600000, 5);
 
     await expect(
-      oddzOptionManager.buy(
-        optionDetails,
-        BigInt(premiumWithSlippage),
-        this.accounts.admin,
-      ),
+      oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin),
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
 

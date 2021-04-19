@@ -36,4 +36,4 @@ export interface Option {
   _amount: BigNumber;
   _strike: BigNumber;
   _optionType: number;
-};
+}
