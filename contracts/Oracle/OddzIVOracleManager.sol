@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 import "./IOddzVolatilityOracle.sol";
 import "../Option/IOddzOption.sol";
@@ -52,7 +52,7 @@ contract OddzIVOracleManager is AccessControl {
         _;
     }
 
-    constructor() public {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 

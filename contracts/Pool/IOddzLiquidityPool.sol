@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";

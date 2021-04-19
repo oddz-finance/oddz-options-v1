@@ -167,4 +167,21 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       "LP Error: caller has no access to the method",
     );
   });
+
+  it("Should revert for underflow operation while locking without add liquidty", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await expect(mockOptionManager.lock()).to.be.revertedWith("revert");
+  });
+
+  it("Should revert for underflow operation while unlocking again", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await mockOptionManager.lock();
+    await expect(mockOptionManager.unlock()).to.be.ok;
+    await expect(mockOptionManager.unlock()).to.be.revertedWith("revert");
+  });
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
@@ -18,7 +18,7 @@ contract MockAggregatorV3 is AggregatorV3Interface {
         uint8 _decimals,
         string memory _description,
         uint256 _version
-    ) public {
+    ) {
         symbolA = _symbolA;
         symbolB = _symbolB;
         idecimals = _decimals;

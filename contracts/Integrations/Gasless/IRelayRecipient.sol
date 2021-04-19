@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 /**
  * a contract must implement this interface in order to support relayed transaction.
@@ -19,7 +19,7 @@ abstract contract IRelayRecipient {
      * otherwise, return `msg.sender`
      * should be used in the contract anywhere instead of msg.sender
      */
-    function _msgSender() internal view virtual returns (address payable);
+    function msgSender() internal view virtual returns (address);
 
     function versionRecipient() external view virtual returns (string memory);
 }

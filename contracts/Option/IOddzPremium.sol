@@ -1,5 +1,5 @@
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 
 interface IOddzPremium {
     /**

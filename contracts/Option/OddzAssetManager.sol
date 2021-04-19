@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma experimental ABIEncoderV2;
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
 

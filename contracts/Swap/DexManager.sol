@@ -1,4 +1,5 @@
-pragma solidity ^0.7.4;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 
 import "./ISwapUnderlyingAsset.sol";
 import "../Option/OddzAssetManager.sol";
@@ -67,7 +68,7 @@ contract DexManager is AccessControl {
         _;
     }
 
-    constructor(OddzAssetManager _assetManger) public {
+    constructor(OddzAssetManager _assetManger) {
         assetManager = _assetManger;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }

@@ -1,4 +1,5 @@
-pragma solidity ^0.7.0;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 
 import "../Option/OddzOptionPremiumManager.sol";
 

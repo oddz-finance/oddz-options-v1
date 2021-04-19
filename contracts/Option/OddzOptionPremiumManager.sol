@@ -1,5 +1,5 @@
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+// SPDX-License-Identifier: BSD-4-Clause
+pragma solidity 0.8.3;
 
 import "./IOddzPremium.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -51,7 +51,7 @@ contract OddzOptionPremiumManager is AccessControl {
         _;
     }
 
-    constructor() public {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -73,7 +73,6 @@ contract OddzOptionPremiumManager is AccessControl {
         public
         onlyOwner(msg.sender)
         validModelName(_name)
-        returns (bytes32 exHash)
     {
         require(address(_modelAddress).isContract(), "Invalid premium model address");
 

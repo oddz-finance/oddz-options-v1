@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity ^0.7.0;
+pragma solidity 0.8.3;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { ERC20Permit } from "@openzeppelin/contracts/drafts/ERC20Permit.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 /**
  * @title Mock ERC20 Token
@@ -16,7 +16,7 @@ contract MockERC20 is ERC20, ERC20Permit, Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply
-    ) public ERC20(name, symbol) ERC20Permit(name) {
+    ) ERC20(name, symbol) ERC20Permit(name) {
         _mint(msg.sender, totalSupply * (10**decimals()));
     }
 
