@@ -71,9 +71,7 @@ interface IOddzOption {
      * @param _option Options details
      * @return premiumResult premium Result Created option ID
      */
-    function getPremium(
-        OptionDetails memory _option
-    ) external view returns (PremiumResult memory premiumResult);
+    function getPremium(OptionDetails memory _option) external view returns (PremiumResult memory premiumResult);
 
     /**
      * @notice Exercises an active option

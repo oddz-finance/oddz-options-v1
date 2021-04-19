@@ -317,8 +317,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     function getPremium(OptionDetails memory _option)
         public
-        override
         view
+        override
         validOptionType(_option._optionType)
         validExpiration(_option._expiration)
         validAssetPair(_option._pair)

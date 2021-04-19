@@ -64,7 +64,7 @@ interface IOddzLiquidityPool {
      */
     function send(
         uint256 _id,
-        address  _account,
+        address _account,
         uint256 _amount
     ) external;
 
@@ -79,7 +79,7 @@ interface IOddzLiquidityPool {
      */
     function sendUA(
         uint256 _id,
-        address  _account,
+        address _account,
         uint256 _amount,
         bytes32 _underlying,
         bytes32 _strike,
