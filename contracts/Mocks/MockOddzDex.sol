@@ -6,7 +6,7 @@ contract MockOddzDex is ISwapUnderlyingAsset {
     function swapTokensForUA(
         address _fromToken,
         address _toToken,
-        address payable _account,
+        address _account,
         uint256 _amountIn,
         uint256 _deadline
     ) public pure override returns (uint256[] memory result) {
