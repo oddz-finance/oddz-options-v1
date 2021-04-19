@@ -179,7 +179,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
     function send(
         uint256 _id,
-        address payable _account,
+        address  _account,
         uint256 _amount
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
@@ -191,7 +191,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
     function sendUA(
         uint256 _id,
-        address payable _account,
+        address  _account,
         uint256 _amount,
         bytes32 _underlying,
         bytes32 _strike,

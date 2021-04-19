@@ -12,6 +12,7 @@ import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
 import "../OddzSDK.sol";
+import "hardhat/console.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
@@ -268,7 +269,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
             token.allowance(_buyer, address(this)),
             premiumResult.optionPremium + premiumResult.txnFee
         );
-
         uint256 lockAmount =
             getLockAmount(
                 cp,
@@ -282,7 +282,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         Option memory option =
             Option(
                 State.Active,
-                payable(_buyer),
+                _buyer,
                 optionDetails._strike,
                 optionDetails._amount,
                 lockAmount,
@@ -317,6 +317,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     function getPremium(OptionDetails memory _option)
         public
+        override
         view
         validOptionType(_option._optionType)
         validExpiration(_option._expiration)

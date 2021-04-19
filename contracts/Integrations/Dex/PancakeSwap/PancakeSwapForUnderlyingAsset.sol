@@ -30,7 +30,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     function swapTokensForUA(
         address _fromToken,
         address _toToken,
-        address payable _account,
+        address  _account,
         uint256 _amountIn,
         uint256 _deadline
     ) public override onlyOwner returns (uint256[] memory result) {

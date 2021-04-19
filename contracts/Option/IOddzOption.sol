@@ -27,7 +27,7 @@ interface IOddzOption {
 
     struct Option {
         State state;
-        address payable holder;
+        address holder;
         uint256 strike;
         uint256 amount;
         uint256 lockedAmount;
@@ -65,6 +65,15 @@ interface IOddzOption {
         uint256 _premiumWithSlippage,
         address _buyer
     ) external returns (uint256 optionId);
+
+    /**
+     * @notice getPremium of option
+     * @param _option Options details
+     * @return premiumResult premium Result Created option ID
+     */
+    function getPremium(
+        OptionDetails memory _option
+    ) external view returns (PremiumResult memory premiumResult);
 
     /**
      * @notice Exercises an active option

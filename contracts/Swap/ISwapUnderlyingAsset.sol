@@ -13,7 +13,7 @@ interface ISwapUnderlyingAsset {
     function swapTokensForUA(
         address _fromToken,
         address _toToken,
-        address payable _account,
+        address  _account,
         uint256 _amountIn,
         uint256 _deadline
     ) external returns (uint256[] memory swapResult);

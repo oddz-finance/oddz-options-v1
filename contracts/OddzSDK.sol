@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./Option/OddzOptionManager.sol";
-import "./Pool/OddzLiquidityPool.sol";
+import "./Option/IOddzOption.sol";
+import "./Pool/IOddzLiquidityPool.sol";
 import "./Integrations/Gasless/BaseRelayRecipient.sol";
 
 contract OddzSDK is BaseRelayRecipient {
-    OddzOptionManager public optionManager;
-    OddzLiquidityPool public pool;
+    IOddzOption public optionManager;
+    IOddzLiquidityPool public pool;
     mapping(address => uint256) public optionCount;
     mapping(address => uint256) public liquidityCount;
 
     constructor(
-        OddzOptionManager _optionManager,
-        OddzLiquidityPool _pool,
+        IOddzOption _optionManager,
+        IOddzLiquidityPool _pool,
         address _trustedForwarder
     ) {
         optionManager = _optionManager;
