@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry } from "../../test-utils";
+import { OptionType, getExpiry, address0 } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -100,7 +100,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       .withArgs(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        "0x0000000000000000000000000000000000000000",
+        address0(),
         this.oddzIVOracle.address,
       );
 

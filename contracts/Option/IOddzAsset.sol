@@ -4,23 +4,16 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IOddzAsset {
-    event NewAsset(uint32 indexed _id, bytes32 indexed _name, bool _status);
-    event AssetActivate(uint32 indexed _id, bytes32 indexed _name);
-    event AssetDeactivate(uint32 indexed _id, bytes32 indexed _name);
+    event NewAsset(bytes32 indexed _name, address indexed _address);
+    event AssetActivate(bytes32 indexed _name, address indexed _address);
+    event AssetDeactivate(bytes32 indexed _name, address indexed _address);
 
-    event NewAssetPair(
-        uint32 indexed _id,
-        uint32 indexed _primary,
-        uint32 indexed _strike,
-        bool _status,
-        uint256 _limit
-    );
-    event AssetActivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
-    event AssetDeactivatePair(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike);
-    event SetPurchaseLimit(uint32 indexed _id, uint32 indexed _primary, uint32 indexed _strike, uint256 _limit);
+    event NewAssetPair(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike, uint256 _limit);
+    event AssetActivatePair(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike);
+    event AssetDeactivatePair(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike);
+    event SetPurchaseLimit(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike, uint256 _limit);
 
     struct Asset {
-        uint32 _id;
         bytes32 _name;
         address _address;
         bool _active;
@@ -28,9 +21,9 @@ interface IOddzAsset {
     }
 
     struct AssetPair {
-        uint32 _id;
-        uint32 _primary;
-        uint32 _strike;
+        address _address;
+        bytes32 _primary;
+        bytes32 _strike;
         bool _active;
         uint256 _limit;
     }
@@ -40,63 +33,53 @@ interface IOddzAsset {
      * @param _name Symbol of the asset e.g. BTC, ETH
      * @param _address Address of the asset
      * @param _precision Percentage precision for the asset
-     * @return assetId Asset ID
      */
     function addAsset(
         bytes32 _name,
         address _address,
         uint8 _precision
-    ) external returns (uint32 assetId);
+    ) external;
 
     /**
      * @notice Activate an asset
-     * @param _assetId ID of an valid asset
-     * @return name Asset symbol
-     * @return status Asset Status
+     * @param _asset underlying asset
      */
-    function activateAsset(uint32 _assetId) external returns (bytes32 name, bool status);
+    function activateAsset(bytes32 _asset) external;
 
     /**
      * @notice Deactivate an asset
-     * @param _assetId ID of an valid asset
-     * @return name Asset symbol
-     * @return status Asset Status
+     * @param _asset underlying asset
      */
-    function deactivateAsset(uint32 _assetId) external returns (bytes32 name, bool status);
+    function deactivateAsset(bytes32 _asset) external;
 
     /**
      * @notice Add trade asset pair
-     * @param _primary ID of the primary asset
-     * @param _strike ID of the strike asset
-     * @param _limit Purchase limit for the pair
-     * @return pairId Asset pair ID
+     * @param _primary primary asset name
+     * @param _strike strike asset name
+     * @param _limit purchase limit for the pair
      */
     function addAssetPair(
-        uint32 _primary,
-        uint32 _strike,
+        bytes32 _primary,
+        bytes32 _strike,
         uint256 _limit
-    ) external returns (uint32 pairId);
+    ) external;
 
     /**
      * @notice Activate an asset pair
-     * @param _pairId ID of an valid asset pair
-     * @return pairId Asset symbol
-     * @return status Asset Status
+     * @param _address asset pair address
      */
-    function activateAssetPair(uint32 _pairId) external returns (uint32 pairId, bool status);
+    function activateAssetPair(address _address) external;
 
     /**
      * @notice Deactivate an asset pair
-     * @param _pairId ID of an valid asset pair
-     * @return pairId Asset symbol
-     * @return status Asset Status
+     * @param _address asset pair address
      */
-    function deactivateAssetPair(uint32 _pairId) external returns (uint32 pairId, bool status);
+    function deactivateAssetPair(address _address) external;
 
     /**
      * @notice Set purchase limit
-     * @param _pairId ID of an valid asset pair
-     * @param _limit Purchase limit for an asset pair
+     * @param _address asset pair address
+     * @param _limit purchase limit for the pair
      */
-    function setPurchaseLimit(uint32 _pairId, uint256 _limit) external;
+    function setPurchaseLimit(address _address, uint256 _limit) external;
 }

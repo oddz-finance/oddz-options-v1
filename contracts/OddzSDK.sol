@@ -44,7 +44,7 @@ contract OddzSDK is BaseRelayRecipient {
     }
 
     function buy(
-        uint32 _pair,
+        address _pair,
         bytes32 _optionModel,
         uint256 _premiumWithSlippage,
         uint256 _expiration,
@@ -61,7 +61,7 @@ contract OddzSDK is BaseRelayRecipient {
     }
 
     function getPremium(
-        uint32 _pair,
+        address _pair,
         bytes32 _optionModel,
         uint256 _expiration,
         uint256 _amount,

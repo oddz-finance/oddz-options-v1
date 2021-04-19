@@ -19,7 +19,7 @@ interface IOddzOption {
         bytes32 indexed _model,
         uint256 _transactionFee,
         uint256 _totalFee,
-        uint32 _pairId
+        address _pair
     );
 
     event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
@@ -33,12 +33,12 @@ interface IOddzOption {
         uint256 lockedAmount;
         uint256 premium;
         uint256 expiration;
-        uint32 pairId;
+        address pair;
         OptionType optionType;
     }
 
     struct OptionDetails {
-        uint32 _pair;
+        address _pair;
         bytes32 _optionModel;
         uint256 _expiration;
         uint256 _amount;

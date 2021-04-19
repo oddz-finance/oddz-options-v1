@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry, Option } from "../../test-utils";
+import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry, Option, address0 } from "../../test-utils";
 import { waffle } from "hardhat";
 import {
   OddzLiquidityPool,
@@ -15,7 +15,7 @@ const provider = waffle.provider;
 let snapshotCount = 0;
 
 const getOptionDetailsStruct = (
-  pairId: number,
+  pair: any,
   model: string,
   expiry: number,
   amount: BigNumber,
@@ -23,7 +23,7 @@ const getOptionDetailsStruct = (
   type: number,
 ) => {
   const option: Option = {
-    _pair: pairId,
+    _pair: pair,
     _optionModel: model,
     _expiration: expiry,
     _amount: amount,
@@ -64,7 +64,11 @@ const getAssetPair = async (
   const oam = await oddzAssetManager.connect(admin);
   await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
   await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
-  await oam.addAssetPair(1, 0, BigNumber.from(utils.parseEther("0.01")));
+  await oam.addAssetPair(
+    utils.formatBytes32String("ETH"),
+    utils.formatBytes32String("USD"),
+    BigNumber.from(utils.parseEther("0.01")),
+  );
 
   await oddzPriceOracleManager
     .connect(admin)
@@ -83,7 +87,7 @@ const getAssetPair = async (
 
   await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 
-  return (await oam.pairs(0))._id;
+  return (await oam.addressPairMap("0xfcb06d25357ef01726861b30b0b83e51482db417"))._address;
 };
 
 const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
@@ -96,7 +100,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset pair", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
-      1,
+      address0(),
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(100),
@@ -108,7 +112,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
   it("should return premium price only if the asset pair is active", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -117,9 +121,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
-    await oddzAssetManager.deactivateAssetPair(pairId);
+    await oddzAssetManager.deactivateAssetPair(pair);
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -127,7 +131,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await expect(oddzOptionManager.getPremium(optionDetails)).to.be.revertedWith("Invalid Asset pair");
-    await oddzAssetManager.activateAssetPair(pairId);
+    await oddzAssetManager.activateAssetPair(pair);
     const option = await oddzOptionManager.getPremium(optionDetails);
     const { optionPremium, txnFee } = option;
     await expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
@@ -137,7 +141,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should return the premium price 1 day", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     // call should be optionType.call
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -146,7 +150,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -164,7 +168,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should return the premium price for 7 days", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     // call should be optionType.call
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -173,7 +177,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(7),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -191,7 +195,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const optionDetails = getOptionDetailsStruct(
-      1,
+      address0(),
       utils.formatBytes32String("B_S"),
       getExpiry(0),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -207,7 +211,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw Expiration cannot be more than 30 days error when the expiry is more than a 30 days", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
-      1,
+      address0(),
       utils.formatBytes32String("B_S"),
       getExpiry(31),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -223,7 +227,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should prevent buying options for unsupported asset pair type", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
-      1,
+      address0(),
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -239,7 +243,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should buy option if the asset pair is supported and emit buy event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -247,8 +251,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -274,7 +279,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -282,8 +287,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(10),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -309,7 +315,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("Call option - excercise flow", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -321,8 +327,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -347,7 +354,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("Put option - excercise flow", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -357,7 +364,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -384,7 +391,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error when trying to excercise an option that is owned by other wallet", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -393,8 +400,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -412,7 +420,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error when trying excercise an option if the option is not active", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -421,8 +429,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -439,7 +448,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should unlock the collateral locked if the option is expired", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -448,8 +457,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("10")), // number of options
@@ -460,15 +470,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-
     const op0 = await oddzOptionManager.options(0);
+
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
     const op1 = await oddzOptionManager.options(1);
+
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
     const op2 = await oddzOptionManager.options(2);
+
     const premiums = BigNumber.from(op0.premium).add(BigNumber.from(op1.premium)).add(BigNumber.from(op2.premium));
-    // const surplusBeforeUpdate = (await oddzLiquidityPool.surplus()).toNumber();
-    //console.log(surplusBeforeUpdate);
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlockAll([0, 1, 2])).to.emit(oddzOptionManager, "Expire");
@@ -480,7 +490,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should distribute premium", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -490,8 +500,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await provider.send("evm_snapshot", []);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -501,8 +512,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails1 = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(14),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -557,7 +569,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should update transaction percentage and option transaction fee", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -569,8 +581,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzOptionManager.setTransactionFeePerc(2);
     expect(await oddzOptionManager.txnFeePerc()).to.equal(2);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -585,7 +598,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should update premium eligibilty correctly", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -596,8 +609,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -625,7 +639,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should withdraw premium successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -636,7 +650,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -672,7 +686,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should update surplus and emit premium forfeited event", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -685,7 +699,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -718,7 +732,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw error while withdraw liquidity", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -731,7 +745,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -758,7 +772,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should send premium to the LP automatically for second liquidity after 14 days", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -769,8 +783,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -803,7 +818,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should not alter user premium eligibility", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -816,7 +831,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -847,7 +862,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error when trying to excercise an option that is expired", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -856,8 +871,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -876,7 +892,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should update settlement percentage and option excercise fee", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -890,8 +906,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
     await oddzOptionManager.setSettlementFeePerc(5);
     expect((await oddzOptionManager.settlementFeePerc()).toNumber()).to.equal(5);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -922,7 +939,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should enable premium eligibility successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -933,8 +950,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -960,7 +978,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error while enabling premium eligibility for a invalid date", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -971,8 +989,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -990,7 +1009,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should throw an error while enableling premium eligibility for already enabled date", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1001,8 +1020,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1029,7 +1049,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should send settlement fee aggragrate staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1040,8 +1060,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
 
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -1063,7 +1084,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should send transaction fee aggragrate staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1072,8 +1093,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("5")), // number of options
@@ -1105,7 +1127,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert buy for less than purchase limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1113,8 +1135,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("0.001")), // number of options
@@ -1139,7 +1162,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1148,9 +1171,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
-    const purchaseLimit = await oddzAssetManager.getPurchaseLimit(pairId);
+
+    const purchaseLimit = await oddzAssetManager.getPurchaseLimit(pair);
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(purchaseLimit / 10), // number of options
@@ -1168,9 +1192,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(
       oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin),
     ).to.be.revertedWith("amount less than purchase limit");
-    await oddzAssetManager.setPurchaseLimit(pairId, BigNumber.from(purchaseLimit / 10));
+    await oddzAssetManager.setPurchaseLimit(pair, BigNumber.from(purchaseLimit / 10));
     const optionDetails1 = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
       BigNumber.from(utils.parseEther("0.002")), // number of options
@@ -1185,21 +1209,17 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       false,
     );
 
-    await expect(
-      oddzOptionManager.buy(
-        optionDetails1,
-        BigInt(premiumWithSlippage1),
-
-        this.accounts.admin,
-      ),
-    ).to.emit(oddzOptionManager, "Buy");
+    await expect(oddzOptionManager.buy(optionDetails1, BigInt(premiumWithSlippage1), this.accounts.admin)).to.emit(
+      oddzOptionManager,
+      "Buy",
+    );
   });
 
   it("should revert buy when premium crosses slippage limit of 5%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1208,8 +1228,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1234,7 +1255,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1243,8 +1264,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1268,7 +1290,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1277,8 +1299,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1295,12 +1318,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzVolatility.setIv(3600000, 5);
 
     await expect(
-      oddzOptionManager.buy(
-        optionDetails,
-        BigInt(premiumWithSlippage),
-
-        this.accounts.admin,
-      ),
+      oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin),
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
 
@@ -1308,7 +1326,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1317,8 +1335,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1339,11 +1358,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
 
-  it("should revert  with less slippage and buy for more slippage with same iv", async function () {
+  it("should revert with less slippage and buy for more slippage with same iv", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1352,8 +1371,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -1394,7 +1414,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("Should use msg.sender instead of account sent for buy option", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
-    const pairId = await getAssetPair(
+    const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
       this.oddzPriceOracleManager,
@@ -1404,13 +1424,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     const optionDetails = getOptionDetailsStruct(
-      pairId,
+      pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
+
     const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzOptionManager,
       optionDetails,
@@ -1418,6 +1439,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.accounts.admin,
       false,
     );
+
     await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin1))
       .to.emit(oddzOptionManager, "Buy")
       .withArgs(
@@ -1426,7 +1448,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1.392900201")),
         BigNumber.from(utils.parseEther("29.250904221")),
-        0,
+        "0xFCb06D25357ef01726861B30b0b83e51482db417",
       );
   });
 }
