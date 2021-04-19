@@ -14,14 +14,20 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should allow deposit, emit AddLiquidity event and should update available balance", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
     expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 0)).transactionValue.toNumber()).to.equal(
       depositAmount,
     );
     const availableBalance = await liquidityManager.availableBalance();
     expect(availableBalance.toNumber()).to.equal(depositAmount);
 
-    await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
     expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 1)).transactionValue.toNumber()).to.equal(
       depositAmount,
     );
@@ -46,19 +52,23 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should not allow withdrawal when the the user is trying to withdraw more amount than deposited", async function () {
     const depositAmount = 1000;
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
-    const liquidityManager1 = await this.oddzLiquidityPool.connect(this.signers.admin1);
-    await expect(liquidityManager1.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
     const withdrawalAmount = 1001;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "LP Error: Amount is too large",
+      "Not enough funds on the pool contract. Please lower the amount",
     );
   });
 
   it("should allow withdraw when the pool has sufficient balance", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
     const withdrawalAmount = 800;
     await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(
       liquidityManager,
@@ -70,7 +80,10 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should not update premium eligibility if the date is less than the current date", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount)).to.emit(liquidityManager, "AddLiquidity");
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
     await expect(liquidityManager.updatePremiumEligibility(Math.round(Date.now() / 1000))).to.be.revertedWith(
       "LP Error: Invalid Date",
     );
@@ -112,7 +125,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should be able to successfully lock pool", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.lock()).to.be.ok;
   });
@@ -120,14 +133,14 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should throw caller has no access to the method while lock pool", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await expect(mockOptionManager.lock()).to.be.revertedWith("LP Error: caller has no access to the method");
   });
 
   it("Should be able to successfully unlock pool", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock();
     await expect(mockOptionManager.unlock()).to.be.ok;
@@ -141,7 +154,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should be able to successfully send token to user", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.send(this.accounts.admin)).to.emit(liquidityManager, "Profit");
   });
@@ -156,7 +169,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should be able to successfully send UA token to user", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.sendUA(this.accounts.admin)).to.emit(liquidityManager, "Profit");
   });
@@ -178,10 +191,18 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should revert for underflow operation while unlocking again", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock();
     await expect(mockOptionManager.unlock()).to.be.ok;
     await expect(mockOptionManager.unlock()).to.be.revertedWith("revert");
+  });
+
+  it("Should use msg.sender instead of account sent for add liquidity", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const depositAmount = 1000;
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1))
+      .to.emit(liquidityManager, "AddLiquidity")
+      .withArgs(this.accounts.admin, depositAmount, depositAmount);
   });
 }
