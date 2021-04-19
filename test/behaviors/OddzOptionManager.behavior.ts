@@ -1448,7 +1448,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1.392900201")),
         BigNumber.from(utils.parseEther("29.250904221")),
-        0,
+        "0xFCb06D25357ef01726861B30b0b83e51482db417",
       );
   });
 }

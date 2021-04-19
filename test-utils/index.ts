@@ -30,7 +30,7 @@ export const address0 = () => {
 };
 
 export interface Option {
-  _pair: number;
+  _pair: any;
   _optionModel: string;
   _expiration: number;
   _amount: BigNumber;
