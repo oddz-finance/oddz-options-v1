@@ -27,7 +27,7 @@ interface IOddzOption {
 
     struct Option {
         State state;
-        address payable holder;
+        address holder;
         uint256 strike;
         uint256 amount;
         uint256 lockedAmount;
@@ -37,26 +37,41 @@ interface IOddzOption {
         OptionType optionType;
     }
 
+    struct OptionDetails {
+        address _pair;
+        bytes32 _optionModel;
+        uint256 _expiration;
+        uint256 _amount;
+        uint256 _strike;
+        OptionType _optionType;
+    }
+
+    struct PremiumResult {
+        uint256 optionPremium;
+        uint256 txnFee;
+        uint256 iv;
+        uint8 ivDecimal;
+    }
+
     /**
      * @notice Buy a new option
-     * @param _pair Underlying asset
-     * @param _optionModel Option Model e.g. B_S (for BlackScholes)
-     * @param _premiumWithSlippage Option premium amount with slippage
-     * @param _expiration Option expiration in unix timestamp
-     * @param _amount Option amount in wei
-     * @param _strike Strike price expressed in wei
-     * @param _optionType Option type i.e. Call or Put
+     * @param _option Options details
+     * @param _premiumWithSlippage Options details
+     * @param _buyer Address of buyer
      * @return optionId Created option ID
      */
     function buy(
-        address _pair,
-        bytes32 _optionModel,
+        OptionDetails memory _option,
         uint256 _premiumWithSlippage,
-        uint256 _expiration,
-        uint256 _amount,
-        uint256 _strike,
-        OptionType _optionType
+        address _buyer
     ) external returns (uint256 optionId);
+
+    /**
+     * @notice getPremium of option
+     * @param _option Options details
+     * @return premiumResult premium Result Created option ID
+     */
+    function getPremium(OptionDetails memory _option) external view returns (PremiumResult memory premiumResult);
 
     /**
      * @notice Exercises an active option
