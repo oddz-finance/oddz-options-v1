@@ -377,7 +377,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
             optionDetails._optionModel
         );
         // convert to USD price precision
-        optionPremium = (optionPremium * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
+        uint8 _decimal = assetManager.getPrecision(pair._primary);
+        if (token.decimals() > _decimal) optionPremium = (optionPremium * (10**token.decimals())) / (10**_decimal);
+        else optionPremium = (optionPremium * (10**_decimal)) / (10**token.decimals());
     }
 
     /**
@@ -446,7 +448,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit / 1e18;
 
         // convert profit to usd decimals
-        profit = (profit * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
+        uint8 _decimal = assetManager.getPrecision(pair._primary);
+        if (token.decimals() > _decimal) profit = (profit * (10**token.decimals())) / (10**_decimal);
+        else profit = (profit * (10**_decimal)) / (10**token.decimals());
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = (profit * settlementFeePerc) / 100;
