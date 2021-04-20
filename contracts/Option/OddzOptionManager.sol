@@ -12,7 +12,7 @@ import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
 import "../OddzSDK.sol";
-import "hardhat/console.sol";
+import "../Libs/ABDKMath64x64.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
@@ -147,8 +147,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = _cp + ((_cp * _iv) / (10**_ivDecimal));
-        oc = oc.min(_cp + _cp);
+        // fetch highest call price using IV
+        uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
+        oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
         oc = (oc * (10**token.decimals())) / (10**_decimal);
     }
@@ -167,7 +168,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
-        oc = ((_cp * _iv) / (10**_ivDecimal)) - _cp;
+        // fetch lowest put price using IV
+        // use negative IV for put
+        uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(-ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
+        oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
         oc = (oc * (10**token.decimals())) / (10**_decimal);
     }
@@ -241,33 +245,33 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     function buy(
-        OptionDetails memory _option,
+        OptionDetails memory _details,
         uint256 _premiumWithSlippage,
         address _buyer
     )
         external
         override
-        validateOptionParams(_option._optionType, _option._pair, _option._expiration)
-        validAmount(_option._amount, _option._pair)
+        validateOptionParams(_details._optionType, _details._pair, _details._expiration)
+        validAmount(_details._amount, _details._pair)
         returns (uint256 optionId)
     {
-        address sender_ = msg.sender == address(sdk) ? _buyer : msg.sender;
-        optionId = createOption(_option, _premiumWithSlippage, sender_);
+        address buyer_ = msg.sender == address(sdk) ? _buyer : msg.sender;
+        optionId = createOption(_details, _premiumWithSlippage, buyer_);
     }
 
     /**
      * @notice Create option
-     * @param optionDetails option buy details
+     * @param _details option buy details
      * @return optionId newly created Option Id
      */
     function createOption(
-        OptionDetails memory optionDetails,
+        OptionDetails memory _details,
         uint256 _premiumWithSlippage,
         address _buyer
     ) private returns (uint256 optionId) {
-        PremiumResult memory premiumResult = getPremium(optionDetails);
+        PremiumResult memory premiumResult = getPremium(_details);
         require(_premiumWithSlippage >= premiumResult.optionPremium, "Premium crossed slippage tolerance");
-        uint256 cp = getCurrentPrice(assetManager.getPair(optionDetails._pair));
+        uint256 cp = getCurrentPrice(assetManager.getPair(_details._pair));
         validateOptionAmount(
             token.allowance(_buyer, address(this)),
             premiumResult.optionPremium + premiumResult.txnFee
@@ -276,23 +280,23 @@ contract OddzOptionManager is IOddzOption, Ownable {
             getLockAmount(
                 cp,
                 premiumResult.iv,
-                optionDetails._strike,
-                optionDetails._pair,
+                _details._strike,
+                _details._pair,
                 premiumResult.ivDecimal,
-                optionDetails._optionType
+                _details._optionType
             );
         optionId = options.length;
         Option memory option =
             Option(
                 State.Active,
                 _buyer,
-                optionDetails._strike,
-                optionDetails._amount,
+                _details._strike,
+                _details._amount,
                 lockAmount,
                 premiumResult.optionPremium,
-                optionDetails._expiration + block.timestamp,
-                optionDetails._pair,
-                optionDetails._optionType
+                _details._expiration + block.timestamp,
+                _details._pair,
+                _details._optionType
             );
 
         options.push(option);
@@ -305,10 +309,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         emit Buy(
             optionId,
             _buyer,
-            optionDetails._optionModel,
+            _details._optionModel,
             premiumResult.txnFee,
             premiumResult.optionPremium + premiumResult.txnFee,
-            optionDetails._pair
+            _details._pair
         );
     }
 
