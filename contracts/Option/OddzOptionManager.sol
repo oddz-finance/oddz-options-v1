@@ -120,7 +120,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _maxPrice,
         uint8 _decimal
     ) private view {
-        _strike = (_strike * (10**token.decimals())) / (10**_decimal);
+        if (token.decimals() > _decimal) _strike = (_strike * (10**token.decimals())) / (10**_decimal);
+        else _strike = (_strike * (10**_decimal)) / (10**token.decimals());
+
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
