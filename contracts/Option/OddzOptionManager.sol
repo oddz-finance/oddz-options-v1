@@ -12,7 +12,6 @@ import "./OddzOptionPremiumManager.sol";
 import "../Pool/OddzLiquidityPool.sol";
 import "./IERC20Extented.sol";
 import "../OddzSDK.sol";
-import "hardhat/console.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
@@ -75,15 +74,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
         address _pair,
         uint256 _expiration
     ) {
-        validOptionType(_optionType);
+
         validAssetPair(_pair);
         validExpiration(_expiration, _pair);
         _;
     }
 
-    function validOptionType(OptionType _optionType) private pure {
-        require(_optionType == OptionType.Call || _optionType == OptionType.Put, "Invalid option type");
-    }
+    
 
     function validExpiration(uint256 _expiration, address _pair) private view {
         require(_expiration <= assetManager.getMaxPeriod(_pair), "Expiration is greater than max expiry");
@@ -183,7 +180,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, _pair._strike);
 
-        if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
+        if (decimal > primary._precision) cp = (cp * (10**decimal)) / (10**primary._precision);
         else cp = (cp * (10**primary._precision)) / (10**decimal);
     }
 
@@ -431,7 +428,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         // convert profit to usd decimals
         profit = (profit * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
-
+         
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = (profit * settlementFeePerc) / 100;
         settlementFeeAggregate = settlementFeeAggregate + settlementFee;

@@ -111,7 +111,7 @@ describe("Oddz Option Sdk Unit tests", function () {
         "USDC",
         totalSupply,
       ])) as MockERC20;
-      const bscForwarder = "0xFcE240fABBF8D5FdefD3B565E414151F2B9f153b";
+      const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
 
       this.ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "ETH Token",
