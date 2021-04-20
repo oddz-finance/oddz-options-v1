@@ -134,14 +134,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
-     * @notice get over collateralization for call option
+     * @notice get maximum strike price
      * @param _cp current price of the underlying asset
      * @param _iv implied volatility of the underlying asset
      * @param _decimal underlying asset precision
      * @param _ivDecimal iv precision
      * @return oc - over collateralization
      */
-    function getCallOverColl(
+    function getMaxStrikePrice(
         uint256 _cp,
         uint256 _iv,
         uint256 _decimal,
@@ -151,18 +151,19 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
         oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
-        oc = (oc * (10**token.decimals())) / (10**_decimal);
+        if (token.decimals() > _decimal) oc = (oc * (10**token.decimals())) / (10**_decimal);
+        else oc = (oc * (10**_decimal)) / (10**token.decimals());
     }
 
     /**
-     * @notice get over collateralization for put option
+     * @notice get minimum strike price
      * @param _cp current price of the underlying asset
      * @param _iv implied volatility of the underlying asset
      * @param _decimal underlying asset precision
      * @param _ivDecimal iv precision
      * @return oc - over collateralization
      */
-    function getPutOverColl(
+    function getMinStrikePrice(
         uint256 _cp,
         uint256 _iv,
         uint256 _decimal,
@@ -173,7 +174,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(-ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
         oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
-        oc = (oc * (10**token.decimals())) / (10**_decimal);
+        if (token.decimals() > _decimal) oc = (oc * (10**token.decimals())) / (10**_decimal);
+        else oc = (oc * (10**_decimal)) / (10**token.decimals());
     }
 
     /**
@@ -192,25 +194,34 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
-     * @notice get underlying assets valid strike price range
+     * @notice get collateral info for option
      * @param _cp current price of the underlying asset
      * @param _iv implied volatility of the underlying asset
      * @param _strike strike price provided by the option buyer
      * @param _pair Asset pair
-     * @return minAssetPrice - minimum allowed strike price for the underlying asset
-     * @return maxAssetPrice - maxium allowed strike price for the underlying asset
+     * @return callOverColl - call over collateral
+     * @return putOverColl - put over collateral
      */
-    function getAssetStrikePriceRange(
+    function getCollateralAmount(
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
         address _pair,
         uint8 _ivDecimal
-    ) private view returns (uint256 minAssetPrice, uint256 maxAssetPrice) {
+    ) private view returns (uint256 callOverColl, uint256 putOverColl) {
         IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pair));
-        minAssetPrice = getPutOverColl(_cp, _iv, primary._precision, _ivDecimal);
-        maxAssetPrice = getCallOverColl(_cp, _iv, primary._precision, _ivDecimal);
+        uint256 minAssetPrice = getMinStrikePrice(_cp, _iv, primary._precision, _ivDecimal);
+        uint256 maxAssetPrice = getMaxStrikePrice(_cp, _iv, primary._precision, _ivDecimal);
         validStrike(_strike, minAssetPrice, maxAssetPrice, primary._precision);
+
+        // convert strike to usd decimals
+        if (token.decimals() > primary._precision)
+            _strike = (_strike * (10**token.decimals())) / (10**primary._precision);
+        else _strike = (_strike * (10**primary._precision)) / (10**token.decimals());
+
+        // limit call over collateral to _strike i.e. max profit is limited to _strike
+        callOverColl = maxAssetPrice.min(_strike);
+        putOverColl = _strike - minAssetPrice;
     }
 
     /**
@@ -239,9 +250,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint8 _ivDecimal,
         OptionType _optionType
     ) private view returns (uint256 lockAmount) {
-        (uint256 minStrikePrice, uint256 maxStrikePrice) =
-            getAssetStrikePriceRange(_cp, _iv, _strike, _pair, _ivDecimal);
-        lockAmount = _optionType == OptionType.Call ? maxStrikePrice : minStrikePrice;
+        (uint256 callOverColl, uint256 putOverColl) = getCollateralAmount(_cp, _iv, _strike, _pair, _ivDecimal);
+        lockAmount = _optionType == OptionType.Call ? putOverColl : callOverColl;
     }
 
     function buy(
