@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry, address0 } from "../../test-utils";
+import { utils } from "ethers";
+import { getExpiry, address0 } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
