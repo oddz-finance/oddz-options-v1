@@ -115,14 +115,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
     await expect(
-      oracleManager.calculateIv(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        OptionType.Call,
-        getExpiry(1),
-        BigNumber.from(160000000000),
-        BigNumber.from(170000000000),
-      ),
+      oracleManager.calculateIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)),
     ).to.be.revertedWith("caller has no access to the method");
   });
 }
