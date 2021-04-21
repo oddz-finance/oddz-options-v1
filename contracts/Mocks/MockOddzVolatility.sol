@@ -10,10 +10,7 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
     function getIv(
         bytes32 _undelying,
         bytes32 _strike,
-        bool _type,
-        uint256 _expiration,
-        uint256 _currentPrice,
-        uint256 _strikePrice
+        uint256 _expiration
     ) public view override returns (uint256, uint8) {
         return (iv, decimals);
     }

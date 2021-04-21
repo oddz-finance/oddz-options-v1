@@ -33,10 +33,7 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
     function getIv(
         bytes32 _asset,
         bytes32 _strike,
-        bool _isCallOption,
-        uint256 _expiration,
-        uint256 _currentPrice,
-        uint256 _strikePrice
+        uint256 _expiration
     ) external view override returns (uint256 iv, uint8 decimals) {
         AssetVolatility storage av = assetVolatilityMap[_asset][_strike];
         iv = av.iv;
