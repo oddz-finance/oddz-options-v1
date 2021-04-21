@@ -66,9 +66,6 @@ describe("Oddz Option Manager Unit tests", function () {
 
       const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
-        this.oddzAssetManager.address,
-      ])) as DexManager;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ETH"),

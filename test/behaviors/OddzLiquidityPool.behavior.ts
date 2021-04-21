@@ -205,4 +205,44 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       .to.emit(liquidityManager, "AddLiquidity")
       .withArgs(this.accounts.admin, depositAmount, depositAmount);
   });
+
+  it.only("Should revert set sdk for non owner", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await expect(liquidityManager.setSdk(this.mockOptionManager))
+      .to.be.revertedWith("LP Error: caller has no access to the method")
+  });
+
+  it.only("Should revert set sdk for non contract address", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await expect(liquidityManager.setSdk(this.accounts.admin))
+      .to.be.revertedWith("invalid SDK contract address")
+  });
+
+  it.only("Should set sdk for contract address", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await expect(liquidityManager.setSdk(this.mockOptionManager))
+      .to.be.revertedWith("invalid SDK contract address")
+  });
+
+  it.only("Should revert add liquidity for zero amount", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const depositAmount = 0;
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1))
+      .to.be.revertedWith("LP Error: Amount is too small")
+  });
+
+  it("should revert remove liquidity ", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const depositAmount = 1000;
+    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
+      liquidityManager,
+      "AddLiquidity",
+    );
+    const withdrawalAmount = 800;
+    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(
+      liquidityManager,
+      "RemoveLiquidity",
+    );
+    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(200);
+  });
 }
