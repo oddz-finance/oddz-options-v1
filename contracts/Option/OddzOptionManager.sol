@@ -95,19 +95,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
-     * @notice sets maximum deadline for DEX swap
-     * @param _deadline maximum swap transaction time
-     */
-    function setMaxDeadline(uint32 _deadline) public onlyOwner {
-        maxDeadline = _deadline;
-    }
-
-    function setSdk(OddzSDK _sdk) external onlyOwner {
-        require(address(_sdk).isContract(), "invalid SDK contract address");
-        sdk = _sdk;
-    }
-
-    /**
      * @notice validate strike price
      * @param _strike strike price provided by the option buyer
      * @param _minPrice minumum allowed strike price
@@ -120,9 +107,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _maxPrice,
         uint8 _decimal
     ) private view {
-        if (token.decimals() > _decimal) _strike = (_strike * (10**token.decimals())) / (10**_decimal);
-        else _strike = (_strike * (10**_decimal)) / (10**token.decimals());
-
+        _strike = updatePrecision(_strike, _decimal, token.decimals());
         require(_strike <= _maxPrice && _strike >= _minPrice, "Strike out of Range");
     }
 
@@ -146,15 +131,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function getMaxStrikePrice(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal,
+        uint8 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
         // fetch highest call price using IV
         uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
         oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
-        if (token.decimals() > _decimal) oc = (oc * (10**token.decimals())) / (10**_decimal);
-        else oc = (oc * (10**_decimal)) / (10**token.decimals());
+        oc = updatePrecision(oc, _decimal, token.decimals());
     }
 
     /**
@@ -168,7 +152,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function getMinStrikePrice(
         uint256 _cp,
         uint256 _iv,
-        uint256 _decimal,
+        uint8 _decimal,
         uint8 _ivDecimal
     ) private view returns (uint256 oc) {
         // fetch lowest put price using IV
@@ -176,8 +160,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 ivExp = ABDKMath64x64.mulu(ABDKMath64x64.exp(-ABDKMath64x64.divu(_iv, 10**_ivDecimal)), 10**_ivDecimal);
         oc = (_cp * ivExp) / (10**_ivDecimal);
         // convert to usd decimals
-        if (token.decimals() > _decimal) oc = (oc * (10**token.decimals())) / (10**_decimal);
-        else oc = (oc * (10**_decimal)) / (10**token.decimals());
+        oc = updatePrecision(oc, _decimal, token.decimals());
     }
 
     /**
@@ -191,8 +174,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, _pair._strike);
 
-        if (decimal > primary._precision) cp = cp / ((10**decimal) / (10**primary._precision));
-        else cp = (cp * (10**primary._precision)) / (10**decimal);
+        cp = updatePrecision(cp, decimal, primary._precision);
     }
 
     /**
@@ -217,9 +199,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validStrike(_strike, minAssetPrice, maxAssetPrice, primary._precision);
 
         // convert strike to usd decimals
-        if (token.decimals() > primary._precision)
-            _strike = (_strike * (10**token.decimals())) / (10**primary._precision);
-        else _strike = (_strike * (10**primary._precision)) / (10**token.decimals());
+        _strike = updatePrecision(_strike, primary._precision, token.decimals());
 
         // limit call over collateral to _strike i.e. max profit is limited to _strike
         callOverColl = maxAssetPrice.min(_strike);
@@ -378,17 +358,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         );
         // convert to USD price precision
         uint8 _decimal = assetManager.getPrecision(pair._primary);
-        if (token.decimals() > _decimal) optionPremium = (optionPremium * (10**token.decimals())) / (10**_decimal);
-        else optionPremium = (optionPremium * (10**_decimal)) / (10**token.decimals());
-    }
-
-    /**
-     * @notice Transaction fee calculation for the option premium
-     * @param _amount Option premium
-     * @return txnFee Transaction Fee
-     */
-    function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
-        txnFee = (_amount * txnFeePerc) / 100;
+        optionPremium = updatePrecision(optionPremium, _decimal, token.decimals());
     }
 
     /**
@@ -429,6 +399,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
+     * @notice Transaction fee calculation for the option premium
+     * @param _amount Option premium
+     * @return txnFee Transaction Fee
+     */
+    function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
+        txnFee = (_amount * txnFeePerc) / 100;
+    }
+
+    /**
      * @notice Sends profits in USD from the USD pool to an option holder's address
      * @param _optionId ID of the option
      */
@@ -448,9 +427,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit / 1e18;
 
         // convert profit to usd decimals
-        uint8 _decimal = assetManager.getPrecision(pair._primary);
-        if (token.decimals() > _decimal) profit = (profit * (10**token.decimals())) / (10**_decimal);
-        else profit = (profit * (10**_decimal)) / (10**token.decimals());
+        profit = updatePrecision(profit, assetManager.getPrecision(pair._primary), token.decimals());
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = (profit * settlementFeePerc) / 100;
@@ -484,6 +461,23 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
+     * @notice sets maximum deadline for DEX swap
+     * @param _deadline maximum swap transaction time
+     */
+    function setMaxDeadline(uint32 _deadline) public onlyOwner {
+        maxDeadline = _deadline;
+    }
+
+    /**
+     * @notice sets SDK address
+     * @param _sdk Oddz SDK address
+     */
+    function setSdk(OddzSDK _sdk) external onlyOwner {
+        require(address(_sdk).isContract(), "invalid SDK contract address");
+        sdk = _sdk;
+    }
+
+    /**
      * @notice transfer transaction fee to beneficiary
      */
     function transferTxnFeeToBeneficiary() external {
@@ -503,5 +497,21 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         token.safeTransfer(address(stakingBenficiary), settlementFee);
         stakingBenficiary.deposit(settlementFee, IOddzStaking.DepositType.Settlement);
+    }
+
+    /**
+     * @notice update precision from current to required
+     * @param _value value to be precision updated
+     * @param _current current precision
+     * @param _required required precision
+     * @return result updated _value
+     */
+    function updatePrecision(
+        uint256 _value,
+        uint8 _current,
+        uint8 _required
+    ) private pure returns (uint256 result) {
+        if (_required > _current) result = (_value * (10**_required)) / (10**_current);
+        else result = (_value * (10**_current)) / (10**_required);
     }
 }
