@@ -4,6 +4,7 @@ import "hardhat/console.sol";
 
 contract MockOptionManager {
     IOddzLiquidityPool public pool;
+    
 
     constructor(IOddzLiquidityPool _pool) {
         pool = _pool;
@@ -17,13 +18,13 @@ contract MockOptionManager {
         pool.unlockLiquidity(0);
     }
 
-    function send(address payable _account) public {
+    function send(address payable _account, uint256 _amount) public {
         lock(0);
-        pool.send(0, _account, 10000000000);
+        pool.send(0, _account, _amount);
     }
 
-    function sendUA(address payable _account) public {
+    function sendUA(address payable _account, uint256 _amount) public {
         lock(0);
-        pool.sendUA(0, _account, 10000000000, "ETH", "USD", 86400);
+        pool.sendUA(0, _account, _amount, "ETH", "USD", 86400);
     }
 }

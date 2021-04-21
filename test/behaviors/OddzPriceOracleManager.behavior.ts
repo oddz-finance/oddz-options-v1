@@ -92,8 +92,6 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
     await expect(oracleManager.setActiveAggregator(hash))
       .to.be.revertedWith("Invalid aggregator")
 
-    await expect(
-      oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
-    ).to.not.equal(null);
+    
   });
 }

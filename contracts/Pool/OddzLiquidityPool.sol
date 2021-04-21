@@ -7,7 +7,6 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -406,9 +405,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         uint256 date = getPresentDayTimestamp();
         lockedAmount = lockedAmount - ll.amount;
         lockedPremium = ll.premium;
-
         transferAmount = _amount;
         if (_amount > ll.amount) transferAmount = ll.amount;
+        
         // Premium calculation
         premiumDayPool[date].collected = premiumDayPool[date].collected + lockedPremium;
         daysExercise[date] = daysExercise[date] + ll.amount;
