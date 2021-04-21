@@ -504,6 +504,129 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
   });
 
+  it("should revert distribute premium for invalid date", async function () {
+    
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+     await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(),[this.accounts.admin]))
+            .to.be.revertedWith("LP Error: Invalid Date")
+  });
+
+  it("should revert distribute premium for no premium collected for date", async function () {
+    
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+     await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds()-1,[this.accounts.admin]))
+            .to.be.revertedWith("LP Error: No premium collected for the date")
+  });
+  it("should revert distribute premium for same date", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await provider.send("evm_snapshot", []);
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("2")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
+    
+
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
+
+
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
+   
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 5 <= (2 + 3)
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
+      utils.parseEther("171.41460393"),
+    );
+
+    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]))
+          .to.be.revertedWith("LP Error: Premium already distributed for this date")
+
+  
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+  });
+
+  
+
+  it("should revert distribute premium for zero address", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await provider.send("evm_snapshot", []);
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
+
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
+   
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 5 <= (2 + 3)
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [address0()]))
+          .to.be.revertedWith("LP Error: Invalid liquidity provider")
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    
+  });
+
+  
+
   it("should distribute premium", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
@@ -572,6 +695,70 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+  });
+
+  it.only("should distribute premium for same date for different providers", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await provider.send("evm_snapshot", []);
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    await addLiquidity(this.oddzLiquidityPool, this.signers.admin1, 1000000);
+
+
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("2")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
+    
+
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
+
+
+    const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
+
+   
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 5 <= (2 + 3)
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin)))
+          .to.equal(utils.parseEther("85.707301965"))
+
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin1])
+          
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin1)))
+          .to.equal(utils.parseEther("85.707301965"))
+    
+   
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);

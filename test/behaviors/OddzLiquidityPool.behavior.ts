@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
+import { address0 } from "../../test-utils";
 
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
 
@@ -281,8 +282,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
   it.only("Should return usd balance of user", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    let depositAmount = 1000;
+    const depositAmount = 1000;
     await liquidityManager.addLiquidity(depositAmount, this.accounts.admin)
      expect(await liquidityManager.usdBalanceOf(this.accounts.admin)).to.be.equal(depositAmount)
   });
+
 }

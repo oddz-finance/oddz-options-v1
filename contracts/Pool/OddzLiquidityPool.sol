@@ -7,6 +7,7 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -182,6 +183,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         address _account,
         uint256 _amount
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
+       
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
@@ -272,8 +274,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len--;
         }
+       
         uint256 lpEligible =
-            premiumDayPool[_date].eligible * (lpBalance[len - 1].currentBalance / getDaysActiveLiquidity(_date));
+            premiumDayPool[_date].eligible * lpBalance[len - 1].currentBalance / getDaysActiveLiquidity(_date);
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp] + lpEligible;
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + lpEligible;
@@ -287,6 +290,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @param _lps List of the active liquidity provider addresses
      */
     function distributePremium(uint256 _date, address[] memory _lps) public {
+       
         require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
@@ -394,6 +398,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         address _account,
         uint256 _amount
     ) private returns (uint256 lockedPremium, uint256 transferAmount) {
+        
         LockedLiquidity storage ll = lockedLiquidity[_lid];
         require(_account != address(0), "LP Error: Invalid address");
 
