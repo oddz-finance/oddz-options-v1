@@ -7,6 +7,7 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -89,11 +90,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         _;
     }
 
-    modifier validCaller(address _buyer) {
-        require((msg.sender == address(sdk) || msg.sender == _buyer), "invalid buyer");
-        _;
-    }
-
     function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
         require(address(_sdk).isContract(), "invalid SDK contract address");
         sdk = _sdk;
@@ -113,9 +109,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         uint256 date = getPresentDayTimestamp();
         // transfer user eligible premium
         transferEligiblePremium(date, sender_);
-
         updateLiquidity(date, _amount, TransactionType.ADD);
-        updateLpBalance(TransactionType.ADD, date, _amount);
+        updateLpBalance(TransactionType.ADD, date, _amount, sender_);
         latestLiquidityDateMap[sender_] = date;
 
         _mint(sender_, mint);
@@ -130,7 +125,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             _amount * 10 <= availableBalance() * reqBalance,
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
-
+       
         burn = divisionCeiling(_amount * totalSupply(), totalBalance());
 
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
@@ -138,7 +133,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
         uint256 date = getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.REMOVE);
-        updateLpBalance(TransactionType.REMOVE, date, _amount);
+        updateLpBalance(TransactionType.REMOVE, date, _amount, msg.sender);
 
         // User premium update
         uint256 premium = transferEligiblePremium(date, msg.sender);
@@ -238,13 +233,15 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     function updateLpBalance(
         TransactionType _type,
         uint256 _date,
-        uint256 _amount
+        uint256 _amount,
+        address _sender
     ) private {
-        uint256 balance = activeLiquidity(msg.sender);
+        uint256 balance = activeLiquidity(_sender);
         if (_type == TransactionType.ADD) balance = balance + _amount;
         else balance = balance - _amount;
 
-        lpBalanceMap[msg.sender].push(LPBalance(balance, _type, _amount, _date));
+        lpBalanceMap[_sender].push(LPBalance(balance, _type, _amount, _date));
+        
     }
 
     /**
@@ -279,8 +276,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp] + lpEligible;
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + lpEligible;
-
-        transferEligiblePremium(_date, _lp);
+        transferEligiblePremium(getPresentDayTimestamp(), _lp);
     }
 
     /**

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import { address0, getExpiry } from "../../test-utils";
+import { address0, getExpiry, addDaysAndGetSeconds } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
 let snapshotCount = 0;
@@ -167,7 +167,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin,1000000000000)).to.emit(liquidityManager, "Loss");
+    await expect(mockOptionManager.send(this.accounts.admin,10000000000000)).to.emit(liquidityManager, "Loss");
   });
 
   it("Should throw caller has no access to the method while send token to user", async function () {
@@ -301,10 +301,26 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(address0(),10000000000)).to.be.revertedWith("revert LP Error: Invalid address")
+    await expect(mockOptionManager.send(address0(),10000000000)).to.be.revertedWith("LP Error: Invalid address")
   });
 
-  // it("Should be able to remove liquidity after lockup duration", async function () {
+  it("Should revert setReqBalance for non owner", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin1);
+    await expect(liquidityManager.setReqBalance(5)).to.be.revertedWith("caller has no access to the method")
+  });
+
+  it("Should revert setReqBalance for invalid value", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await expect(liquidityManager.setReqBalance(5)).to.be.revertedWith("LP Error: required balance valid range")
+  });
+
+  it("Should set setReqBalance", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+     await liquidityManager.setReqBalance(6);
+     expect(await liquidityManager.reqBalance()).to.equal(6);
+  });
+
+  // it.only("Should be able to remove liquidity after lockup duration", async function () {
   //   const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
   //   await provider.send("evm_snapshot", []);
   //   await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
@@ -319,6 +335,32 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   //   await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     
   // });
+
+  it("Should be able to remove liquidity, get premium ", async function () {
+    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await this.mockOptionManager.lock(0);
+    await provider.send("evm_snapshot", []);
+    //execution day +15
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.mockOptionManager.unlock();
+    await provider.send("evm_snapshot", []);
+    //execution day +(15 +2)
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    await expect(liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin)
+    ).to.emit(liquidityManager,"AddLiquidity");
+    await liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
+
+    
+    const removeAmount = BigNumber.from(utils.parseEther(this.transderTokenAmout)).div(1000) 
+    await expect(liquidityManager.removeLiquidity(removeAmount))
+    .to.emit(liquidityManager, "RemoveLiquidity") 
+     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+
+     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    
+  });
 
  
 
