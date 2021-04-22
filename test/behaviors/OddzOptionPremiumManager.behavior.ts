@@ -79,8 +79,9 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
       this.oddzPremiumBlackScholes.address,
     );
 
-    await expect(optionPremiumManager.enableOptionPremiumModel(utils.formatBytes32String("B_S")))
-      .to.be.revertedWith("Premium model is enabled")
+    await expect(optionPremiumManager.enableOptionPremiumModel(utils.formatBytes32String("B_S"))).to.be.revertedWith(
+      "Premium model is enabled",
+    );
   });
 
   it("Should be able to successfully enable option model", async function () {
@@ -103,9 +104,10 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
       this.oddzPremiumBlackScholes.address,
     );
     await expect(optionPremiumManager.disableOptionPremiumModel(utils.formatBytes32String("B_S")));
-    
-    await expect(optionPremiumManager.disableOptionPremiumModel(utils.formatBytes32String("B_S")))
-      .to.be.revertedWith("Premium model is disabled")
+
+    await expect(optionPremiumManager.disableOptionPremiumModel(utils.formatBytes32String("B_S"))).to.be.revertedWith(
+      "Premium model is disabled",
+    );
   });
 
   it("Should throw caller has no access to the method while enabling an option model", async function () {

@@ -7,7 +7,6 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -125,7 +124,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             _amount * 10 <= availableBalance() * reqBalance,
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
-       
+
         burn = divisionCeiling(_amount * totalSupply(), totalBalance());
 
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
@@ -177,7 +176,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         address _account,
         uint256 _amount
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
-       
         (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
@@ -241,7 +239,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         else balance = balance - _amount;
 
         lpBalanceMap[_sender].push(LPBalance(balance, _type, _amount, _date));
-        
     }
 
     /**
@@ -270,9 +267,9 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len--;
         }
-       
+
         uint256 lpEligible =
-            premiumDayPool[_date].eligible * lpBalance[len - 1].currentBalance / getDaysActiveLiquidity(_date);
+            (premiumDayPool[_date].eligible * lpBalance[len - 1].currentBalance) / getDaysActiveLiquidity(_date);
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp] + lpEligible;
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + lpEligible;
@@ -285,7 +282,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @param _lps List of the active liquidity provider addresses
      */
     function distributePremium(uint256 _date, address[] memory _lps) public {
-       
         require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
@@ -393,7 +389,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         address _account,
         uint256 _amount
     ) private returns (uint256 lockedPremium, uint256 transferAmount) {
-        
         LockedLiquidity storage ll = lockedLiquidity[_lid];
         require(_account != address(0), "LP Error: Invalid address");
 
@@ -403,7 +398,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         lockedPremium = ll.premium;
         transferAmount = _amount;
         if (_amount > ll.amount) transferAmount = ll.amount;
-        
+
         // Premium calculation
         premiumDayPool[date].collected = premiumDayPool[date].collected + lockedPremium;
         daysExercise[date] = daysExercise[date] + ll.amount;

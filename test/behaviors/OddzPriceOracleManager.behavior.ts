@@ -88,10 +88,7 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
         [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzPriceOracle.address],
       ),
     );
-   // tries to set address(0) as active aggregator
-    await expect(oracleManager.setActiveAggregator(hash))
-      .to.be.revertedWith("Invalid aggregator")
-
-    
+    // tries to set address(0) as active aggregator
+    await expect(oracleManager.setActiveAggregator(hash)).to.be.revertedWith("Invalid aggregator");
   });
 }

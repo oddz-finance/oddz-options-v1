@@ -12,19 +12,14 @@ contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
         price = _price;
     }
 
-    function getPrice(bytes32 _underlying, bytes32 _strike)
-        public
-        view
-        override
-        onlyOwner
-        returns (uint256 , uint8 )
-    {
-        return(price,decimals);
+    function getPrice(bytes32 _underlying, bytes32 _strike) public view override onlyOwner returns (uint256, uint8) {
+        return (price, decimals);
     }
 
     function setUnderlyingPrice(uint256 _price) external {
         price = _price;
     }
+
     function setDecimals(uint8 _decimals) external {
         decimals = _decimals;
     }

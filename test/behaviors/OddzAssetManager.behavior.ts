@@ -492,17 +492,20 @@ export function shouldBehaveLikeOddzAssetManager(): void {
   it("should revert get asset address for empty asset name", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
     await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
-    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String("")))
-    .to.be.revertedWith("invalid asset name")
+    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String(""))).to.be.revertedWith(
+      "invalid asset name",
+    );
   });
   it("should revert get asset address for non existing asset", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
-    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String("USD")))
-    .to.be.revertedWith("Invalid asset address")
+    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String("USD"))).to.be.revertedWith(
+      "Invalid asset address",
+    );
   });
   it("should revert add asset for zero address", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
-    await expect(oddzAssetManager.addAsset(utils.formatBytes32String("USD"), address0(), 8))
-    .to.be.revertedWith("invalid address")
+    await expect(oddzAssetManager.addAsset(utils.formatBytes32String("USD"), address0(), 8)).to.be.revertedWith(
+      "invalid address",
+    );
   });
 }

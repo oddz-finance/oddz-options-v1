@@ -27,7 +27,7 @@ import {
   OddzIVOracleManager,
   OddzOptionPremiumManager,
   OddzPremiumBlackScholes,
-  MockOddzDex
+  MockOddzDex,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -66,7 +66,6 @@ describe("Oddz Option Manager Unit tests", function () {
 
       const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
 
-
       await this.dexManager.addExchange(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
@@ -81,7 +80,6 @@ describe("Oddz Option Manager Unit tests", function () {
       );
 
       await this.dexManager.setActiveExchange(dexHash);
-
 
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
@@ -163,7 +161,6 @@ describe("Oddz Option Manager Unit tests", function () {
       await this.oddzOptionManager.setMaxDeadline(100);
       await this.oddzLiquidityPool.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
-
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);

@@ -4,7 +4,6 @@ import "hardhat/console.sol";
 
 contract MockOptionManager {
     IOddzLiquidityPool public pool;
-    
 
     constructor(IOddzLiquidityPool _pool) {
         pool = _pool;

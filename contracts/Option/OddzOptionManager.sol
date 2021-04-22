@@ -74,13 +74,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         address _pair,
         uint256 _expiration
     ) {
-
         validAssetPair(_pair);
         validExpiration(_expiration, _pair);
         _;
     }
-
-    
 
     function validExpiration(uint256 _expiration, address _pair) private view {
         require(_expiration <= assetManager.getMaxPeriod(_pair), "Expiration is greater than max expiry");
@@ -428,7 +425,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         // convert profit to usd decimals
         profit = (profit * (10**token.decimals())) / (10**assetManager.getPrecision(pair._primary));
-         
+
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = (profit * settlementFeePerc) / 100;
         settlementFeeAggregate = settlementFeeAggregate + settlementFee;

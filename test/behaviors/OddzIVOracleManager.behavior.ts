@@ -6,15 +6,16 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should revert add for non owner", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
     await expect(
-      oracleManager.connect(this.signers.admin1).addIVAggregator(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        this.oddzIVOracle.address,
-        this.oddzIVOracle.address,
-        1,
-      ),
-    )
-      .to.revertedWith("caller has no access to the method")
+      oracleManager
+        .connect(this.signers.admin1)
+        .addIVAggregator(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          this.oddzIVOracle.address,
+          this.oddzIVOracle.address,
+          1,
+        ),
+    ).to.revertedWith("caller has no access to the method");
   });
   it("Should be able to successfully add an aggregator", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
@@ -149,45 +150,33 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       ),
     );
 
-    await expect(oracleManager.setActiveIVAggregator(hash))
-      .to.be.revertedWith("Invalid aggregator")
-
-    
+    await expect(oracleManager.setActiveIVAggregator(hash)).to.be.revertedWith("Invalid aggregator");
   });
 
   it("Should revert set Manager for non contract address", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    
-    await expect(oracleManager.setManager(this.accounts.admin))
-      .to.be.revertedWith("Invalid manager address")
 
-    
+    await expect(oracleManager.setManager(this.accounts.admin)).to.be.revertedWith("Invalid manager address");
   });
 
   it("Should  set Manager for  contract address", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    
-    await expect(oracleManager.setManager(this.oddzIVOracleManager.address))
-      .to.be.ok;
 
-    
+    await expect(oracleManager.setManager(this.oddzIVOracleManager.address)).to.be.ok;
   });
   it("Should revert remove Manager for non owner", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    
-    await oracleManager.setManager(this.oddzIVOracleManager.address)
-    await expect(oracleManager.connect(this.signers.admin1).removeManager(this.oddzIVOracleManager.address))
-          .to.be.revertedWith("AccessControl: sender must be an admin to revoke")
-    
+
+    await oracleManager.setManager(this.oddzIVOracleManager.address);
+    await expect(
+      oracleManager.connect(this.signers.admin1).removeManager(this.oddzIVOracleManager.address),
+    ).to.be.revertedWith("AccessControl: sender must be an admin to revoke");
   });
 
   it("Should remove Manager ", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
-    
-    await oracleManager.setManager(this.oddzIVOracleManager.address)
-    await expect(oracleManager.removeManager(this.oddzIVOracleManager.address))
-          .to.be.ok;
 
-    
+    await oracleManager.setManager(this.oddzIVOracleManager.address);
+    await expect(oracleManager.removeManager(this.oddzIVOracleManager.address)).to.be.ok;
   });
 }

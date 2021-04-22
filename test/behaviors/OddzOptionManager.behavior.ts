@@ -505,17 +505,17 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   it("should revert distribute premium for invalid date", async function () {
-    
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-     await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(),[this.accounts.admin]))
-            .to.be.revertedWith("LP Error: Invalid Date")
+    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(), [this.accounts.admin])).to.be.revertedWith(
+      "LP Error: Invalid Date",
+    );
   });
 
   it("should revert distribute premium for no premium collected for date", async function () {
-    
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-     await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds()-1,[this.accounts.admin]))
-            .to.be.revertedWith("LP Error: No premium collected for the date")
+    await expect(
+      oddzLiquidityPool.distributePremium(addDaysAndGetSeconds() - 1, [this.accounts.admin]),
+    ).to.be.revertedWith("LP Error: No premium collected for the date");
   });
   it("should revert distribute premium for same date", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
@@ -548,14 +548,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
-    
 
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
 
-
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
-   
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
@@ -569,10 +566,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       utils.parseEther("171.41460393"),
     );
 
-    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]))
-          .to.be.revertedWith("LP Error: Premium already distributed for this date")
-
-  
+    await expect(
+      oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]),
+    ).to.be.revertedWith("LP Error: Premium already distributed for this date");
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
@@ -594,7 +590,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin1, 1000000);
 
-
     const optionDetails = getOptionDetailsStruct(
       pair,
       utils.formatBytes32String("B_S"),
@@ -612,14 +607,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
-    
 
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
 
-
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
-   
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
@@ -629,21 +621,18 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // execution day + 5 <= (2 + 3)
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin)))
-          .to.equal(utils.parseEther("85.707301965"))
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
+      utils.parseEther("85.707301965"),
+    );
 
-    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]))
-          .to.be.revertedWith("LP Error: Premium already distributed for the provider")
-          
- 
-    
-   
+    await expect(
+      oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]),
+    ).to.be.revertedWith("LP Error: Premium already distributed for the provider");
+
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
   });
-
-  
 
   it("should revert distribute premium for zero address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
@@ -671,7 +660,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
-   
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
@@ -680,16 +668,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     // execution day + 5 <= (2 + 3)
     await provider.send("evm_increaseTime", [getExpiry(3)]);
-    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [address0()]))
-          .to.be.revertedWith("LP Error: Invalid liquidity provider")
+    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [address0()])).to.be.revertedWith(
+      "LP Error: Invalid liquidity provider",
+    );
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    
   });
-
-  
 
   it("should distribute premium", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
@@ -779,7 +765,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
     await addLiquidity(this.oddzLiquidityPool, this.signers.admin1, 1000000);
 
-
     const optionDetails = getOptionDetailsStruct(
       pair,
       utils.formatBytes32String("B_S"),
@@ -797,14 +782,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
-    
 
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
 
-
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
 
-   
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
@@ -814,15 +796,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // execution day + 5 <= (2 + 3)
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin)))
-          .to.equal(utils.parseEther("85.707301965"))
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
+      utils.parseEther("85.707301965"),
+    );
 
-    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin1])
-          
-    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin1)))
-          .to.equal(utils.parseEther("85.707301965"))
-    
-   
+    await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin1]);
+
+    await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin1))).to.equal(
+      utils.parseEther("85.707301965"),
+    );
+
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
@@ -1158,7 +1141,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Option has expired");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-
   });
 
   it("should update settlement percentage and option excercise fee", async function () {
@@ -1318,7 +1300,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-
   });
 
   it("should send settlement fee aggragrate staking contract successfully", async function () {
@@ -1727,8 +1708,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       );
   });
 
-  
-
   it("should revert set sdk for non contract address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
@@ -1769,27 +1748,30 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       false,
     );
 
-    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin))
-          .to.emit(oddzOptionManager,"Buy")
+    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin)).to.emit(
+      oddzOptionManager,
+      "Buy",
+    );
 
-          const optionDetails1 = getOptionDetailsStruct(
-            pair,
-            utils.formatBytes32String("B_S"),
-            getExpiry(1),
-            BigNumber.from(utils.parseEther("1")), // number of options
-            BigNumber.from(330000000000),
-            OptionType.Call,
-          );
-        
-          const premiumWithSlippage1 = await getPremiumWithSlippageAndBuy(
-            this.oddzOptionManager,
-            optionDetails,
-            0.05,
-            this.accounts.admin,
-            false,
-          );   
-          await expect(oddzOptionManager.buy(optionDetails1, BigInt(premiumWithSlippage1), this.accounts.admin))
-          .to.be.revertedWith("Strike out of Range")     
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(330000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage1 = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      0.05,
+      this.accounts.admin,
+      false,
+    );
+    await expect(
+      oddzOptionManager.buy(optionDetails1, BigInt(premiumWithSlippage1), this.accounts.admin),
+    ).to.be.revertedWith("Strike out of Range");
   });
 
   it("should revert set settlement fee for invalid value", async function () {
@@ -1800,10 +1782,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
   it("should revert exercise UA with more than deadline limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const deadline =101;
-    await expect(oddzOptionManager.excerciseUA(0, deadline))
-      .to.be.revertedWith("Deadline input is more than maximum limit allowed")
-      
+    const deadline = 101;
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.be.revertedWith(
+      "Deadline input is more than maximum limit allowed",
+    );
   });
 
   it("should revert exercise after expiration period", async function () {
@@ -1836,18 +1818,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
-    
-      await provider.send("evm_snapshot", []);
-      // execution day + 3
-      await provider.send("evm_increaseTime", [getExpiry(3)]);
-      const deadline =15;
-      await expect(oddzOptionManager.excerciseUA(0, deadline))
-        .to.be.revertedWith("Option has expired");
 
-      await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-      await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_snapshot", []);
+    // execution day + 3
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    const deadline = 15;
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.be.revertedWith("Option has expired");
 
-      
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
   });
 
   it("should revert exercise for non owner", async function () {
@@ -1878,10 +1857,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
-    const deadline =15;
-    await expect(oddzOptionManager.connect(this.signers.admin1).excerciseUA(0, deadline))
-      .to.be.revertedWith("Wrong msg.sender")
-      
+    const deadline = 15;
+    await expect(oddzOptionManager.connect(this.signers.admin1).excerciseUA(0, deadline)).to.be.revertedWith(
+      "Wrong msg.sender",
+    );
   });
 
   it("should revert exercise for options not active", async function () {
@@ -1911,14 +1890,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
-    const deadline =15;
-    await expect(oddzOptionManager.excerciseUA(0, deadline))
-      .to.emit(oddzOptionManager, "Exercise");
-     
-    await expect(oddzOptionManager.excerciseUA(0, deadline))
-      .to.be.revertedWith("Wrong state")
-  });
+    const deadline = 15;
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
 
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.be.revertedWith("Wrong state");
+  });
 
   it("should exercise UA", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
@@ -1948,10 +1924,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
-    const deadline =15;
-    await expect(oddzOptionManager.excerciseUA(0, deadline))
-      .to.emit(oddzOptionManager, "Exercise");
-      
+    const deadline = 15;
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
   });
 
   it("should revert expire for options not expired yet", async function () {
@@ -1980,8 +1954,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
-    await expect(oddzOptionManager.unlock(0)).to.be.revertedWith("Option has not expired yet")
-      
+    await expect(oddzOptionManager.unlock(0)).to.be.revertedWith("Option has not expired yet");
   });
 
   it("should revert expire for options not active", async function () {
@@ -2013,17 +1986,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
-    const deadline =15;
-    await expect(oddzOptionManager.excerciseUA(0, deadline))
-      .to.emit(oddzOptionManager, "Exercise");
-      await provider.send("evm_snapshot", []);
-      // execution day + 3
-      await provider.send("evm_increaseTime", [getExpiry(3)]);
-    await expect(oddzOptionManager.unlock(0)).to.be.revertedWith("Option is not active")
+    const deadline = 15;
+    await expect(oddzOptionManager.excerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
+    await provider.send("evm_snapshot", []);
+    // execution day + 3
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await expect(oddzOptionManager.unlock(0)).to.be.revertedWith("Option is not active");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-
-
   });
 
   it("should buy after setting less decimals", async function () {
@@ -2039,7 +2009,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
     // set more decimal
-    await oddzPriceOracle.setDecimals(9)
+    await oddzPriceOracle.setDecimals(9);
     const optionDetails = getOptionDetailsStruct(
       pair,
       utils.formatBytes32String("B_S"),
@@ -2057,11 +2027,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       false,
     );
 
-    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin))
-          .to.emit(oddzOptionManager,"Buy")
-
-    });
-
-  
-
+    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin)).to.emit(
+      oddzOptionManager,
+      "Buy",
+    );
+  });
 }
