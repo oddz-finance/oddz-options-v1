@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry, address0 } from "../../test-utils";
+import { utils } from "ethers";
+import { getExpiry, address0 } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -115,14 +115,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
     await expect(
-      oracleManager.calculateIv(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        OptionType.Call,
-        getExpiry(1),
-        BigNumber.from(160000000000),
-        BigNumber.from(170000000000),
-      ),
+      oracleManager.calculateIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)),
     ).to.be.revertedWith("caller has no access to the method");
   });
 }
