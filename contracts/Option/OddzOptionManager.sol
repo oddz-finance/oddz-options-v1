@@ -234,7 +234,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         OptionType _optionType
     ) private view returns (uint256 lockAmount) {
         (uint256 callOverColl, uint256 putOverColl) = getCollateralAmount(_cp, _iv, _strike, _pair, _ivDecimal);
-        lockAmount = _optionType == OptionType.Call ? putOverColl : callOverColl;
+        lockAmount = _optionType == OptionType.Call ? callOverColl : putOverColl;
     }
 
     function buy(
