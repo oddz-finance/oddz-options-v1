@@ -1,14 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import {
-  OptionType,
-  ExcerciseType,
-  addDaysAndGetSeconds,
-  getExpiry,
-  Option,
-  address0,
-  addSnapshotCount,
-} from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
+import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry, Option, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
 import {
   OddzLiquidityPool,
@@ -109,7 +101,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should fail with message invalid asset pair", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
-      address0(),
+      constants.AddressZero,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(100),
@@ -251,7 +243,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should prevent buying options for unsupported asset pair type", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
-      address0(),
+      constants.AddressZero,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
       BigNumber.from(utils.parseEther("1")), // number of options
@@ -675,9 +667,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     // execution day + 5 <= (2 + 3)
     await provider.send("evm_increaseTime", [getExpiry(3)]);
-    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [address0()])).to.be.revertedWith(
-      "LP Error: Invalid liquidity provider",
-    );
+    await expect(
+      oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [constants.AddressZero]),
+    ).to.be.revertedWith("LP Error: Invalid liquidity provider");
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);

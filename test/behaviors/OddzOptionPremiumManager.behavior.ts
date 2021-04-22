@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
 
 export function shouldBehaveLikeOddzOptionPremiumManager(): void {
   it("Should be able to successfully add an option model", async function () {
@@ -28,7 +27,7 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
   it("Should throw Invalid premium model address", async function () {
     const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
     await expect(
-      optionPremiumManager.addOptionPremiumModel(utils.formatBytes32String("B_S"), address0()),
+      optionPremiumManager.addOptionPremiumModel(utils.formatBytes32String("B_S"), constants.AddressZero),
     ).to.be.revertedWith("Invalid premium model address");
   });
 

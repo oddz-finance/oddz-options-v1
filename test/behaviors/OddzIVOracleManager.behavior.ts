@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry, address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
+import { OptionType, getExpiry } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should revert add for non owner", async function () {
@@ -114,7 +114,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       .withArgs(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        address0(),
+        constants.AddressZero,
         this.oddzIVOracle.address,
       );
 

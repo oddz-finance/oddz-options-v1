@@ -33,10 +33,6 @@ export const getExpiry = (days = 1) => {
   return 60 * 60 * 24 * days;
 };
 
-export const address0 = () => {
-  return "0x0000000000000000000000000000000000000000";
-};
-
 export interface Option {
   _pair: any;
   _optionModel: string;

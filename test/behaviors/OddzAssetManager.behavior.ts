@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
 
 // ETH/USD pair address
 const pair = "0xfcb06d25357ef01726861b30b0b83e51482db417";
@@ -307,7 +306,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     await expect(
-      oddzAssetManager.setPurchaseLimit(address0(), BigNumber.from(utils.parseEther("0.01"))),
+      oddzAssetManager.setPurchaseLimit(constants.AddressZero, BigNumber.from(utils.parseEther("0.01"))),
     ).to.be.revertedWith("Invalid Asset pair");
   });
 
@@ -504,8 +503,8 @@ export function shouldBehaveLikeOddzAssetManager(): void {
   });
   it("should revert add asset for zero address", async function () {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
-    await expect(oddzAssetManager.addAsset(utils.formatBytes32String("USD"), address0(), 8)).to.be.revertedWith(
-      "invalid address",
-    );
+    await expect(
+      oddzAssetManager.addAsset(utils.formatBytes32String("USD"), constants.AddressZero, 8),
+    ).to.be.revertedWith("invalid address");
   });
 }

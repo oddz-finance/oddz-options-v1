@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, ethers, utils } from "ethers";
-import { address0, getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
+import { getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
 
@@ -287,7 +287,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transderTokenAmout)), this.accounts.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(address0(), 10000000000)).to.be.revertedWith("LP Error: Invalid address");
+    await expect(mockOptionManager.send(constants.AddressZero, 10000000000)).to.be.revertedWith(
+      "LP Error: Invalid address",
+    );
   });
 
   it("Should revert setReqBalance for non owner", async function () {

@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry, address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
+import { OptionType, getExpiry } from "../../test-utils";
 import {
   OddzLiquidityPool,
   OddzAssetManager,
@@ -99,7 +99,7 @@ export function shouldBehaveLikeOddzSDK(): void {
 
     await expect(
       oddzSDK.getPremium(
-        address0(),
+        constants.AddressZero,
         utils.formatBytes32String("B_S"),
         getExpiry(1),
         BigNumber.from(100),
@@ -199,7 +199,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     await expect(
       oddzSDK.buy(
-        address0(),
+        constants.AddressZero,
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1")),
         getExpiry(1),

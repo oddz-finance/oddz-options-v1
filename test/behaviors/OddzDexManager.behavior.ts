@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
 import { OddzAssetManager, MockERC20 } from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
 
@@ -25,7 +24,7 @@ const addAssetPair = async (
 export function shouldBehaveLikeOddzDexManager(): void {
   it("should revert set swapper for zero address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
-    await expect(dexManager.setSwapper(address0())).to.be.revertedWith("invalid address");
+    await expect(dexManager.setSwapper(constants.AddressZero)).to.be.revertedWith("invalid address");
   });
 
   it("should set swapper", async function () {
@@ -35,7 +34,7 @@ export function shouldBehaveLikeOddzDexManager(): void {
 
   it("should revert remove swapper for zero address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
-    await expect(dexManager.removeSwapper(address0())).to.be.revertedWith("invalid address");
+    await expect(dexManager.removeSwapper(constants.AddressZero)).to.be.revertedWith("invalid address");
   });
 
   it("should  remove swapper", async function () {
