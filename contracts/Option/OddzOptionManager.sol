@@ -183,6 +183,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _iv implied volatility of the underlying asset
      * @param _strike strike price provided by the option buyer
      * @param _pair Asset pair
+     * @param _ivDecimal iv precision
      * @return callOverColl - call over collateral
      * @return putOverColl - put over collateral
      */
@@ -254,6 +255,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Create option
      * @param _details option buy details
+     * @param _premiumWithSlippage Options details
+     * @param _buyer Address of buyer
      * @return optionId newly created Option Id
      */
     function createOption(
