@@ -1,9 +1,8 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0, getExpiry, addDaysAndGetSeconds } from "../../test-utils";
+import { BigNumber, ethers, utils } from "ethers";
+import { address0, getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
-let snapshot = 0;
 
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
 
@@ -325,8 +324,8 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
     const removeAmount = BigNumber.from(utils.parseEther(this.transderTokenAmout)).div(1000);
     await expect(liquidityManager.removeLiquidity(removeAmount)).to.emit(liquidityManager, "RemoveLiquidity");
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshot))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshot))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 }

@@ -1,6 +1,14 @@
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import { OptionType, ExcerciseType, addDaysAndGetSeconds, getExpiry, Option, address0 } from "../../test-utils";
+import {
+  OptionType,
+  ExcerciseType,
+  addDaysAndGetSeconds,
+  getExpiry,
+  Option,
+  address0,
+  addSnapshotCount,
+} from "../../test-utils";
 import { waffle } from "hardhat";
 import {
   OddzLiquidityPool,
@@ -12,7 +20,6 @@ import {
 } from "../../typechain";
 import { Signer } from "@ethersproject/abstract-signer";
 const provider = waffle.provider;
-let snapshotCount = 0;
 
 const getOptionDetailsStruct = (
   pair: any,
@@ -501,7 +508,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.unlockAll([0, 1, 2])).to.emit(oddzOptionManager, "Expire");
     const collected = BigNumber.from((await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).collected);
     expect(premiums).to.equal(collected);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should revert distribute premium for invalid date", async function () {
@@ -570,9 +577,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]),
     ).to.be.revertedWith("LP Error: Premium already distributed for this date");
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should revert distribute premium for same date for same provider", async function () {
@@ -629,9 +636,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]),
     ).to.be.revertedWith("LP Error: Premium already distributed for the provider");
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should revert distribute premium for zero address", async function () {
@@ -672,9 +679,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       "LP Error: Invalid liquidity provider",
     );
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should distribute premium", async function () {
@@ -743,11 +750,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should distribute premium for same date for different providers", async function () {
@@ -806,9 +813,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       utils.parseEther("85.707301965"),
     );
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should throw an error when transaction fee updated", async function () {
@@ -882,8 +889,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
       utils.parseEther("139.2900201"),
     );
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -928,9 +935,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await expect(oddzLiquidityPool.transferPremium()).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -975,8 +982,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
       utils.parseEther("123.8133512"),
     );
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -1015,8 +1022,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzLiquidityPool.transferPremium()).to.be.revertedWith(
       "LP Error: Address not eligible for premium collection",
     );
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -1060,9 +1067,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.accounts.admin,
     ).to.emit(oddzLiquidityPool, "PremiumCollected");
     await expect((await oddzLiquidityPool.lpPremium(this.accounts.admin)).toNumber()).to.equal(0);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -1105,9 +1112,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
       BigNumber.from(utils.parseEther("139.2900201")),
     );
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should throw an error when trying to excercise an option that is expired", async function () {
@@ -1139,8 +1146,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Option has expired");
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should update settlement percentage and option excercise fee", async function () {
@@ -1224,8 +1231,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzLiquidityPool.updatePremiumEligibility(addDaysAndGetSeconds(2));
     expect((await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).enabled).to.equal(true);
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   // TODO: This case should be part of liquidity pool
@@ -1297,9 +1304,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       "LP Error: Premium eligibilty already updated for the date",
     );
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should send settlement fee aggragrate staking contract successfully", async function () {
@@ -1713,7 +1720,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.setSdk(this.accounts.admin)).to.be.revertedWith("invalid SDK contract address");
   });
-  it("should  set sdk with contract address", async function () {
+  it("should set sdk with contract address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     await expect(oddzOptionManager.setSdk(this.oddzLiquidityPool.address)).to.be.ok;
@@ -1825,8 +1832,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const deadline = 15;
     await expect(oddzOptionManager.excerciseUA(0, deadline)).to.be.revertedWith("Option has expired");
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should revert exercise for non owner", async function () {
@@ -1992,8 +1999,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // execution day + 3
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await expect(oddzOptionManager.unlock(0)).to.be.revertedWith("Option is not active");
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(++snapshotCount))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
   it("should buy after setting less decimals", async function () {

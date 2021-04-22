@@ -1,4 +1,12 @@
 import { BigNumber } from "ethers";
+
+let snapshotCount = 0;
+
+export const addSnapshotCount = () => {
+  snapshotCount++;
+  return snapshotCount;
+};
+
 export const OptionType = {
   Call: 0,
   Put: 1,
