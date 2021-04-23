@@ -3,7 +3,7 @@ import {  utils, constants } from "ethers";
 import {  getExpiry } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
-  it("Should revert add for non owner", async function () {
+  it("Should revert add IV aggregator for non owner", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
     await expect(
       oracleManager
@@ -155,7 +155,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
   it("Should  set Manager for  contract address", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
-    await expect(oracleManager.setManager(this.oddzIVOracleManager.address)).to.be.ok;
+    await expect(oracleManager.setManager(this.oddzIVOracleManager.address)).to.emit(oracleManager, "RoleGranted")
   });
   it("Should revert remove Manager for non owner", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
@@ -170,6 +170,6 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
     await oracleManager.setManager(this.oddzIVOracleManager.address);
-    await expect(oracleManager.removeManager(this.oddzIVOracleManager.address)).to.be.ok;
+    await expect(oracleManager.removeManager(this.oddzIVOracleManager.address)).to.emit(oracleManager, "RoleRevoked");
   });
 }
