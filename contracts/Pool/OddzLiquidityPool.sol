@@ -3,6 +3,7 @@ pragma solidity 0.8.3;
 
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
+import "../Libs/ABDKMath64x64.sol";
 import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -119,7 +120,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         latestLiquidityDateMap[sender_] = date;
 
         _mint(sender_, mint);
-
         emit AddLiquidity(sender_, _amount, mint);
 
         token.safeTransferFrom(sender_, address(this), _amount);
@@ -131,26 +131,23 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
 
-        burn = divisionCeiling(_amount * totalSupply(), totalBalance());
-
-        require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
-        require(burn > 0, "LP Error: Amount is too small");
-
         uint256 date = getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date, _amount);
 
-        // User premium update
-        uint256 premium = transferEligiblePremium(date, msg.sender);
-        burn = burn + premium;
-        _amount = _amount + ((totalBalance() * premium) / totalSupply());
+        // burn = _amount + fetch eligible premium if any
+        burn = _amount + transferEligiblePremium(date, msg.sender);
+        require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
+        require(burn > 0, "LP Error: Amount is too small");
+
+        // Forfeit premium if less than premium locked period
         updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
+        uint256 transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), burn);
 
         _burn(msg.sender, burn);
+        emit RemoveLiquidity(msg.sender, transferAmount, burn);
 
-        emit RemoveLiquidity(msg.sender, _amount, burn);
-
-        require(token.transfer(msg.sender, _amount), "LP Error: Insufficient funds");
+        token.safeTransfer(msg.sender, transferAmount);
     }
 
     function lockLiquidity(
@@ -213,7 +210,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @return Liquidity provider's balance in USD
      */
     function usdBalanceOf(address account) external view returns (uint256 share) {
-        if (totalSupply() > 0) share = (totalBalance() * balanceOf(account)) / totalSupply();
+        if (totalSupply() > 0)
+            share = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), balanceOf(account));
         else share = 0;
     }
 
@@ -429,6 +427,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     }
 
     function totalBalance() public view override returns (uint256 balance) {
+        // though balance is oUSD its 1 - 1 minted for premium in USD
         return token.balanceOf(address(this)) - balanceOf(address(this));
     }
 
@@ -466,16 +465,5 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
         (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
-    }
-
-    /**
-     * @dev Ceil division
-     * @param _numerator division numerator
-     * @param _denominator division denominator
-     */
-    function divisionCeiling(uint256 _numerator, uint256 _denominator) internal pure returns (uint256) {
-        uint256 result = _numerator / _denominator;
-        if ((_numerator % _denominator) != 0) result++;
-        return result;
     }
 }
