@@ -84,5 +84,5 @@ interface IOddzOption {
      * @param _optionId Option ID
      * @param _deadline Deadline until which txn does not revert
      */
-    function excerciseUA(uint256 _optionId, uint32 _deadline) external;
+    function exerciseUA(uint256 _optionId, uint32 _deadline) external;
 }

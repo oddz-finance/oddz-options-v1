@@ -266,7 +266,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len--;
         }
-
         uint256 lpEligible =
             (premiumDayPool[_date].eligible * lpBalance[len - 1].currentBalance) / getDaysActiveLiquidity(_date);
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
