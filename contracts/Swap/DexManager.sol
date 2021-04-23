@@ -79,7 +79,6 @@ contract DexManager is AccessControl {
     }
 
     function removeSwapper(address _address) public {
-        require(_address != address(0), "invalid address");
         revokeRole(SWAPPER_ROLE, _address);
     }
 

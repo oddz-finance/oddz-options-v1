@@ -32,10 +32,7 @@ export function shouldBehaveLikeOddzDexManager(): void {
     await expect(dexManager.setSwapper(this.dexManager.address)).to.be.ok;
   });
 
-  it("should revert remove swapper for zero address", async function () {
-    const dexManager = await this.dexManager.connect(this.signers.admin);
-    await expect(dexManager.removeSwapper(constants.AddressZero)).to.be.revertedWith("invalid address");
-  });
+  
 
   it("should  remove swapper", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
@@ -79,15 +76,15 @@ export function shouldBehaveLikeOddzDexManager(): void {
         utils.formatBytes32String("USD"),
         this.mockOddzDex.address,
       ),
-    ).to.be.ok;
+    ).to.emit(dexManager, "NewExchange")
   });
-  it("should revert seting active exchange with zero address", async function () {
+  it("should revert setting active exchange with zero address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     // tries to set address(0) as active exchange
     const dexHash = utils.keccak256(
       utils.defaultAbiCoder.encode(
         ["bytes32", "bytes32", "address"],
-        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), constants.AddressZero],
       ),
     );
 
@@ -109,7 +106,7 @@ export function shouldBehaveLikeOddzDexManager(): void {
       ),
     );
 
-    await expect(this.dexManager.setActiveExchange(dexHash)).to.be.ok;
+    await expect(this.dexManager.setActiveExchange(dexHash)).to.emit(dexManager,"SetExchange");
   });
   it("should revert getExchange for non swapper address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
@@ -118,12 +115,12 @@ export function shouldBehaveLikeOddzDexManager(): void {
       this.mockLiquidityPool.getExchange(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.be.revertedWith("caller has no access to the method");
   });
-  it("should revert getExchange without adding any", async function () {
+  it("should revert getExchange when no exchanges exist", async function () {
     await expect(
       this.mockLiquidityPool.getExchange(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.be.revertedWith("invalid exchange address");
   });
-  it("should get Exchange address after adding", async function () {
+  it("should successfully get Exchange address after add exchange", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     await dexManager.addExchange(
       utils.formatBytes32String("ETH"),
