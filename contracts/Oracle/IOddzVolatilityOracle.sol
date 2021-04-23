@@ -28,20 +28,14 @@ interface IOddzVolatilityOracle {
      * @notice Function to get the Implied volatility of the underlying asset
      * @param _underlying underlying asset
      * @param _strike strike asset
-     * @param _isCallOption true for call option
      * @param _expiration expiration time in unix timestamp
-     * @param _currentPrice current price of the underlying asset
-     * @param _strikePrice strike price of the option
      * @return iv implied volatility for the underlying asset
      * @return decimals implied volatility decimals
      */
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
-        bool _isCallOption,
-        uint256 _expiration,
-        uint256 _currentPrice,
-        uint256 _strikePrice
+        uint256 _expiration
     ) external view returns (uint256 iv, uint8 decimals);
 
     /**

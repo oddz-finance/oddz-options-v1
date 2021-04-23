@@ -10,7 +10,7 @@ contract MockOddzDex is ISwapUnderlyingAsset {
         uint256 _amountIn,
         uint256 _deadline
     ) public pure override returns (uint256[] memory result) {
-        uint256[] memory result = new uint256[](2);
+        result = new uint256[](2);
         uint256 counter = 0;
 
         for (uint256 i = 0; i < 2; i++) {
