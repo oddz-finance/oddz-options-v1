@@ -124,7 +124,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             _amount * 10 <= availableBalance() * reqBalance,
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
-
         burn = divisionCeiling(_amount * totalSupply(), totalBalance());
 
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
@@ -144,7 +143,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
 
         emit RemoveLiquidity(msg.sender, _amount, burn);
 
-        require(token.transfer(msg.sender, _amount), "LP Error: Insufficient funds");
+        token.safeTransfer(msg.sender, _amount);
     }
 
     function lockLiquidity(
