@@ -1,6 +1,6 @@
 pragma solidity 0.8.3;
+
 import "../Pool/IOddzLiquidityPool.sol";
-import "hardhat/console.sol";
 
 contract MockOptionManager {
     IOddzLiquidityPool public pool;

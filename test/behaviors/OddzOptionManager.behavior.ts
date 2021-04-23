@@ -241,6 +241,80 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Expiration is greater than max expiry");
   });
 
+  it("should throw Strike out of Range error when the strike is out of range for call option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const pair = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(975201968001),
+      OptionType.Call,
+    );
+
+    await expect(
+      oddzOptionManager.buy(optionDetails, BigNumber.from(utils.parseEther("10000")), this.accounts.admin),
+    ).to.be.revertedWith("Strike out of Range");
+
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(26644747999),
+      OptionType.Call,
+    );
+
+    await expect(
+      oddzOptionManager.buy(optionDetails1, BigNumber.from(utils.parseEther("10000")), this.accounts.admin),
+    ).to.be.revertedWith("Strike out of Range");
+  });
+
+  it("should throw Strike out of Range error when the strike is out of range for put option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const pair = getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(975201968001),
+      OptionType.Put,
+    );
+
+    await expect(
+      oddzOptionManager.buy(optionDetails, BigNumber.from(utils.parseEther("10000")), this.accounts.admin),
+    ).to.be.revertedWith("Strike out of Range");
+
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(26644747999),
+      OptionType.Call,
+    );
+
+    await expect(
+      oddzOptionManager.buy(optionDetails1, BigNumber.from(utils.parseEther("10000")), this.accounts.admin),
+    ).to.be.revertedWith("Strike out of Range");
+  });
+
   it("should prevent buying options for unsupported asset pair type", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const optionDetails = getOptionDetailsStruct(
