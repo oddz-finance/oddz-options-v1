@@ -32,8 +32,6 @@ export function shouldBehaveLikeOddzDexManager(): void {
     await expect(dexManager.setSwapper(this.dexManager.address)).to.be.ok;
   });
 
-  
-
   it("should  remove swapper", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
     await dexManager.setSwapper(this.dexManager.address);
@@ -76,7 +74,7 @@ export function shouldBehaveLikeOddzDexManager(): void {
         utils.formatBytes32String("USD"),
         this.mockOddzDex.address,
       ),
-    ).to.emit(dexManager, "NewExchange")
+    ).to.emit(dexManager, "NewExchange");
   });
   it("should revert setting active exchange with zero address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);
@@ -106,7 +104,7 @@ export function shouldBehaveLikeOddzDexManager(): void {
       ),
     );
 
-    await expect(this.dexManager.setActiveExchange(dexHash)).to.emit(dexManager,"SetExchange");
+    await expect(this.dexManager.setActiveExchange(dexHash)).to.emit(dexManager, "SetExchange");
   });
   it("should revert getExchange for non swapper address", async function () {
     const dexManager = await this.dexManager.connect(this.signers.admin);

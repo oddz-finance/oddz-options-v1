@@ -2,7 +2,6 @@ import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
 import { getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
-import { remove } from "fs-extra";
 const provider = waffle.provider;
 
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
@@ -232,7 +231,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("Should set sdk for contract address", async function () {
     const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
     await expect(liquidityManager.setSdk(this.mockOptionManager.address)).to.be.ok;
-    expect(await liquidityManager.sdk()).to.equal(this.mockOptionManager.address)
+    expect(await liquidityManager.sdk()).to.equal(this.mockOptionManager.address);
   });
 
   it("Should revert add liquidity for zero amount", async function () {
@@ -326,16 +325,13 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin),
     ).to.emit(liquidityManager, "AddLiquidity");
     await liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("10000000000")
+    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("10000000000");
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout)).div(1000);
     await expect(liquidityManager.removeLiquidity(removeAmount))
-          .to.emit(liquidityManager,"PremiumForfeited")
-          .withArgs(this.accounts.admin, "5002501")
-          .to.emit(liquidityManager, "RemoveLiquidity")
-          .withArgs(
-            this.accounts.admin,
-            removeAmount, 
-            "10000000000000010000001")
+      .to.emit(liquidityManager, "PremiumForfeited")
+      .withArgs(this.accounts.admin, "5002501")
+      .to.emit(liquidityManager, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, removeAmount, "10000000000000010000001");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -354,26 +350,25 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     //execution day +(2 +15)
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await expect(
-      liquidityManager.connect(this.signers.admin1).addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin1),
+      liquidityManager
+        .connect(this.signers.admin1)
+        .addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin1),
     ).to.emit(liquidityManager, "AddLiquidity");
 
     await expect(liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]))
-          .to.emit(liquidityManager,"PremiumCollected")
-          .withArgs(this.accounts.admin,"10000000000")
+      .to.emit(liquidityManager, "PremiumCollected")
+      .withArgs(this.accounts.admin, "10000000000");
 
-    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("0")
-    expect(await (liquidityManager.balanceOf(this.accounts.admin)))
-          .to.equal(BigNumber.from(utils.parseEther(this.transferTokenAmout).add(BigNumber.from("10000000000"))));
+    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("0");
+    expect(await liquidityManager.balanceOf(this.accounts.admin)).to.equal(
+      BigNumber.from(utils.parseEther(this.transferTokenAmout).add(BigNumber.from("10000000000"))),
+    );
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
     await expect(liquidityManager.removeLiquidity(removeAmount))
-          .to.emit(liquidityManager, "RemoveLiquidity")
-          .withArgs(
-            this.accounts.admin,
-            removeAmount, 
-            "10000000000000005000000000")
+      .to.emit(liquidityManager, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, removeAmount, "10000000000000005000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
-  
 }

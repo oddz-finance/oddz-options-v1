@@ -1784,7 +1784,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     oddzOptionManager.setSdk(this.oddzLiquidityPool.address);
-    expect(await oddzOptionManager.sdk()).to.equal(this.oddzLiquidityPool.address)
+    expect(await oddzOptionManager.sdk()).to.equal(this.oddzLiquidityPool.address);
   });
 
   it("should revert set settlement fee for invalid value", async function () {
