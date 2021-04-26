@@ -1024,8 +1024,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pair,
       utils.formatBytes32String("B_S"),
       getExpiry(1),
-      BigNumber.from(utils.parseEther("5")), // number of options
-      BigNumber.from(170000000000),
+      BigNumber.from(utils.parseEther("20")), // number of options
+      BigNumber.from(161000000000),
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
@@ -1038,13 +1038,20 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     await oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
     // Remove 10% of the liquidity
-    await expect(oddzLiquidityPool.removeLiquidity(utils.parseEther("100000"))).to.emit(
-      oddzLiquidityPool,
-      "PremiumForfeited",
+    await expect(oddzLiquidityPool.removeLiquidity(utils.parseEther("100000")))
+      .to.emit(oddzLiquidityPool, "PremiumForfeited")
+      .withArgs(this.accounts.admin, BigNumber.from(utils.parseEther("136.745578977777777777")))
+      .to.emit(oddzLiquidityPool, "RemoveLiquidity")
+      .withArgs(
+        this.accounts.admin,
+        BigNumber.from(utils.parseEther("99877.080257502200946913")),
+        BigNumber.from(utils.parseEther("100000")),
+      );
+    await expect(BigNumber.from(await oddzLiquidityPool.surplus())).to.equal(
+      utils.parseEther("136.745578977777777777"),
     );
-    await expect(BigNumber.from(await oddzLiquidityPool.surplus())).to.equal(utils.parseEther("15.4766689"));
     await expect(BigNumber.from(await oddzLiquidityPool.lpPremium(this.accounts.admin))).to.equal(
-      utils.parseEther("123.8133512"),
+      utils.parseEther("1093.964631822222222223"),
     );
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
