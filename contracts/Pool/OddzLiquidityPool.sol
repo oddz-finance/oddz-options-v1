@@ -136,8 +136,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date, _amount, msg.sender);
 
-        
-
         // Forfeit premium if less than premium locked period
         updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
         uint256 transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), burn);
