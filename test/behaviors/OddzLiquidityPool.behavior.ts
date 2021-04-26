@@ -331,7 +331,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       .to.emit(liquidityManager, "PremiumForfeited")
       .withArgs(this.accounts.admin, "5002501")
       .to.emit(liquidityManager, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, removeAmount, "10000000000000010000001");
+      .withArgs(this.accounts.admin, "9999999999999989999861", "10000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -366,7 +366,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
     await expect(liquidityManager.removeLiquidity(removeAmount))
       .to.emit(liquidityManager, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, removeAmount, "10000000000000005000000000");
+      .withArgs(this.accounts.admin, "9999999999999994999659580", "10000000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);

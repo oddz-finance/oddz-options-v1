@@ -8,6 +8,7 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -126,13 +127,16 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         );
 
         uint256 date = getPresentDayTimestamp();
-        updateLiquidity(date, _amount, TransactionType.REMOVE);
-        updateLpBalance(TransactionType.REMOVE, date, _amount, msg.sender);
 
         // burn = _amount + fetch eligible premium if any
         burn = _amount + transferEligiblePremium(date, msg.sender);
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
         require(burn > 0, "LP Error: Amount is too small");
+
+        updateLiquidity(date, _amount, TransactionType.REMOVE);
+        updateLpBalance(TransactionType.REMOVE, date, _amount, msg.sender);
+
+        
 
         // Forfeit premium if less than premium locked period
         updateUserPremium(latestLiquidityDateMap[msg.sender], _amount, date);
