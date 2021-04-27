@@ -2,14 +2,20 @@
 pragma solidity 0.8.3;
 
 interface IOddzStaking {
-    enum DepositType { Settlement, Transaction, Others }
 
-    event Redeem(address indexed _staker, uint256 _amount);
-    event Deposit(uint256 indexed _time, uint256 _amount, DepositType _type);
+    struct token{
+        address _address;
+        uint256 _rewardRate;
+        bool _active;
+    }
 
-    function redeemProfit() external returns (uint256 _profit);
+    event Claim(address indexed _staker, uint256 _amount);
+    event Deposit(address indexed _staker, uint256 indexed _amount, uint256 _time);
+    event Distribute(uint256 _amount, uint256 _time);
 
-    function profitInfo(address _staker) external view returns (uint256);
+    function withdraw(uint256 _amount) external returns (uint256 _profit);
 
-    function deposit(uint256 _amount, DepositType _type) external;
+    function distributeReward(uint256 _amount) external;
+
+    function deposit(uint256 _amount) external;
 }
