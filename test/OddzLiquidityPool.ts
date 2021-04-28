@@ -45,7 +45,7 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       )) as OddzAssetManager;
 
       const totalSupply = "100000000";
-      this.transderTokenAmout = "10000000";
+      this.transferTokenAmout = "10000000";
       this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "USD coin",
         "USDC",
@@ -99,8 +99,8 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       await usdcToken1.approve(this.oddzLiquidityPool.address, BigNumber.from(utils.parseEther(totalSupply)));
       await this.usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
       await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
-      await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transderTokenAmout)));
-      await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transderTokenAmout)));
+      await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
+      await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
     });
     shouldBehaveLikeOddzLiquidityPool();
   });

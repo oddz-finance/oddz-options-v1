@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { utils, constants } from "ethers";
 
 export function shouldBehaveLikeOddzPriceOracleManager(): void {
   it("Should be able to successfully add an aggregator", async function () {
@@ -70,12 +69,25 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
       .withArgs(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        address0(),
+        constants.AddressZero,
         this.oddzPriceOracle.address,
       );
 
     await expect(
       oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.not.equal(null);
+  });
+
+  it("Should revert for setting invalid active aggregator", async function () {
+    const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
+
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "address"],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzPriceOracle.address],
+      ),
+    );
+    // tries to set address(0) as active aggregator
+    await expect(oracleManager.setActiveAggregator(hash)).to.be.revertedWith("Invalid aggregator");
   });
 }

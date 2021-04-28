@@ -1,4 +1,12 @@
 import { BigNumber } from "ethers";
+
+let snapshotCount = 0;
+
+export const addSnapshotCount = () => {
+  snapshotCount++;
+  return snapshotCount;
+};
+
 export const OptionType = {
   Call: 0,
   Put: 1,
@@ -23,10 +31,6 @@ export const addDaysAndGetSeconds = (days = 0) => {
 
 export const getExpiry = (days = 1) => {
   return 60 * 60 * 24 * days;
-};
-
-export const address0 = () => {
-  return "0x0000000000000000000000000000000000000000";
 };
 
 export interface Option {

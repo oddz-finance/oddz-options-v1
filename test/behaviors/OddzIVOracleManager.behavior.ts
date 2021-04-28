@@ -1,8 +1,22 @@
 import { expect } from "chai";
-import { utils } from "ethers";
-import { getExpiry, address0 } from "../../test-utils";
+import { utils, constants } from "ethers";
+import { getExpiry } from "../../test-utils";
 
 export function shouldBehaveLikeOddzIVOracleManager(): void {
+  it("Should revert add IV aggregator for non owner", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+    await expect(
+      oracleManager
+        .connect(this.signers.admin1)
+        .addIVAggregator(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          this.oddzIVOracle.address,
+          this.oddzIVOracle.address,
+          1,
+        ),
+    ).to.revertedWith("caller has no access to the method");
+  });
   it("Should be able to successfully add an aggregator", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
     await expect(
@@ -100,7 +114,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
       .withArgs(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        address0(),
+        constants.AddressZero,
         this.oddzIVOracle.address,
       );
 
@@ -117,5 +131,45 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     await expect(
       oracleManager.calculateIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)),
     ).to.be.revertedWith("caller has no access to the method");
+  });
+
+  it("Should revert for setting invalid active aggregator", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+    // sets address(0) as active aggreagator when aggregator is not added
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "address"],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzIVOracle.address],
+      ),
+    );
+
+    await expect(oracleManager.setActiveIVAggregator(hash)).to.be.revertedWith("Invalid aggregator");
+  });
+
+  it("Should revert set Manager for non contract address", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await expect(oracleManager.setManager(this.accounts.admin)).to.be.revertedWith("Invalid manager address");
+  });
+
+  it("Should  set Manager for  contract address", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await expect(oracleManager.setManager(this.oddzIVOracleManager.address)).to.emit(oracleManager, "RoleGranted");
+  });
+  it("Should revert remove Manager for non owner", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await oracleManager.setManager(this.oddzIVOracleManager.address);
+    await expect(
+      oracleManager.connect(this.signers.admin1).removeManager(this.oddzIVOracleManager.address),
+    ).to.be.revertedWith("AccessControl: sender must be an admin to revoke");
+  });
+
+  it("Should remove Manager ", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await oracleManager.setManager(this.oddzIVOracleManager.address);
+    await expect(oracleManager.removeManager(this.oddzIVOracleManager.address)).to.emit(oracleManager, "RoleRevoked");
   });
 }

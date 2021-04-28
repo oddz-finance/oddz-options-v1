@@ -10,6 +10,7 @@ import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetMan
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
+import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -26,6 +27,7 @@ import {
   OddzIVOracleManager,
   OddzOptionPremiumManager,
   OddzPremiumBlackScholes,
+  MockOddzDex,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -61,6 +63,23 @@ describe("Oddz Option Manager Unit tests", function () {
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
+
+      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+
+      await this.dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        mockOddzDex.address,
+      );
+
+      const dexHash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), mockOddzDex.address],
+        ),
+      );
+
+      await this.dexManager.setActiveExchange(dexHash);
 
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
@@ -122,6 +141,8 @@ describe("Oddz Option Manager Unit tests", function () {
         this.dexManager.address,
       ])) as OddzLiquidityPool;
 
+      this.dexManager.setSwapper(this.oddzLiquidityPool.address);
+
       const oddzOptionPremiumManager = (await deployContract(
         this.signers.admin,
         OddzOptionPremiumManagerArtifact,
@@ -137,6 +158,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.oddzAssetManager.address,
         oddzOptionPremiumManager.address,
       ])) as OddzOptionManager;
+      await this.oddzOptionManager.setMaxDeadline(100);
       await this.oddzLiquidityPool.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
 
