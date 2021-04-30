@@ -278,7 +278,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     function distributePremiumPerLP(uint256 _date, address _lp) private {
         LPBalance[] storage lpBalance = lpBalanceMap[_lp];
         uint256 len = lpBalance.length;
-        require(len > 0, "LP Error: Invalid liquidity provider");
+        // Invalid liquidity provider
+        if (len <= 0) return;
         require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP Error: Premium already distributed for the provider");
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len--;
