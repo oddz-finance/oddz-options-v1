@@ -214,7 +214,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @return share liquidity provider's active liquidity
      */
     function activeLiquidity(address _account) public view returns (uint256 share) {
-        share = activeLiqudityByDate(_account, getPresentDayTimestamp());
+        share = activeLiquidityByDate(_account, getPresentDayTimestamp());
     }
 
     /**
@@ -223,7 +223,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @param _date unix timestamp of the date
      * @return share liquidity provider's active liquidity
      */
-    function activeLiqudityByDate(address _account, uint256 _date) public view returns (uint256 share) {
+    function activeLiquidityByDate(address _account, uint256 _date) public view returns (uint256 share) {
         LPBalance[] storage lpBalanceList = lpBalanceMap[_account];
         uint256 len = lpBalanceList.length;
         while (len > 0 && lpBalanceList[len - 1].transactionDate > _date) {
