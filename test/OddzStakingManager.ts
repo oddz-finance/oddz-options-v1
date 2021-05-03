@@ -19,6 +19,7 @@ import {
 } from "../typechain";
 import { shouldBehaveLikeOddzStakingManager } from "./behaviors/OddzStakingManager.behavior";
 import { BigNumber, utils } from "ethers";
+import { getExpiry } from "../test-utils";
 
 describe("Oddz Staking Manager Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
@@ -28,7 +29,9 @@ describe("Oddz Staking Manager Unit tests", function () {
 
     const signers: Signer[] = await ethers.getSigners();
     this.signers.admin = signers[0];
+    this.signers.admin1 = signers[1];
     this.accounts.admin = await signers[0].getAddress();
+    this.accounts.admin1 = await signers[1].getAddress();
     this.wallet = wallet;
     this.walletTo = walletTo;
   });
@@ -42,8 +45,26 @@ describe("Oddz Staking Manager Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
 
+      this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "oddz coin",
+        "ODDZ",
+        totalSupply,
+      ])) as MockERC20;
+
+      this.oUsdToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "oUsd coin",
+        "oUsd",
+        totalSupply,
+      ])) as MockERC20;
+
+      this.oDevToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "oDev coin",
+        "oDev",
+        totalSupply,
+      ])) as MockERC20;
+
       this.oddzStakingManager = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
-        
+         this.usdcToken.address
       ])) as OddzStakingManager;
 
       this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
@@ -59,9 +80,37 @@ describe("Oddz Staking Manager Unit tests", function () {
       ])) as ODevTokenStaking;
 
     
-      this.oddzTokenStaking.setManager(this.oddzStakingManager.address);
-      this.oUsdTokenStaking.setManager(this.oddzStakingManager.address);
-      this.oDevTokenStaking.setManager(this.oddzStakingManager.address);
+      await this.oddzTokenStaking.setManager(this.oddzStakingManager.address);
+      await this.oUsdTokenStaking.setManager(this.oddzStakingManager.address);
+      await this.oDevTokenStaking.setManager(this.oddzStakingManager.address);
+
+      await this.oddzStakingManager.addToken(
+        utils.formatBytes32String("ODDZ"),
+        this.oddzToken.address,
+        this.oddzTokenStaking.address,
+        getExpiry(1),
+        getExpiry(1),
+        50,
+        70
+      );
+      await this.oddzStakingManager.addToken(
+        utils.formatBytes32String("oUsd"),
+        this.oUsdToken.address,
+        this.oUsdTokenStaking.address,
+        getExpiry(1),
+        getExpiry(1),
+        30,
+        30
+      );
+      await this.oddzStakingManager.addToken(
+        utils.formatBytes32String("oDev"),
+        this.oDevToken.address,
+        this.oDevTokenStaking.address,
+        getExpiry(1),
+        getExpiry(1),
+        20,
+        0
+      );
     
     });
 

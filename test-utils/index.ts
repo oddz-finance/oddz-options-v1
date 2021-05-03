@@ -4,6 +4,12 @@ export const OptionType = {
   Put: 1,
 };
 
+export const DepositType = {
+  Transaction: 0,
+  Settlement: 1,
+  Invalid: 2,
+};
+
 export const AssetIds = {
   ETH: 0,
   BTC: 1,

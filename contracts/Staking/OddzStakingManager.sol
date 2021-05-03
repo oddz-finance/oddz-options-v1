@@ -9,20 +9,22 @@ import "./ODevTokenStaking.sol";
 import "./OUsdTokenStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "hardhat/console.sol";
 
-contract StakingManager is Ownable, IOddzStaking {
+contract OddzStakingManager is Ownable, IOddzStaking {
     using Address for address;
     using SafeERC20 for IERC20;
 
     IERC20 usdcToken;
 
-    mapping(address => Token) tokens;
+    mapping(address => Token) public tokens;
 
 
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
 
     modifier validToken(address _token) {
+        require(_token.isContract(), "invalid token address");
         require(tokens[_token]._active == true, "token is not active");
         _;
     }
@@ -36,8 +38,6 @@ contract StakingManager is Ownable, IOddzStaking {
         usdcToken = _usdcToken;
     }
 
-    
-
     function setLockupDuration(address _token, uint256 _duration) external onlyOwner {
         require(_token.isContract(), "invalid token address");
         tokens[_token]._lockupDuration = _duration;
@@ -50,12 +50,12 @@ contract StakingManager is Ownable, IOddzStaking {
 
     function deactivateToken(address _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
-        emit TokenDeactivate(_token, tokens[_token]._name, block.timestamp);
+        emit TokenDeactivate(_token, tokens[_token]._name);
     }
 
     function activateToken(address _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
-        emit TokenActivate(_token, tokens[_token]._name, block.timestamp);
+        emit TokenActivate(_token, tokens[_token]._name,);
     }
 
     function addToken(
@@ -80,7 +80,7 @@ contract StakingManager is Ownable, IOddzStaking {
             0,
             true
         );
-        emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration, block.timestamp);
+        emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration);
     }
 
     
@@ -89,19 +89,20 @@ contract StakingManager is Ownable, IOddzStaking {
             txnFeeBalance += _amount;
         } else if (_depositType == DepositType.Settlement) {
             settlementFeeBalance += _amount;
+        }else{
+            revert("invalid deposit type");
         }
         usdcToken.transferFrom(msg.sender, address(this), _amount);
-        emit Deposit(block.timestamp, _depositType, _amount);
+        emit Deposit(msg.sender, _depositType, _amount);
     }
 
     function stake(address _token, uint256 _amount) external override validToken(_token) {
-        require(_token.isContract(), "invalid token address");
         require(_amount > 0, "invalid amount");
 
         uint256 date = getPresentDayTimestamp();
         AbstractTokenStaking(tokens[_token]._stakingContract).stake(_token, msg.sender, _amount, date);
 
-        emit Stake(msg.sender, _token, _amount, block.timestamp);
+        emit Stake(msg.sender, _token, _amount);
     }
 
     function withdraw(address _token, uint256 _amount) external override {
@@ -140,7 +141,7 @@ contract StakingManager is Ownable, IOddzStaking {
                   * AbstractTokenStaking(token._stakingContract).balance(_staker);
         AbstractTokenStaking(token._stakingContract).addRewards(_staker, reward);
 
-        emit DistributeReward(_staker, _token, reward, block.timestamp);
+        emit DistributeReward(_staker, _token, reward);
     }
 
     function _transferRewards(
@@ -156,7 +157,7 @@ contract StakingManager is Ownable, IOddzStaking {
 
             reward = AbstractTokenStaking(tokens[_token]._stakingContract).removeRewards(_staker);    
             usdcToken.transfer(_staker, reward);
-            emit TransferReward(_staker, _token, reward, block.timestamp);
+            emit TransferReward(_staker, _token, reward);
         }
     }
 
