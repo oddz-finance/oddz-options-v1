@@ -127,7 +127,6 @@ library DateTimeLibrary {
         timestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY;
     }
 
-
     /**
      * @dev get day based on the timestamp
      */
