@@ -5,7 +5,7 @@ import "../../../Oracle/IOddzPriceOracle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
-import "../Libs/DateTimeLibrary.sol";
+import "../../../Libs/DateTimeLibrary.sol";
 
 contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
     using Address for address;
