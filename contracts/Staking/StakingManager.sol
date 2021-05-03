@@ -10,7 +10,7 @@ import "./OUsdTokenStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract StakingManager is IOddzStaking, AccessControl {
+contract StakingManager is Ownable, IOddzStaking {
     using Address for address;
     using SafeERC20 for IERC20;
 
@@ -18,26 +18,9 @@ contract StakingManager is IOddzStaking, AccessControl {
 
     mapping(address => Token) tokens;
 
-    // user => token => StakerDetailsPerToken
-    mapping(address => mapping(address => StakerDetails)) stakers;
 
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
-
-    /**
-     * @dev Access control specific data definitions
-     */
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "LP Error: caller has no access to the method");
-        _;
-    }
-
-    modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "LP Error: caller has no access to the method");
-        _;
-    }
 
     modifier validToken(address _token) {
         require(tokens[_token]._active == true, "token is not active");
@@ -50,45 +33,27 @@ contract StakingManager is IOddzStaking, AccessControl {
     }
 
     constructor(IERC20 _usdcToken) {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         usdcToken = _usdcToken;
     }
 
-    /**
-     @dev sets the manager for the staking  contract
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
+    
 
-    /**
-     @dev removes the manager for the staking contract for valid managers
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function removeManager(address _address) public {
-        revokeRole(MANAGER_ROLE, _address);
-    }
-
-    function setLockupDuration(address _token, uint256 _duration) external onlyOwner(msg.sender) {
+    function setLockupDuration(address _token, uint256 _duration) external onlyOwner {
         require(_token.isContract(), "invalid token address");
         tokens[_token]._lockupDuration = _duration;
     }
 
-    function setRewardRate(address _token, uint256 _rate) external onlyOwner(msg.sender) {
+    function setRewardFrequency(address _token, uint256 _rate) external onlyOwner {
         require(_token.isContract(), "invalid token address");
-        tokens[_token]._rewardRate = _rate;
+        tokens[_token]._rewardFrequency = _rate;
     }
 
-    function deactivateToken(address _token) external onlyOwner(msg.sender) validToken(_token) {
+    function deactivateToken(address _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(_token, tokens[_token]._name, block.timestamp);
     }
 
-    function activateToken(address _token) external onlyOwner(msg.sender) inactiveToken(_token) {
+    function activateToken(address _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
         emit TokenActivate(_token, tokens[_token]._name, block.timestamp);
     }
@@ -97,34 +62,35 @@ contract StakingManager is IOddzStaking, AccessControl {
         bytes32 _name,
         address _address,
         address _stakingContract,
-        uint256 _rewardRate,
+        uint256 _rewardFrequency,
         uint256 _lockupDuration,
         uint256 _txnFeeReward,
         uint256 _settlementFeeReward
-    ) external onlyOwner(msg.sender) {
+    ) external onlyOwner {
         require(_address.isContract(), "invalid token address");
         require(_stakingContract.isContract(), "invalid staking contract");
         tokens[_address] = Token(
             _name,
             _address,
             _stakingContract,
-            _rewardRate,
+            _rewardFrequency,
             _txnFeeReward,
             _settlementFeeReward,
             _lockupDuration,
             0,
             true
         );
-        emit TokenAdded(_address, _name, _rewardRate, _lockupDuration, block.timestamp);
+        emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration, block.timestamp);
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) external override onlyManager(msg.sender) {
+    
+    function deposit(uint256 _amount, DepositType _depositType) external override  { 
         if (_depositType == DepositType.Transaction) {
             txnFeeBalance += _amount;
         } else if (_depositType == DepositType.Settlement) {
             settlementFeeBalance += _amount;
         }
-
+        usdcToken.transferFrom(msg.sender, address(this), _amount);
         emit Deposit(block.timestamp, _depositType, _amount);
     }
 
@@ -133,22 +99,19 @@ contract StakingManager is IOddzStaking, AccessControl {
         require(_amount > 0, "invalid amount");
 
         uint256 date = getPresentDayTimestamp();
-        ITokenStaking(tokens[_token]._stakingContract).stake(_token, msg.sender, _amount);
-        stakers[msg.sender][_token]._balance += _amount;
-        stakers[msg.sender][_token]._lastStakedAt = date;
+        ITokenStaking(tokens[_token]._stakingContract).stake(_token, msg.sender, _amount, date);
 
         emit Stake(msg.sender, _token, _amount, block.timestamp);
     }
 
-    function withdraw(address _token, uint256 _amount) external override returns (uint256 burn) {
+    function withdraw(address _token, uint256 _amount) external override {
         require(_token.isContract(), "invalid token address");
         require(_amount < ITokenStaking(tokens[_token]._stakingContract).balance(msg.sender), "Amount is too large");
 
         uint256 date = getPresentDayTimestamp();
-        burn = _amount + _transferRewards(msg.sender, _token, date);
-        ITokenStaking(tokens[_token]._stakingContract).burn(msg.sender, burn);
+        _transferRewards(msg.sender, _token, date);
+        ITokenStaking(tokens[_token]._stakingContract).burn(msg.sender, _amount);
         usdcToken.safeTransfer(msg.sender, _amount);
-        stakers[msg.sender][_token]._balance -= _amount;
     }
 
     function distributeRewards(address _token, address[] memory _stakers) external override {
@@ -163,14 +126,14 @@ contract StakingManager is IOddzStaking, AccessControl {
         uint256 date = getPresentDayTimestamp();
         Token storage token = tokens[_token];
 
-        if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardRate) {
+        if (date - token._lastDistributed < token._rewardFrequency) {
             return;
         }
 
-        uint256 reward = txnFeeBalance * token._txnFeeReward * stakers[_staker][_token]._balance;
-        reward += settlementFeeBalance * token._settlementFeeReward * stakers[_staker][_token]._balance;
-        stakers[_staker][_token]._rewards += reward;
-        _transferRewards(_staker, _token, date);
+        uint256 reward = txnFeeBalance * token._txnFeeReward * ITokenStaking(token._stakingContract).balance(_staker);
+        reward += settlementFeeBalance * token._settlementFeeReward 
+                    * ITokenStaking(token._stakingContract).balance(_staker);
+        ITokenStaking(token._stakingContract).addRewards(_staker, reward);
 
         emit DistributeReward(_staker, _token, reward, block.timestamp);
     }
@@ -180,27 +143,30 @@ contract StakingManager is IOddzStaking, AccessControl {
         address _token,
         uint256 _date
     ) private returns (uint256 reward) {
-        if (_date - stakers[_staker][_token]._lastStakedAt >= tokens[_token]._lockupDuration) {
-            reward = stakers[msg.sender][_token]._rewards;
-            ITokenStaking(tokens[_token]._stakingContract).mint(_staker, stakers[_staker][_token]._rewards);
-            stakers[_staker][_token]._rewards = 0;
+        if (
+            _date - ITokenStaking(tokens[_token]._stakingContract).getLastStakedAt(_staker) 
+            >= 
+            tokens[_token]._lockupDuration
+            ) {
+
+            reward = ITokenStaking(tokens[_token]._stakingContract).removeRewards(_staker);    
+            usdcToken.transfer(_staker, reward);
             emit TransferReward(_staker, _token, reward, block.timestamp);
         }
     }
 
-    function claimRewards(address _token) external {
+    function claimRewards(address _token) external { 
         require(_token.isContract(), "invalid token address");
 
         uint256 date = getPresentDayTimestamp();
         _transferRewards(msg.sender, _token, date);
     }
 
-    function getProfit(address _token) external returns (uint256 profit) {
+    function getProfitInfo(address _token) external view returns (uint256 profit) {
         require(_token.isContract(), "invalid token address");
 
-        profit =
-            ITokenStaking(tokens[_token]._stakingContract).balance(msg.sender) -
-            stakers[msg.sender][_token]._balance;
+        profit = ITokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender); 
+            
     }
 
     /**
