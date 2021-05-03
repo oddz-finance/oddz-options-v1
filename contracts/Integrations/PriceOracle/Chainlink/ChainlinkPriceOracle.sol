@@ -22,7 +22,7 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         address aggregator = addressMap[_underlying][_strike];
         require(aggregator != address(0), "No aggregator");
 
-        (, int256 answer, uint256 updatedAt , ) = AggregatorV3Interface(aggregator).latestRoundData();
+        (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         uint256 constant DELAY_IN_SECONDS = 30 * 60;
         price = uint256(answer);
