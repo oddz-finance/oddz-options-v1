@@ -88,10 +88,11 @@ contract StakingManager is IOddzStaking,AccessControl {
 
     function deactivateToken(address _token) external onlyOwner(msg.sender){
         tokens[_token]._active = false;
-        emit LpTokenDeactivate(_token, block.timestamp);
+        emit TokenDeactivate(_token, tokens[_token]._name, block.timestamp);
     }
     function activateToken(address _token) external onlyOwner(msg.sender){
         tokens[_token]._active = true;
+        emit TokenActivate(_token, tokens[_token]._name, block.timestamp);
     }
 
     function addToken(
@@ -113,6 +114,7 @@ contract StakingManager is IOddzStaking,AccessControl {
                             _lockupDuration,
                             0,
                             true);
+        emit TokenAdded(_address, _name, _rewardRate, _lockupDuration, block.timestamp);                
     }
 
 
@@ -123,7 +125,7 @@ contract StakingManager is IOddzStaking,AccessControl {
             settlementFeeBalance += _amount;
         }
 
-        emit Deposit(block.timestamp, _amount, _depositType);
+        emit Deposit(block.timestamp, _depositType, _amount );
     }
 
     function stake(address _token, uint256 _amount) override external validToken(_token){
@@ -134,7 +136,7 @@ contract StakingManager is IOddzStaking,AccessControl {
         stakers[msg.sender][_token]._balance += _amount;
         stakers[msg.sender][_token]._lastStakedAt = date;
 
-        emit Stake(msg.sender, _amount, block.timestamp);
+        emit Stake(msg.sender, _token, _amount, block.timestamp);
     }
 
     function withdraw(address _token, uint256 _amount) override external returns(uint256 burn){
@@ -169,6 +171,7 @@ contract StakingManager is IOddzStaking,AccessControl {
         stakers[_staker][_token]._rewards +=reward;
         _transferRewards(_staker, _token, date);
        
+       emit DistributeReward(_staker, _token, reward, block.timestamp);
     }
 
     
@@ -179,6 +182,7 @@ contract StakingManager is IOddzStaking,AccessControl {
             reward = stakers[msg.sender][_token]._rewards;
             ITokenStaking(tokens[_token]._stakingContract).mint(_staker, stakers[_staker][_token]._rewards);
             stakers[_staker][_token]._rewards=0;
+            emit TransferReward(_staker, _token, reward, block.timestamp);
          }
     }
 

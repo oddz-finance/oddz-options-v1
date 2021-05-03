@@ -27,12 +27,19 @@ interface IOddzStaking {
         uint256 _rewards;
     }
 
-    event LpTokenAdded(address indexed _address, uint256 _rewardRate, uint256 _lockupDuration, uint256 _timestamp);
-    event LpTokenDeactivate(address indexed _address, uint256 _timestamp);
-    event Deposit(uint256 indexed _time, uint256 _amount, DepositType _type);
-    event Claim(address indexed _staker, uint256 _amount);
-    event Stake(address indexed _staker, uint256 indexed _amount, uint256 _time);
-    event Distribute(uint256 _amount, uint256 _time);
+    event TokenAdded(
+                address indexed _address, 
+                bytes32 indexed _name, 
+                uint256 _rewardRate, 
+                uint256 _lockupDuration, 
+                uint256 _timestamp);
+    event TokenDeactivate(address indexed _address, bytes32 indexed _name, uint256 _timestamp);
+    event TokenActivate(address indexed _address, bytes32 indexed _name, uint256 _timestamp);
+    event Deposit(uint256 indexed _time, DepositType indexed _type, uint256 _amount );
+    event Claim(address indexed _staker, address indexed _token, uint256 _amount);
+    event Stake(address indexed _staker, address indexed _token, uint256 indexed _amount, uint256 _time);
+    event DistributeReward(address indexed _staker, address indexed _token, uint256 _reward, uint256 _time);
+    event TransferReward(address indexed _staker, address indexed _token, uint256 _amount, uint256 _time);
 
     function withdraw(address _token, uint256 _amount) external returns (uint256 _profit);
 
