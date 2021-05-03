@@ -16,15 +16,10 @@ contract StakingManager is IOddzStaking,Ownable {
     IERC20 usdcToken;
     
     mapping(address => Token) tokens;
+
+    // user => token => StakerDetailsPerToken
+    mapping(address => mapping(address => StakerDetails)) stakers;
    
-   // user => token => balance
-    mapping(address => mapping(address => uint256)) balances;
-    // user => token => time
-    mapping(address => mapping(address => uint256)) lastStakedAt;
-    // user => token => rewards
-    mapping(address => mapping(address => uint256)) stakerRewards;
-    
-    address[] public stakers;
 
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
@@ -99,8 +94,8 @@ contract StakingManager is IOddzStaking,Ownable {
 
         uint256 date = getPresentDayTimestamp();
         ITokenStaking(tokens[_token]._stakingContract).stake(_token, msg.sender,_amount);
-        balances[msg.sender][_token] += _amount;
-        lastStakedAt[msg.sender][_token] = date;
+        stakers[msg.sender][_token]._balance += _amount;
+        stakers[msg.sender][_token]._lastStakedAt = date;
 
         emit Stake(msg.sender, _amount, block.timestamp);
     }
@@ -112,7 +107,7 @@ contract StakingManager is IOddzStaking,Ownable {
         burn =_amount + _transferRewards(msg.sender,_token,date);
         ITokenStaking(tokens[_token]._stakingContract).burn(msg.sender, burn);
         usdcToken.safeTransfer(msg.sender, _amount);
-        balances[msg.sender][_token] -= _amount;
+        stakers[msg.sender][_token]._balance -= _amount;
 
     }
 
@@ -132,9 +127,9 @@ contract StakingManager is IOddzStaking,Ownable {
             return;
         }
         
-        uint256 reward = txnFeeBalance * token._txnFeeReward * balances[_staker][_token];
-        reward += settlementFeeBalance * token._settlementFeeReward * balances[_staker][_token];
-        stakerRewards[_staker][_token] +=reward;
+        uint256 reward = txnFeeBalance * token._txnFeeReward * stakers[_staker][_token]._balance;
+        reward += settlementFeeBalance * token._settlementFeeReward * stakers[_staker][_token]._balance;
+        stakers[_staker][_token]._rewards +=reward;
         _transferRewards(_staker, _token, date);
        
     }
@@ -143,10 +138,10 @@ contract StakingManager is IOddzStaking,Ownable {
 
 
     function _transferRewards(address _staker, address _token, uint256 _date) private returns (uint256 reward){
-         if(_date - lastStakedAt[_staker][_token] >= tokens[_token]._lockupDuration){
-            reward = stakerRewards[msg.sender][_token];
-            ITokenStaking(tokens[_token]._stakingContract).mint(_staker, stakerRewards[_staker][_token]);
-            stakerRewards[_staker][_token]=0;
+         if(_date - stakers[_staker][_token]._lastStakedAt >= tokens[_token]._lockupDuration){
+            reward = stakers[msg.sender][_token]._rewards;
+            ITokenStaking(tokens[_token]._stakingContract).mint(_staker, stakers[_staker][_token]._rewards);
+            stakers[_staker][_token]._rewards=0;
          }
     }
 
@@ -157,7 +152,8 @@ contract StakingManager is IOddzStaking,Ownable {
     }
 
     function getBalance(address _token) external returns (uint256 profit){
-        profit = ITokenStaking(tokens[_token]._stakingContract).balance(msg.sender)-balances[msg.sender][_token];
+        profit = ITokenStaking(tokens[_token]._stakingContract).balance(msg.sender) 
+                - stakers[msg.sender][_token]._balance;
     }
 
     /**

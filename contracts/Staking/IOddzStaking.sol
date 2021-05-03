@@ -20,11 +20,11 @@ interface IOddzStaking {
 
     
 
-    struct Staker{
+    struct StakerDetails{
         address _staker;
-        uint256 _lastStakedOddzAt;
-        uint256 _lastStakedOusdAt;
-        uint256 _lastStakedLpTokenAt;
+        uint256 _balance;
+        uint256 _lastStakedAt;
+        uint256 _rewards;
     }
 
     event LpTokenAdded(address indexed _address, uint256 _rewardRate, uint256 _lockupDuration, uint256 _timestamp);
