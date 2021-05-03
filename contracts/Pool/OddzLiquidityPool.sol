@@ -107,7 +107,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
 
         require(mint > 0, "LP Error: Amount is too small");
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         // transfer user eligible premium
         transferEligiblePremium(date, sender_);
         updateLiquidity(date, _amount, TransactionType.ADD);
@@ -126,7 +126,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
             "LP Error: Not enough funds on the pool contract. Please lower the amount."
         );
 
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
 
         // burn = _amount + fetch eligible premium if any
         burn = _amount + transferEligiblePremium(date, msg.sender);
@@ -164,7 +164,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         LockedLiquidity storage ll = lockedLiquidity[_id];
         ll.locked = false;
         lockedAmount = lockedAmount - ll.amount;
-        PremiumPool storage dayPremium = premiumDayPool[getPresentDayTimestamp()];
+        PremiumPool storage dayPremium = premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()];
         dayPremium.collected = dayPremium.collected + ll.premium;
 
         emit Profit(_id, ll.premium);
@@ -246,7 +246,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @param _date Epoch time for 00:00:00 hours of the date
      */
     function updatePremiumEligibility(uint256 _date) public {
-        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
+        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
         require(!premium.enabled, "LP Error: Premium eligibilty already updated for the date");
         premium.enabled = true;
@@ -272,7 +272,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         lpPremiumDistributionMap[_lp][_date] = lpEligible;
         lpPremium[_lp] = lpPremium[_lp] + lpEligible;
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + lpEligible;
-        transferEligiblePremium(getPresentDayTimestamp(), _lp);
+        transferEligiblePremium(DateTimeLibrary.getPresentDayTimestamp(), _lp);
     }
 
     /**
@@ -281,7 +281,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @param _lps List of the active liquidity provider addresses
      */
     function distributePremium(uint256 _date, address[] memory _lps) public {
-        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
+        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
         if (!premiumDayPool[_date].enabled) {
             updatePremiumEligibility(_date);
         }
@@ -296,7 +296,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     }
 
     function transferPremium() external {
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         require(
             (date - latestLiquidityDateMap[msg.sender]) > premiumLockupDuration,
             "LP Error: Address not eligible for premium collection"
@@ -392,7 +392,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         require(_account != address(0), "LP Error: Invalid address");
 
         ll.locked = false;
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         lockedAmount = lockedAmount - ll.amount;
         lockedPremium = ll.premium;
         transferAmount = _amount;
@@ -453,13 +453,5 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      */
     function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
         reqBalance = _reqBalance;
-    }
-
-    /**
-     * @dev get day based on the timestamp
-     */
-    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 }

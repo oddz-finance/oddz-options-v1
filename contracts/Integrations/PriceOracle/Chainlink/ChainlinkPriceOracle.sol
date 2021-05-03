@@ -5,6 +5,7 @@ import "../../../Oracle/IOddzPriceOracle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "../Libs/DateTimeLibrary.sol";
 
 contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
     using Address for address;
@@ -21,10 +22,13 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         address aggregator = addressMap[_underlying][_strike];
         require(aggregator != address(0), "No aggregator");
 
-        (, int256 answer, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
+        (, int256 answer, uint256 updatedAt , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
+        uint256 constant DELAY_IN_SECONDS = 30 * 60;
         price = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
+        require(updatedAt > date - DELAY_IN_SECONDS, "Chain link Price Out Of Sync");
     }
 
     function setPairContract(
