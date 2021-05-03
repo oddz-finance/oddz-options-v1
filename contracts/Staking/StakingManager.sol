@@ -10,7 +10,8 @@ import "./OUsdTokenStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract StakingManager is IOddzStaking,Ownable {
+contract StakingManager is IOddzStaking,AccessControl {
+    using Address for address;
     using SafeERC20 for IERC20;
 
     IERC20 usdcToken;
@@ -23,6 +24,21 @@ contract StakingManager is IOddzStaking,Ownable {
 
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
+
+    /**
+     * @dev Access control specific data definitions
+     */
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
+     modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "LP Error: caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "LP Error: caller has no access to the method");
+        _;
+    }
 
     modifier validToken(address _token) {
         require(tokens[_token]._active == true, "token is not active");
@@ -37,23 +53,44 @@ contract StakingManager is IOddzStaking,Ownable {
     constructor(
         IERC20 _usdcToken
         ){
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         usdcToken = _usdcToken;
     }
 
+    /**
+     @dev sets the manager for the staking  contract
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
 
-    function setLockupDuration(address _token, uint256 _duration) external onlyOwner{
+    /**
+     @dev removes the manager for the staking contract for valid managers
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
+
+
+    function setLockupDuration(address _token, uint256 _duration) external onlyOwner(msg.sender){
         tokens[_token]._lockupDuration = _duration;
     }
 
-    function setRewardRate(address _token, uint256 _rate) external onlyOwner{
+    function setRewardRate(address _token, uint256 _rate) external onlyOwner(msg.sender){
         tokens[_token]._rewardRate = _rate;
     }
 
-    function deactivateToken(address _token) external onlyOwner{
+    function deactivateToken(address _token) external onlyOwner(msg.sender){
         tokens[_token]._active = false;
         emit LpTokenDeactivate(_token, block.timestamp);
     }
-    function activateToken(address _token) external onlyOwner{
+    function activateToken(address _token) external onlyOwner(msg.sender){
         tokens[_token]._active = true;
     }
 
@@ -65,7 +102,7 @@ contract StakingManager is IOddzStaking,Ownable {
                     uint256 _lockupDuration, 
                     uint256 _txnFeeReward, 
                     uint256 _settlementFeeReward
-                    ) external{
+                    ) external onlyOwner(msg.sender){
         tokens[_address] = Token(
                             _name,
                             _address, 
@@ -79,7 +116,7 @@ contract StakingManager is IOddzStaking,Ownable {
     }
 
 
-    function deposit(uint256 _amount, DepositType _depositType) override external {
+    function deposit(uint256 _amount, DepositType _depositType) override external onlyManager(msg.sender){
         if(_depositType == DepositType.Transaction){
             txnFeeBalance += _amount;
         }else if (_depositType == DepositType.Settlement){
@@ -151,7 +188,7 @@ contract StakingManager is IOddzStaking,Ownable {
         
     }
 
-    function getBalance(address _token) external returns (uint256 profit){
+    function getProfit(address _token) external returns (uint256 profit){
         profit = ITokenStaking(tokens[_token]._stakingContract).balance(msg.sender) 
                 - stakers[msg.sender][_token]._balance;
     }
