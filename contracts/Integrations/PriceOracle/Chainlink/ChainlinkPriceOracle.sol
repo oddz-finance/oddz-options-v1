@@ -24,7 +24,7 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
 
         (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
-        uint256 constant DELAY_IN_SECONDS = 30 * 60;
+        uint256 DELAY_IN_SECONDS = 30 * 60;
         price = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
