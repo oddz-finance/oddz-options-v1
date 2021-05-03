@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
 
 // ETH/USD pair address
 const pair = "0xfcb06d25357ef01726861b30b0b83e51482db417";
@@ -307,7 +306,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
       86400,
     );
     await expect(
-      oddzAssetManager.setPurchaseLimit(address0(), BigNumber.from(utils.parseEther("0.01"))),
+      oddzAssetManager.setPurchaseLimit(constants.AddressZero, BigNumber.from(utils.parseEther("0.01"))),
     ).to.be.revertedWith("Invalid Asset pair");
   });
 
@@ -487,5 +486,25 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await expect(oddzAssetManager.updateMinPeriod(addr, 2591999))
       .to.emit(oddzAssetManager, "AssetPairMinPeriodUpdate")
       .withArgs(addr, utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 2591999);
+  });
+
+  it("should revert get asset address for empty asset name", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
+    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String(""))).to.be.revertedWith(
+      "invalid asset name",
+    );
+  });
+  it("should revert get asset address for non existing asset", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await expect(oddzAssetManager.getAssetAddressByName(utils.formatBytes32String("USD"))).to.be.revertedWith(
+      "Invalid asset address",
+    );
+  });
+  it("should revert add asset for zero address", async function () {
+    const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin);
+    await expect(
+      oddzAssetManager.addAsset(utils.formatBytes32String("USD"), constants.AddressZero, 8),
+    ).to.be.revertedWith("invalid address");
   });
 }

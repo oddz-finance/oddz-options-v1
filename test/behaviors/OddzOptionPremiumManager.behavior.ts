@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
 
 export function shouldBehaveLikeOddzOptionPremiumManager(): void {
   it("Should be able to successfully add an option model", async function () {
@@ -28,7 +27,7 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
   it("Should throw Invalid premium model address", async function () {
     const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
     await expect(
-      optionPremiumManager.addOptionPremiumModel(utils.formatBytes32String("B_S"), address0()),
+      optionPremiumManager.addOptionPremiumModel(utils.formatBytes32String("B_S"), constants.AddressZero),
     ).to.be.revertedWith("Invalid premium model address");
   });
 
@@ -72,6 +71,18 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
     );
   });
 
+  it("Should revert enable for already enabled model", async function () {
+    const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
+    await optionPremiumManager.addOptionPremiumModel(
+      utils.formatBytes32String("B_S"),
+      this.oddzPremiumBlackScholes.address,
+    );
+
+    await expect(optionPremiumManager.enableOptionPremiumModel(utils.formatBytes32String("B_S"))).to.be.revertedWith(
+      "Premium model is enabled",
+    );
+  });
+
   it("Should be able to successfully enable option model", async function () {
     const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
     await optionPremiumManager.addOptionPremiumModel(
@@ -84,6 +95,18 @@ export function shouldBehaveLikeOddzOptionPremiumManager(): void {
     await expect(optionPremiumManager.enableOptionPremiumModel(utils.formatBytes32String("B_S")))
       .to.emit(optionPremiumManager, "OptionPremiumModelStatusUpdate")
       .withArgs(utils.formatBytes32String("B_S"), true);
+  });
+  it("Should revert for disable already disabled model", async function () {
+    const optionPremiumManager = await this.oddzOptionPremiumManager.connect(this.signers.admin);
+    await optionPremiumManager.addOptionPremiumModel(
+      utils.formatBytes32String("B_S"),
+      this.oddzPremiumBlackScholes.address,
+    );
+    await expect(optionPremiumManager.disableOptionPremiumModel(utils.formatBytes32String("B_S")));
+
+    await expect(optionPremiumManager.disableOptionPremiumModel(utils.formatBytes32String("B_S"))).to.be.revertedWith(
+      "Premium model is disabled",
+    );
   });
 
   it("Should throw caller has no access to the method while enabling an option model", async function () {

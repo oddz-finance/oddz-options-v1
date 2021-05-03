@@ -75,14 +75,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         address _pair,
         uint256 _expiration
     ) {
-        validOptionType(_optionType);
         validAssetPair(_pair);
         validExpiration(_expiration, _pair);
         _;
-    }
-
-    function validOptionType(OptionType _optionType) private pure {
-        require(_optionType == OptionType.Call || _optionType == OptionType.Put, "Invalid option type");
     }
 
     function validExpiration(uint256 _expiration, address _pair) private view {
@@ -364,7 +359,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _optionId Option id
      * @param _deadline Deadline until which txn does not revert
      */
-    function excerciseUA(uint256 _optionId, uint32 _deadline) external override {
+    function exerciseUA(uint256 _optionId, uint32 _deadline) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");

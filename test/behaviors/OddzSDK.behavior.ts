@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
-import { OptionType, getExpiry, address0 } from "../../test-utils";
+import { BigNumber, utils, constants } from "ethers";
+import { OptionType, getExpiry } from "../../test-utils";
 import {
   OddzLiquidityPool,
   OddzAssetManager,
@@ -23,7 +23,6 @@ const getPremiumWithSlippageAndBuy = async (
   admin: string,
   isBuy: boolean,
 ) => {
-  //console.log("admin: ",admin.toString())
   const premium: any = await oddzSDK.getPremium(
     pair,
     model,
@@ -99,7 +98,7 @@ export function shouldBehaveLikeOddzSDK(): void {
 
     await expect(
       oddzSDK.getPremium(
-        address0(),
+        constants.AddressZero,
         utils.formatBytes32String("B_S"),
         getExpiry(1),
         BigNumber.from(100),
@@ -199,7 +198,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     await expect(
       oddzSDK.buy(
-        address0(),
+        constants.AddressZero,
         utils.formatBytes32String("B_S"),
         BigNumber.from(utils.parseEther("1")),
         getExpiry(1),
@@ -369,7 +368,7 @@ export function shouldBehaveLikeOddzSDK(): void {
   it("should  revert for invalid address while add liquidity", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, "0x0000000000000000000000000000000000000000")).to.be.revertedWith(
+    await expect(oddzSDK.addLiquidity(depositAmount, constants.AddressZero)).to.be.revertedWith(
       "invalid provider address",
     );
   });
@@ -393,7 +392,7 @@ export function shouldBehaveLikeOddzSDK(): void {
         BigNumber.from(utils.parseEther("1")), // number of options
         BigNumber.from(170000000000),
         OptionType.Call,
-        "0x0000000000000000000000000000000000000000",
+        constants.AddressZero,
       ),
     ).to.revertedWith("invalid provider address");
   });
