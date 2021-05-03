@@ -1,15 +1,14 @@
 pragma solidity 0.8.3;
 
-import "./ITokenStaking.sol";
+import "./AbstractTokenStaking.sol";
 import "./IOddzStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract ODevTokenStaking is ITokenStaking,AccessControl, ERC20("Oddz Dev Staking Token", "sODev") {
+contract ODevTokenStaking is AbstractTokenStaking,AccessControl, ERC20("Oddz Dev Staking Token", "sODev") {
     using Address for address;
     using SafeERC20 for IERC20;
 
-    mapping(address => StakerDetails) stakers;
 
     /**
      * @dev Access control specific data definitions
@@ -64,10 +63,6 @@ contract ODevTokenStaking is ITokenStaking,AccessControl, ERC20("Oddz Dev Stakin
         IERC20(_token).transferFrom(_staker, address(this), _amount);
     }
 
-    function balance(address _address) external view override returns (uint256 bal) {
-        bal = balanceOf(_address);
-    }
-
     function mint(address _staker, uint256 _amount) external override onlyManager(msg.sender){
         _mint(_staker, _amount);
     }
@@ -76,24 +71,8 @@ contract ODevTokenStaking is ITokenStaking,AccessControl, ERC20("Oddz Dev Stakin
         _burn(_staker, _amount);
     }
 
-    function getLastStakedAt(address _staker) external override view returns(uint256 lastStakedAt){
-        lastStakedAt = stakers[_staker]._lastStakedAt;
-    }
-
-    function setLastStakedAt(address _staker, uint256 _lastStakedAt) external override{
-        stakers[_staker]._lastStakedAt = _lastStakedAt;
-    }
-
-    function getRewards(address _staker) external override view returns(uint256 rewards){
-        rewards = stakers[_staker]._rewards;
-    }
-
-    function addRewards(address _staker, uint256 _amount) external override {
-        stakers[_staker]._rewards += _amount;
-    }
-    function removeRewards(address _staker) external override returns(uint256 rewards) {
-        rewards = stakers[_staker]._rewards;
-        stakers[_staker]._rewards = 0;
+     function balance(address _address) external view override returns (uint256 bal) {
+        bal = balanceOf(_address);
     }
 
 }
