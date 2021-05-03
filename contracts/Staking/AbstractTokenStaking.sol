@@ -4,9 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-
 abstract contract AbstractTokenStaking {
-
     struct StakerDetails {
         address _address;
         uint256 _lastStakedAt;
@@ -23,26 +21,29 @@ abstract contract AbstractTokenStaking {
 
     function mint(address _staker, uint256 _amount) external virtual;
 
-    function burn(address _staker, uint256 _amount) external virtual ;
+    function burn(address _staker, uint256 _amount) external virtual;
 
-    function balance(address _address) external view virtual returns (uint256) ;
+    function balance(address _address) external view virtual returns (uint256);
 
-    function getLastStakedAt(address _staker) public view  returns(uint256 lastStakedAt){
+    function supply() external view virtual returns (uint256);
+
+    function getLastStakedAt(address _staker) public view returns (uint256 lastStakedAt) {
         lastStakedAt = stakers[_staker]._lastStakedAt;
     }
 
-    function setLastStakedAt(address _staker, uint256 _lastStakedAt) public{
+    function setLastStakedAt(address _staker, uint256 _lastStakedAt) public {
         stakers[_staker]._lastStakedAt = _lastStakedAt;
     }
 
-    function getRewards(address _staker) public view returns(uint256 rewards){
+    function getRewards(address _staker) public view returns (uint256 rewards) {
         rewards = stakers[_staker]._rewards;
     }
 
     function addRewards(address _staker, uint256 _amount) public {
         stakers[_staker]._rewards += _amount;
     }
-    function removeRewards(address _staker) public returns (uint256 rewards){
+
+    function removeRewards(address _staker) public returns (uint256 rewards) {
         rewards = stakers[_staker]._rewards;
         stakers[_staker]._rewards = 0;
     }

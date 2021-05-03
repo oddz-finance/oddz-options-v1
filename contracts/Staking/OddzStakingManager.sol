@@ -19,7 +19,6 @@ contract OddzStakingManager is Ownable, IOddzStaking {
 
     mapping(address => Token) public tokens;
 
-
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
 
@@ -55,7 +54,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
 
     function activateToken(address _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
-        emit TokenActivate(_token, tokens[_token]._name,);
+        emit TokenActivate(_token, tokens[_token]._name);
     }
 
     function addToken(
@@ -83,13 +82,12 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration);
     }
 
-    
-    function deposit(uint256 _amount, DepositType _depositType) external override  { 
+    function deposit(uint256 _amount, DepositType _depositType) external override {
         if (_depositType == DepositType.Transaction) {
             txnFeeBalance += _amount;
         } else if (_depositType == DepositType.Settlement) {
             settlementFeeBalance += _amount;
-        }else{
+        } else {
             revert("invalid deposit type");
         }
         usdcToken.transferFrom(msg.sender, address(this), _amount);
@@ -108,10 +106,16 @@ contract OddzStakingManager is Ownable, IOddzStaking {
     function withdraw(address _token, uint256 _amount) external override {
         require(_token.isContract(), "invalid token address");
         require(
-            _amount < AbstractTokenStaking(tokens[_token]._stakingContract).balance(msg.sender), 
-            "Amount is too large");
+            _amount <= AbstractTokenStaking(tokens[_token]._stakingContract).balance(msg.sender),
+            "Amount is too large"
+        );
 
         uint256 date = getPresentDayTimestamp();
+        require(
+            date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >=
+                tokens[_token]._lockupDuration,
+            "cannot withdraw within lockup duration"
+        );
         _transferRewards(msg.sender, _token, date);
         AbstractTokenStaking(tokens[_token]._stakingContract).burn(msg.sender, _amount);
         usdcToken.safeTransfer(msg.sender, _amount);
@@ -133,12 +137,20 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             return;
         }
 
-        uint256 reward = txnFeeBalance 
-                        * token._txnFeeReward 
-                        * AbstractTokenStaking(token._stakingContract).balance(_staker);
-        reward += settlementFeeBalance 
-                  * token._settlementFeeReward 
-                  * AbstractTokenStaking(token._stakingContract).balance(_staker);
+        if (txnFeeBalance == 0 && settlementFeeBalance == 0) {
+            return;
+        }
+        uint256 reward =
+            (txnFeeBalance * token._txnFeeReward * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+                100 /
+                AbstractTokenStaking(token._stakingContract).supply();
+        reward +=
+            (settlementFeeBalance *
+                token._settlementFeeReward *
+                AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+            100 /
+            AbstractTokenStaking(token._stakingContract).supply();
+
         AbstractTokenStaking(token._stakingContract).addRewards(_staker, reward);
 
         emit DistributeReward(_staker, _token, reward);
@@ -150,18 +162,16 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         uint256 _date
     ) private returns (uint256 reward) {
         if (
-            _date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(_staker) 
-            >= 
+            _date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(_staker) >=
             tokens[_token]._lockupDuration
-            ) {
-
-            reward = AbstractTokenStaking(tokens[_token]._stakingContract).removeRewards(_staker);    
+        ) {
+            reward = AbstractTokenStaking(tokens[_token]._stakingContract).removeRewards(_staker);
             usdcToken.transfer(_staker, reward);
             emit TransferReward(_staker, _token, reward);
         }
     }
 
-    function claimRewards(address _token) external { 
+    function claimRewards(address _token) external {
         require(_token.isContract(), "invalid token address");
 
         uint256 date = getPresentDayTimestamp();
@@ -171,8 +181,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
     function getProfitInfo(address _token) external view returns (uint256 profit) {
         require(_token.isContract(), "invalid token address");
 
-        profit = AbstractTokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender); 
-            
+        profit = AbstractTokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender);
     }
 
     /**

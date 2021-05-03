@@ -9,7 +9,6 @@ contract OddzTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz St
     using Address for address;
     using SafeERC20 for IERC20;
 
-
     /**
      * @dev Access control specific data definitions
      */
@@ -25,7 +24,7 @@ contract OddzTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz St
         _;
     }
 
-    constructor(){
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -55,25 +54,27 @@ contract OddzTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz St
         uint256 _date
     ) external override {
         _mint(_staker, _amount);
-        if (stakers[_staker]._address==address(0)){
-            stakers[_staker]= StakerDetails(_staker, 0,0);
-        }else{
+        if (stakers[_staker]._address == address(0)) {
+            stakers[_staker] = StakerDetails(_staker, 0, 0);
+        } else {
             stakers[_staker]._lastStakedAt = _date;
         }
-        IERC20(_token).transferFrom(_staker, address(this), _amount);
+        IERC20(_token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function mint(address _staker, uint256 _amount) external override onlyManager(msg.sender){
+    function mint(address _staker, uint256 _amount) external override onlyManager(msg.sender) {
         _mint(_staker, _amount);
     }
 
-    function burn(address _staker, uint256 _amount) external override onlyManager(msg.sender){
+    function burn(address _staker, uint256 _amount) external override onlyManager(msg.sender) {
         _burn(_staker, _amount);
     }
 
-     function balance(address _address) external view override returns (uint256 bal) {
+    function balance(address _address) external view override returns (uint256 bal) {
         bal = balanceOf(_address);
     }
-    
 
+    function supply() external view override returns (uint256 supply) {
+        supply = totalSupply();
+    }
 }

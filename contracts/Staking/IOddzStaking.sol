@@ -4,9 +4,8 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-
 interface IOddzStaking {
-    enum DepositType { Settlement, Transaction, Others }
+    enum DepositType { Transaction, Settlement, Others }
 
     struct Token {
         bytes32 _name;
@@ -14,20 +13,18 @@ interface IOddzStaking {
         address _stakingContract;
         uint256 _rewardFrequency;
         uint256 _txnFeeReward;
-        uint256 _settlementFeeReward; 
+        uint256 _settlementFeeReward;
         uint256 _lockupDuration;
         uint256 _lastDistributed;
         bool _active;
     }
-
 
     event TokenAdded(
         address indexed _address,
         bytes32 indexed _name,
         address indexed _stakingContract,
         uint256 _rewardFrequency,
-        uint256 _lockupDuration,
-        uint256 _timestamp
+        uint256 _lockupDuration
     );
     event TokenDeactivate(address indexed _address, bytes32 indexed _name);
     event TokenActivate(address indexed _address, bytes32 indexed _name);
@@ -37,7 +34,7 @@ interface IOddzStaking {
     event DistributeReward(address indexed _staker, address indexed _token, uint256 _reward);
     event TransferReward(address indexed _staker, address indexed _token, uint256 _reward);
 
-    function withdraw(address _token, uint256 _amount) external ;
+    function withdraw(address _token, uint256 _amount) external;
 
     function distributeRewards(address _token, address[] memory _stakers) external;
 
