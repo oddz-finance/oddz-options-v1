@@ -2,11 +2,11 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-interface IOddzStaking {
 
+interface IOddzStaking {
     enum DepositType { Settlement, Transaction, Others }
 
-    struct Token{
+    struct Token {
         bytes32 _name;
         address _address;
         address _stakingContract;
@@ -18,9 +18,7 @@ interface IOddzStaking {
         bool _active;
     }
 
-    
-
-    struct StakerDetails{
+    struct StakerDetails {
         address _staker;
         uint256 _balance;
         uint256 _lastStakedAt;
@@ -28,14 +26,15 @@ interface IOddzStaking {
     }
 
     event TokenAdded(
-                address indexed _address, 
-                bytes32 indexed _name, 
-                uint256 _rewardRate, 
-                uint256 _lockupDuration, 
-                uint256 _timestamp);
+        address indexed _address,
+        bytes32 indexed _name,
+        uint256 _rewardRate,
+        uint256 _lockupDuration,
+        uint256 _timestamp
+    );
     event TokenDeactivate(address indexed _address, bytes32 indexed _name, uint256 _timestamp);
     event TokenActivate(address indexed _address, bytes32 indexed _name, uint256 _timestamp);
-    event Deposit(uint256 indexed _time, DepositType indexed _type, uint256 _amount );
+    event Deposit(uint256 indexed _time, DepositType indexed _type, uint256 _amount);
     event Claim(address indexed _staker, address indexed _token, uint256 _amount);
     event Stake(address indexed _staker, address indexed _token, uint256 indexed _amount, uint256 _time);
     event DistributeReward(address indexed _staker, address indexed _token, uint256 _reward, uint256 _time);
