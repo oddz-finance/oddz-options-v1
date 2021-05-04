@@ -315,10 +315,10 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       .to.emit(oddzStakingManager, "Deposit")
       .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
     await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
-      await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
       .to.emit(oddzStakingManager, "Deposit")
       .withArgs(this.accounts.admin, DepositType.Settlement, BigNumber.from(utils.parseEther("100000")));
-      const oUsdToken = await this.oUsdToken.connect(this.signers.admin);
+    const oUsdToken = await this.oUsdToken.connect(this.signers.admin);
     await oUsdToken.approve(this.oUsdTokenStaking.address, BigNumber.from(utils.parseEther("100")));
     await expect(oddzStakingManager.stake(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))))
       .to.emit(oddzStakingManager, "Stake")
@@ -349,10 +349,10 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       .to.emit(oddzStakingManager, "Deposit")
       .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
     await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
-      await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
       .to.emit(oddzStakingManager, "Deposit")
       .withArgs(this.accounts.admin, DepositType.Settlement, BigNumber.from(utils.parseEther("100000")));
-      const oDevToken = await this.oDevToken.connect(this.signers.admin);
+    const oDevToken = await this.oDevToken.connect(this.signers.admin);
     await oDevToken.approve(this.oDevTokenStaking.address, BigNumber.from(utils.parseEther("100")));
     await expect(oddzStakingManager.stake(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))))
       .to.emit(oddzStakingManager, "Stake")

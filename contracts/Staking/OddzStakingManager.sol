@@ -19,6 +19,9 @@ contract OddzStakingManager is Ownable, IOddzStaking {
 
     mapping(address => Token) public tokens;
 
+    /**
+     * @dev USDC fee balance details
+     */
     uint256 public txnFeeBalance;
     uint256 public settlementFeeBalance;
 
@@ -37,21 +40,39 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         usdcToken = _usdcToken;
     }
 
+    /**
+     * @notice Set lockup duration for the token
+     * @param _token token address
+     * @param _duration lockup duration
+     */
     function setLockupDuration(address _token, uint256 _duration) external onlyOwner {
         require(_token.isContract(), "invalid token address");
         tokens[_token]._lockupDuration = _duration;
     }
 
-    function setRewardFrequency(address _token, uint256 _rate) external onlyOwner {
+    /**
+     * @notice Set reward distribution frequency for the token
+     * @param _token token address
+     * @param _frequency reward frequency
+     */
+    function setRewardFrequency(address _token, uint256 _frequency) external onlyOwner {
         require(_token.isContract(), "invalid token address");
-        tokens[_token]._rewardFrequency = _rate;
+        tokens[_token]._rewardFrequency = _frequency;
     }
 
+    /**
+     * @notice Deactivate token
+     * @param _token token address
+     */
     function deactivateToken(address _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(_token, tokens[_token]._name);
     }
 
+    /**
+     * @notice Activate token
+     * @param _token token address
+     */
     function activateToken(address _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
         emit TokenActivate(_token, tokens[_token]._name);
@@ -151,6 +172,13 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         tokens[_token]._lastDistributed = date;
     }
 
+    /**
+     * @notice Distribute rewards per staker
+     * @param _token Address of the staked token
+     * @param _staker Staker Address
+     * @param _txnFeeBalance Transaction fee available for token
+     * @param _settlementFeeBalance Settlement fee available for token
+     */
     function _distributeRewards(
         address _token,
         address _staker,
@@ -171,6 +199,12 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit DistributeReward(_staker, _token, txnFeeReward + settlementFeeReward);
     }
 
+    /**
+     * @notice Transfer rewards to the staker
+     * @param _staker Staker Address
+     * @param _token Address of the staked token
+     * @param _date current date
+     */
     function _transferRewards(
         address _staker,
         address _token,
@@ -186,6 +220,10 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         }
     }
 
+    /**
+     * @notice Claim rewards by the staker
+     * @param _token Address of the staked token
+     */
     function claimRewards(address _token) external {
         require(_token.isContract(), "invalid token address");
 
@@ -198,6 +236,10 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         _transferRewards(msg.sender, _token, date);
     }
 
+    /**
+     * @notice Get profit info of the staker
+     * @param _token Address of the staked token
+     */
     function getProfitInfo(address _token) external view returns (uint256 profit) {
         require(_token.isContract(), "invalid token address");
 
@@ -205,10 +247,11 @@ contract OddzStakingManager is Ownable, IOddzStaking {
     }
 
     /**
-     * @dev get day based on the timestamp
+     * @notice Get day based on timestamp
+     * @return date start time of date
      */
-    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
+    function getPresentDayTimestamp() internal view returns (uint256 date) {
         (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
+        date = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 }
