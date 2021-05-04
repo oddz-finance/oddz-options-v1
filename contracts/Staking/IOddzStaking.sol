@@ -30,7 +30,8 @@ interface IOddzStaking {
     event TokenActivate(address indexed _address, bytes32 indexed _name);
     event Deposit(address indexed _sender, DepositType indexed _type, uint256 _amount);
     event Claim(address indexed _staker, address indexed _token, uint256 _amount);
-    event Stake(address indexed _staker, address indexed _token, uint256 indexed _amount);
+    event Stake(address indexed _staker, address indexed _token, uint256 _amount);
+    event Withdraw(address indexed _staker, address indexed _token, uint256 _amount);
     event DistributeReward(address indexed _staker, address indexed _token, uint256 _reward);
     event TransferReward(address indexed _staker, address indexed _token, uint256 _reward);
 

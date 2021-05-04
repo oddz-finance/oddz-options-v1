@@ -55,7 +55,7 @@ contract ODevTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz De
     ) external override {
         _mint(_staker, _amount);
         if (stakers[_staker]._address == address(0)) {
-            stakers[_staker] = StakerDetails(_staker, 0, 0);
+            stakers[_staker] = StakerDetails(_staker, _date, 0);
         } else {
             stakers[_staker]._lastStakedAt = _date;
         }

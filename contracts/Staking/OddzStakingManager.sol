@@ -114,28 +114,31 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         require(
             date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >=
                 tokens[_token]._lockupDuration,
-            "cannot withdraw within lockup duration"
+            "cannot withdraw within lockup period"
         );
         _transferRewards(msg.sender, _token, date);
         AbstractTokenStaking(tokens[_token]._stakingContract).burn(msg.sender, _amount);
         usdcToken.safeTransfer(msg.sender, _amount);
+
+        emit Withdraw(msg.sender, _token, _amount);
     }
 
     function distributeRewards(address _token, address[] memory _stakers) external override {
         require(_token.isContract(), "invalid token address");
+        uint256 date = getPresentDayTimestamp();
+
+        if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardFrequency) {
+            return;
+        }
 
         for (uint256 sid = 0; sid < _stakers.length; sid++) {
             _distributeRewards(_token, _stakers[sid]);
         }
+        tokens[_token]._lastDistributed = date;
     }
 
     function _distributeRewards(address _token, address _staker) private {
-        uint256 date = getPresentDayTimestamp();
         Token storage token = tokens[_token];
-
-        if (date - token._lastDistributed < token._rewardFrequency) {
-            return;
-        }
 
         if (txnFeeBalance == 0 && settlementFeeBalance == 0) {
             return;
@@ -175,6 +178,10 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         require(_token.isContract(), "invalid token address");
 
         uint256 date = getPresentDayTimestamp();
+        require(date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) 
+                >
+                tokens[_token]._lockupDuration,
+                "cannot claim rewards within lockup period");
         _transferRewards(msg.sender, _token, date);
     }
 
