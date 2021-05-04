@@ -130,33 +130,54 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardFrequency) {
             return;
         }
-
-        for (uint256 sid = 0; sid < _stakers.length; sid++) {
-            _distributeRewards(_token, _stakers[sid]);
-        }
-        tokens[_token]._lastDistributed = date;
-    }
-
-    function _distributeRewards(address _token, address _staker) private {
-        Token storage token = tokens[_token];
-
         if (txnFeeBalance == 0 && settlementFeeBalance == 0) {
             return;
         }
-        uint256 reward =
-            (txnFeeBalance * token._txnFeeReward * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
-                100 /
-                AbstractTokenStaking(token._stakingContract).supply();
-        reward +=
-            (settlementFeeBalance *
-                token._settlementFeeReward *
+        uint256 txnFeeRewardsAvailable = txnFeeBalance * tokens[_token]._txnFeeReward / 100;
+        uint256 settlementFeeRewardsAvailable = settlementFeeBalance * tokens[_token]._settlementFeeReward / 100;
+
+        uint256 txnFeeRewardsDistributed;
+        uint256 settlementFeeRewardsDistributed;
+
+        for (uint256 sid = 0; sid < _stakers.length; sid++) {
+            (uint256 txnFeeReward, uint256 settlementFeeReward) =  _distributeRewards(
+                                                                                _token, 
+                                                                                _stakers[sid], 
+                                                                                txnFeeRewardsAvailable, 
+                                                                                settlementFeeRewardsAvailable
+                                                                                );
+
+            txnFeeRewardsDistributed += txnFeeReward;
+            settlementFeeRewardsDistributed += settlementFeeReward;                                                                    
+        }
+        txnFeeBalance -=txnFeeRewardsDistributed;
+        settlementFeeBalance -= settlementFeeRewardsDistributed;
+        tokens[_token]._lastDistributed = date;
+    }
+
+    function _distributeRewards(
+                            address _token, 
+                            address _staker, 
+                            uint256 _txnFeeBalance, 
+                            uint256 _settlementFeeBalance
+                            ) 
+                            private 
+                            returns(uint256 txnFeeReward, uint256 settlementFeeReward)
+                            {
+        Token storage token = tokens[_token];
+       
+        txnFeeReward =
+            (_txnFeeBalance *  
                 AbstractTokenStaking(token._stakingContract).balance(_staker)) /
-            100 /
-            AbstractTokenStaking(token._stakingContract).supply();
+                AbstractTokenStaking(token._stakingContract).supply();
+        settlementFeeReward =
+            (settlementFeeBalance *
+                AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+                AbstractTokenStaking(token._stakingContract).supply();
 
-        AbstractTokenStaking(token._stakingContract).addRewards(_staker, reward);
+        AbstractTokenStaking(token._stakingContract).addRewards(_staker, txnFeeReward + settlementFeeReward);
 
-        emit DistributeReward(_staker, _token, reward);
+        emit DistributeReward(_staker, _token, txnFeeReward + settlementFeeReward);
     }
 
     function _transferRewards(
