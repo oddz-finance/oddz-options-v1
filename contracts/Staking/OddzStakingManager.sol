@@ -84,8 +84,8 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         address _stakingContract,
         uint256 _rewardFrequency,
         uint256 _lockupDuration,
-        uint256 _txnFeeReward,
-        uint256 _settlementFeeReward
+        uint8 _txnFeeReward,
+        uint8 _settlementFeeReward
     ) external onlyOwner {
         require(_address.isContract(), "invalid token address");
         require(_stakingContract.isContract(), "invalid staking contract");
@@ -94,10 +94,10 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             _address,
             _stakingContract,
             _rewardFrequency,
-            _txnFeeReward,
-            _settlementFeeReward,
             _lockupDuration,
             0,
+             _txnFeeReward,
+            _settlementFeeReward,
             true
         );
         emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration);

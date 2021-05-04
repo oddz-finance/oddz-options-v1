@@ -20,20 +20,20 @@ interface IOddzStaking {
      * @param _address Address of the token
      * @param _stakingContract staking contract address for the token
      * @param _rewardFrequency Reward distribution frequency
-     * @param _txnFeeReward Percentage txn fee reward
-     * @param _settlementFeeReward Percentage settlement fee reward
      * @param _lockupDuration Lock up duration for the token withdrawal
      * @param _lastDistributed last distributeds date for the token
+     * @param _txnFeeReward Percentage txn fee reward
+     * @param _settlementFeeReward Percentage settlement fee reward
      */
     struct Token {
         bytes32 _name;
         address _address;
         address _stakingContract;
         uint256 _rewardFrequency;
-        uint256 _txnFeeReward;
-        uint256 _settlementFeeReward;
         uint256 _lockupDuration;
         uint256 _lastDistributed;
+        uint8 _txnFeeReward;
+        uint8 _settlementFeeReward;
         bool _active;
     }
 
