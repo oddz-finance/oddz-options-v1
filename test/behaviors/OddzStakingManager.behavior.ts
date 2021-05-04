@@ -125,13 +125,6 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     expect(await this.oddzTokenStaking.balance(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("10")));
   });
 
-  it("Should revert deposit for invalid deposit type", async function () {
-    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
-    await expect(
-      oddzStakingManager.deposit(BigNumber.from(utils.parseEther("10")), DepositType.Invalid),
-    ).to.be.revertedWith("invalid deposit type");
-  });
-
   it("Should revert deposit without any approved allowance", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(

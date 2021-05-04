@@ -108,8 +108,6 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             txnFeeBalance += _amount;
         } else if (_depositType == DepositType.Settlement) {
             settlementFeeBalance += _amount;
-        } else {
-            revert("invalid deposit type");
         }
         usdcToken.transferFrom(msg.sender, address(this), _amount);
         emit Deposit(msg.sender, _depositType, _amount);
