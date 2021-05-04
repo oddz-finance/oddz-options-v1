@@ -96,7 +96,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             _rewardFrequency,
             _lockupDuration,
             0,
-             _txnFeeReward,
+            _txnFeeReward,
             _settlementFeeReward,
             true
         );
