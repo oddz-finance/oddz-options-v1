@@ -8,7 +8,6 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD LP token", "oUSD") {
     using Address for address;
@@ -28,8 +27,6 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     enum TransactionType { ADD, REMOVE }
     struct LPBalance {
         uint256 currentBalance;
-        TransactionType transactionType;
-        uint256 transactionValue;
         uint256 transactionDate;
     }
     mapping(uint256 => uint256) public daysActiveLiquidity;
@@ -200,26 +197,40 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         emitSendEvent(_id, lockedPremium, transferAmount);
     }
 
-    /*
-     * @nonce Returns LP's balance in USD
-     * @param account Liquidity provider's address
-     * @return Liquidity provider's balance in USD
+    /**
+     * @notice Returns LP's balance in USD
+     * @param _account Liquidity provider's address
+     * @return share Liquidity provider's balance in USD
      */
-    function usdBalanceOf(address account) external view returns (uint256 share) {
+    function usdBalanceOf(address _account) external view returns (uint256 share) {
         if (totalSupply() > 0)
-            share = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), balanceOf(account));
+            share = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), balanceOf(_account));
         else share = 0;
     }
 
-    /*
-     * @nonce Returns LP's active liquidty
-     * @param account Liquidity provider's address
-     * @return Liquidity provider's active liquidity in USD
+    /**
+     * @notice Returns LP's active liquidty
+     * @param _account Liquidity provider's address
+     * @return share liquidity provider's active liquidity
      */
-    function activeLiquidity(address account) public view returns (uint256 share) {
-        LPBalance[] storage lpBalanceList = lpBalanceMap[account];
-        if (lpBalanceList.length > 0) return lpBalanceList[lpBalanceList.length - 1].currentBalance;
-        return 0;
+    function activeLiquidity(address _account) public view returns (uint256 share) {
+        share = activeLiquidityByDate(_account, getPresentDayTimestamp());
+    }
+
+    /**
+     * @notice Returns LP's active liqudity based on input date
+     * @param _account Liquidity provider's address
+     * @param _date unix timestamp of the date
+     * @return share liquidity provider's active liquidity
+     */
+    function activeLiquidityByDate(address _account, uint256 _date) public view returns (uint256 share) {
+        LPBalance[] storage lpBalanceList = lpBalanceMap[_account];
+        uint256 len = lpBalanceList.length;
+        while (len > 0 && lpBalanceList[len - 1].transactionDate > _date) {
+            len--;
+        }
+        if (len > 0) return lpBalanceList[len - 1].currentBalance;
+        else return 0;
     }
 
     /**
@@ -238,7 +249,11 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
         if (_type == TransactionType.ADD) balance = balance + _amount;
         else balance = balance - _amount;
 
-        lpBalanceMap[_sender].push(LPBalance(balance, _type, _amount, _date));
+        LPBalance[] storage lpBalance = lpBalanceMap[_sender];
+
+        if (lpBalance.length > 0 && lpBalance[lpBalance.length - 1].transactionDate == _date)
+            lpBalance[lpBalance.length - 1].currentBalance = balance;
+        else lpBalance.push(LPBalance(balance, _date));
     }
 
     /**
@@ -262,7 +277,8 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
     function distributePremiumPerLP(uint256 _date, address _lp) private {
         LPBalance[] storage lpBalance = lpBalanceMap[_lp];
         uint256 len = lpBalance.length;
-        require(len > 0, "LP Error: Invalid liquidity provider");
+        // Invalid liquidity provider
+        if (len == 0) return;
         require(lpPremiumDistributionMap[_lp][_date] <= 0, "LP Error: Premium already distributed for the provider");
         while (len > 0 && lpBalance[len - 1].transactionDate > _date) {
             len--;
