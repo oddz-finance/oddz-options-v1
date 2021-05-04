@@ -276,7 +276,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     ).to.be.revertedWith("Amount is too large");
   });
 
-  it("Should successfully stake, distribute and claim rewards, withdraw stake", async function () {
+  it("Should successfully stake, distribute and claim rewards, withdraw stake for oddz token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
@@ -304,6 +304,74 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     await expect(oddzStakingManager.withdraw(this.oddzToken.address, BigNumber.from(utils.parseEther("100"))))
       .to.emit(oddzStakingManager, "Withdraw")
       .withArgs(this.accounts.admin, this.oddzToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("Should successfully stake, distribute and claim rewards, withdraw stake for oUSD token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+      await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Settlement, BigNumber.from(utils.parseEther("100000")));
+      const oUsdToken = await this.oUsdToken.connect(this.signers.admin);
+    await oUsdToken.approve(this.oUsdTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzStakingManager.distributeRewards(this.oUsdToken.address, [this.accounts.admin]))
+      .to.emit(oddzStakingManager, "DistributeReward")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("60000")));
+    expect(await oddzStakingManager.getProfitInfo(this.oUsdToken.address)).to.equal(
+      BigNumber.from(utils.parseEther("60000")),
+    );
+    await expect(oddzStakingManager.claimRewards(this.oUsdToken.address))
+      .to.emit(oddzStakingManager, "TransferReward")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("60000")));
+    await expect(oddzStakingManager.withdraw(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Withdraw")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("Should successfully stake, distribute and claim rewards, withdraw stake for oDEV token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+      await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Settlement, BigNumber.from(utils.parseEther("100000")));
+      const oDevToken = await this.oDevToken.connect(this.signers.admin);
+    await oDevToken.approve(this.oDevTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzStakingManager.distributeRewards(this.oDevToken.address, [this.accounts.admin]))
+      .to.emit(oddzStakingManager, "DistributeReward")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("20000")));
+    expect(await oddzStakingManager.getProfitInfo(this.oDevToken.address)).to.equal(
+      BigNumber.from(utils.parseEther("20000")),
+    );
+    await expect(oddzStakingManager.claimRewards(this.oDevToken.address))
+      .to.emit(oddzStakingManager, "TransferReward")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("20000")));
+    await expect(oddzStakingManager.withdraw(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Withdraw")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("100")));
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
@@ -335,7 +403,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       .withArgs(this.accounts.admin, this.oddzToken.address, BigNumber.from(utils.parseEther("100")));
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
-  it("Should distribute rewards for token as per reward frequency", async function () {
+  it("Should distribute rewards for token only as per reward frequency", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
