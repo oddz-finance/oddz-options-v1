@@ -133,47 +133,38 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         if (txnFeeBalance == 0 && settlementFeeBalance == 0) {
             return;
         }
-        uint256 txnFeeRewardsAvailable = txnFeeBalance * tokens[_token]._txnFeeReward / 100;
-        uint256 settlementFeeRewardsAvailable = settlementFeeBalance * tokens[_token]._settlementFeeReward / 100;
+        uint256 txnFeeRewardsAvailable = (txnFeeBalance * tokens[_token]._txnFeeReward) / 100;
+        uint256 settlementFeeRewardsAvailable = (settlementFeeBalance * tokens[_token]._settlementFeeReward) / 100;
 
         uint256 txnFeeRewardsDistributed;
         uint256 settlementFeeRewardsDistributed;
 
         for (uint256 sid = 0; sid < _stakers.length; sid++) {
-            (uint256 txnFeeReward, uint256 settlementFeeReward) =  _distributeRewards(
-                                                                                _token, 
-                                                                                _stakers[sid], 
-                                                                                txnFeeRewardsAvailable, 
-                                                                                settlementFeeRewardsAvailable
-                                                                                );
+            (uint256 txnFeeReward, uint256 settlementFeeReward) =
+                _distributeRewards(_token, _stakers[sid], txnFeeRewardsAvailable, settlementFeeRewardsAvailable);
 
             txnFeeRewardsDistributed += txnFeeReward;
-            settlementFeeRewardsDistributed += settlementFeeReward;                                                                    
+            settlementFeeRewardsDistributed += settlementFeeReward;
         }
-        txnFeeBalance -=txnFeeRewardsDistributed;
+        txnFeeBalance -= txnFeeRewardsDistributed;
         settlementFeeBalance -= settlementFeeRewardsDistributed;
         tokens[_token]._lastDistributed = date;
     }
 
     function _distributeRewards(
-                            address _token, 
-                            address _staker, 
-                            uint256 _txnFeeBalance, 
-                            uint256 _settlementFeeBalance
-                            ) 
-                            private 
-                            returns(uint256 txnFeeReward, uint256 settlementFeeReward)
-                            {
+        address _token,
+        address _staker,
+        uint256 _txnFeeBalance,
+        uint256 _settlementFeeBalance
+    ) private returns (uint256 txnFeeReward, uint256 settlementFeeReward) {
         Token storage token = tokens[_token];
-       
+
         txnFeeReward =
-            (_txnFeeBalance *  
-                AbstractTokenStaking(token._stakingContract).balance(_staker)) /
-                AbstractTokenStaking(token._stakingContract).supply();
+            (_txnFeeBalance * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+            AbstractTokenStaking(token._stakingContract).supply();
         settlementFeeReward =
-            (settlementFeeBalance *
-                AbstractTokenStaking(token._stakingContract).balance(_staker)) /
-                AbstractTokenStaking(token._stakingContract).supply();
+            (settlementFeeBalance * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+            AbstractTokenStaking(token._stakingContract).supply();
 
         AbstractTokenStaking(token._stakingContract).addRewards(_staker, txnFeeReward + settlementFeeReward);
 
@@ -199,10 +190,11 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         require(_token.isContract(), "invalid token address");
 
         uint256 date = getPresentDayTimestamp();
-        require(date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) 
-                >
+        require(
+            date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >
                 tokens[_token]._lockupDuration,
-                "cannot claim rewards within lockup period");
+            "cannot claim rewards within lockup period"
+        );
         _transferRewards(msg.sender, _token, date);
     }
 
