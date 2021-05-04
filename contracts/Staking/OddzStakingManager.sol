@@ -163,7 +163,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             (_txnFeeBalance * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
             AbstractTokenStaking(token._stakingContract).supply();
         settlementFeeReward =
-            (settlementFeeBalance * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
+            (_settlementFeeBalance * AbstractTokenStaking(token._stakingContract).balance(_staker)) /
             AbstractTokenStaking(token._stakingContract).supply();
 
         AbstractTokenStaking(token._stakingContract).addRewards(_staker, txnFeeReward + settlementFeeReward);
