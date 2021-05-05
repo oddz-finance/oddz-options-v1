@@ -10,6 +10,9 @@ import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetMan
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
+import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
+import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzDefaultPool.sol/OddzDefaultPool.json";
+import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 
 import { Accounts, Signers } from "../types";
@@ -20,7 +23,8 @@ import {
   MockOddzVolatility,
   MockOddzStaking,
   MockERC20,
-  OddzLiquidityPool,
+  OddzLiquidityPoolManager,
+  OddzDefaultPool,
   OddzPriceOracleManager,
   OddzAssetManager,
   DexManager,
@@ -32,8 +36,6 @@ import {
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
-import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
-import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 
 const { deployContract } = waffle;
 
@@ -135,13 +137,15 @@ describe("Oddz Option Manager Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
 
+      this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
+
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
-      this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
+      this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
         this.usdcToken.address,
         this.dexManager.address,
-      ])) as OddzLiquidityPool;
+      ])) as OddzLiquidityPoolManager;
 
-      this.dexManager.setSwapper(this.oddzLiquidityPool.address);
+      this.dexManager.setSwapper(this.oddzLiquidityPoolManager.address);
 
       const oddzOptionPremiumManager = (await deployContract(
         this.signers.admin,
@@ -153,23 +157,23 @@ describe("Oddz Option Manager Unit tests", function () {
         this.oddzPriceOracleManager.address,
         oddzIVOracleManager.address,
         oddzStaking.address,
-        this.oddzLiquidityPool.address,
+        this.oddzLiquidityPoolManager.address,
         this.usdcToken.address,
         this.oddzAssetManager.address,
         oddzOptionPremiumManager.address,
       ])) as OddzOptionManager;
       await this.oddzOptionManager.setMaxDeadline(100);
-      await this.oddzLiquidityPool.setManager(this.oddzOptionManager.address);
+      await this.oddzLiquidityPoolManager.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
       // Allow for liquidty pool
-      await usdcToken.approve(this.oddzLiquidityPool.address, totalSupply);
-      await usdcToken1.approve(this.oddzLiquidityPool.address, totalSupply);
-      await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
-      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
+      await usdcToken.approve(this.oddzLiquidityPoolManager.address, totalSupply);
+      await usdcToken1.approve(this.oddzLiquidityPoolManager.address, totalSupply);
+      await usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPoolManager.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPoolManager.address);
 
       // Allow for option manager
       await usdcToken.approve(this.oddzOptionManager.address, totalSupply);
@@ -194,6 +198,32 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzPremiumBlackScholes.address,
       );
       await oddzOptionPremiumManager.setManager(this.oddzOptionManager.address);
+      await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 1, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 2, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 7, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 14, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 30, [
+          this.oddzDefaultPool.address,
+        ]);
     });
     shouldBehaveLikeOddzOptionManager();
   });
