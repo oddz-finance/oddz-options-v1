@@ -282,7 +282,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
             premiumResult.optionPremium,
             _details._pair,
             _details._optionModel,
-            _details._expiration
+            _details._expiration,
+            _details._optionType
         );
         txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
 

@@ -20,6 +20,7 @@ import MockOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionMa
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import { BigNumber, utils } from "ethers";
+import { OptionType } from "../test-utils";
 
 const { deployContract } = waffle;
 
@@ -112,27 +113,54 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 1, [
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
           this.oddzDefaultPool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 2, [
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
           this.oddzDefaultPool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 7, [
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
           this.oddzDefaultPool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 14, [
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
           this.oddzDefaultPool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 30, [
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+          this.oddzDefaultPool.address,
+        ]);
+
+      // Put
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 1, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 2, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 7, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 14, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 30, [
           this.oddzDefaultPool.address,
         ]);
     });

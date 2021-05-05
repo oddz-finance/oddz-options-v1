@@ -4,6 +4,7 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./IOddzLiquidityPool.sol";
+import "../Option/IOddzOption.sol";
 
 /**
  * @title Oddz USD Liquidity Pool
@@ -52,7 +53,8 @@ interface IOddzLiquidityPoolManager {
         uint256 _premium,
         address _pair,
         bytes32 _model,
-        uint256 _expiration
+        uint256 _expiration,
+        IOddzOption.OptionType _type
     ) external;
 
     /**

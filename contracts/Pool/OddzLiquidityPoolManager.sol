@@ -120,12 +120,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     function mapPool(
         address _pair,
+        IOddzOption.OptionType _type,
         bytes32 _model,
         uint256 _period,
         IOddzLiquidityPool[] memory _pools
     ) public onlyOwner(msg.sender) {
         // TODO: Add additional validation to check pools are repeated
-        poolMapper[keccak256(abi.encode(_pair, _model, _period))] = _pools;
+        poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))] = _pools;
     }
 
     function addLiquidity(
@@ -176,11 +177,12 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _premium,
         address _pair,
         bytes32 _model,
-        uint256 _expiration
+        uint256 _expiration,
+        IOddzOption.OptionType _type
     ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
         (address[] memory pools, uint256[] memory poolBalances) =
-            getSortedEligiblePools(_pair, _model, _expiration, _amount);
+            getSortedEligiblePools(_pair, _type, _model, _expiration, _amount);
         require(pools.length > 0, "LP Error: No pool balance");
 
         uint8 count = 0;
@@ -408,12 +410,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     function getSortedEligiblePools(
         address _pair,
+        IOddzOption.OptionType _type,
         bytes32 _model,
         uint256 _expiration,
         uint256 _amount
     ) public view returns (address[] memory pools, uint256[] memory poolBalance) {
         IOddzLiquidityPool[] memory allPools =
-            poolMapper[keccak256(abi.encode(_pair, _model, periodMapper[_expiration / 1 days]))];
+            poolMapper[keccak256(abi.encode(_pair, _type, _model, periodMapper[_expiration / 1 days]))];
         uint256 balance = 0;
         uint256 count = 0;
         for (uint8 i = 0; i < allPools.length; i++) {
