@@ -2,7 +2,8 @@ import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
 import { OptionType, getExpiry } from "../../test-utils";
 import {
-  OddzLiquidityPool,
+  OddzLiquidityPoolManager,
+  OddzDefaultPool,
   OddzAssetManager,
   MockERC20,
   OddzPriceOracleManager,
@@ -86,9 +87,14 @@ const getAssetPair = async (
   return (await oam.addressPairMap("0xfcb06d25357ef01726861b30b0b83e51482db417"))._address;
 };
 
-const addLiquidity = async (oddzLiquidityPool: OddzLiquidityPool, admin: Signer, amount: number) => {
-  const olp = await oddzLiquidityPool.connect(admin);
-  await olp.addLiquidity(utils.parseEther(amount.toString()), await admin.getAddress());
+const addLiquidity = async (
+  oddzDefaultPool: OddzDefaultPool,
+  oddzLiquidityPoolManager: OddzLiquidityPoolManager,
+  admin: Signer,
+  amount: number,
+) => {
+  const olp = await oddzLiquidityPoolManager.connect(admin);
+  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()), await admin.getAddress());
   return olp;
 };
 
@@ -212,7 +218,7 @@ export function shouldBehaveLikeOddzSDK(): void {
 
   it("should buy option if the asset pair is supported and emit buy event", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
-    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
@@ -310,7 +316,7 @@ export function shouldBehaveLikeOddzSDK(): void {
       this.usdcToken,
       this.ethToken,
     );
-    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzSDK,
       pair,
@@ -368,9 +374,9 @@ export function shouldBehaveLikeOddzSDK(): void {
   it("should  revert for invalid address while add liquidity", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, constants.AddressZero)).to.be.revertedWith(
-      "invalid provider address",
-    );
+    await expect(
+      oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, constants.AddressZero),
+    ).to.be.revertedWith("invalid provider address");
   });
 
   it("should revert for invalid address while buying option", async function () {
@@ -400,8 +406,8 @@ export function shouldBehaveLikeOddzSDK(): void {
   it("should emit AddLiquidity event ", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      this.oddzLiquidityPool,
+    await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
+      this.oddzDefaultPool,
       "AddLiquidity",
     );
   });
@@ -409,8 +415,8 @@ export function shouldBehaveLikeOddzSDK(): void {
   it("should get liquidity count of provider ", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      this.oddzLiquidityPool,
+    await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
+      this.oddzDefaultPool,
       "AddLiquidity",
     );
 
@@ -428,7 +434,7 @@ export function shouldBehaveLikeOddzSDK(): void {
       this.usdcToken,
       this.ethToken,
     );
-    await addLiquidity(this.oddzLiquidityPool, this.signers.admin, 1000000);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
       this.oddzSDK,
       pair,
