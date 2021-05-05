@@ -8,102 +8,99 @@ const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
 
 export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should return available balance and total balance. Both of them should be set to 0", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    const totalBalance = await liquidityManager.totalBalance();
-    const availableBalance = await liquidityManager.availableBalance();
+    const defaultPool = await this.oddzDefaultPool.connect(this.signers.admin);
+    const totalBalance = await defaultPool.totalBalance();
+    const availableBalance = await defaultPool.availableBalance();
     expect(availableBalance.toNumber()).to.equal(totalBalance.toNumber());
   });
 
   it("should allow deposit, emit AddLiquidity event and should update available balance", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const defaultPool = await this.oddzDefaultPool.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      liquidityManager,
-      "AddLiquidity",
-    );
-    const availableBalance = await liquidityManager.availableBalance();
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin),
+    ).to.emit(defaultPool, "AddLiquidity");
+    const availableBalance = await defaultPool.availableBalance();
     expect(availableBalance.toNumber()).to.equal(depositAmount);
 
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      liquidityManager,
-      "AddLiquidity",
-    );
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin),
+    ).to.emit(defaultPool, "AddLiquidity");
 
-    const newavailableBalance = await liquidityManager.availableBalance();
+    const newavailableBalance = await defaultPool.availableBalance();
     expect(newavailableBalance.toNumber()).to.equal(depositAmount + depositAmount);
-    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(2000);
-    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 0)).currentBalance.toNumber()).to.equal(
+    expect(await defaultPool.daysActiveLiquidity(BigNumber.from(date))).to.equal(2000);
+    expect((await defaultPool.lpBalanceMap(this.accounts.admin, 0)).currentBalance.toNumber()).to.equal(
       depositAmount * 2,
     );
   });
 
   it("should not allow withdraw when the pool does not have sufficient balance", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const withdrawalAmount = 1000;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "LP Error: Not enough funds on the pool contract. Please lower the amount.",
-    );
+    await expect(
+      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+    ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount.");
   });
 
   it("should not allow withdrawal when the the user is trying to withdraw more amount than deposited", async function () {
     const depositAmount = 1000;
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      liquidityManager,
-      "AddLiquidity",
-    );
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin),
+    ).to.emit(this.oddzDefaultPool, "AddLiquidity");
     const withdrawalAmount = 1001;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "Not enough funds on the pool contract. Please lower the amount",
-    );
+    await expect(
+      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+    ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount.");
   });
 
   it("should allow withdraw when the pool has sufficient balance", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      liquidityManager,
-      "AddLiquidity",
-    );
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin),
+    ).to.emit(this.oddzDefaultPool, "AddLiquidity");
     const withdrawalAmount = 800;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.emit(
-      liquidityManager,
-      "RemoveLiquidity",
+    await expect(
+      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+    ).to.emit(this.oddzDefaultPool, "RemoveLiquidity");
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).daysActiveLiquidity(BigNumber.from(date))).to.equal(
+      200,
     );
-    expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(200);
   });
 
   it("Should not update premium eligibility if the date is less than the current date", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin)).to.emit(
-      liquidityManager,
-      "AddLiquidity",
-    );
-    await expect(liquidityManager.updatePremiumEligibility(Math.round(Date.now() / 1000))).to.be.revertedWith(
-      "LP Error: Invalid Date",
-    );
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin),
+    ).to.emit(this.oddzDefaultPool, "AddLiquidity");
+    await expect(
+      this.oddzDefaultPool.connect(this.signers.admin).enablePremiumDistribution(Math.round(Date.now() / 1000)),
+    ).to.be.revertedWith("LP Error: Invalid Date");
   });
 
   it("Should be able to successfully set Manager", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setManager(this.mockOptionManager.address)).to.emit(liquidityManager, "RoleGranted");
   });
 
   it("Should throw Invalid manager address while set Manager", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setManager(this.accounts.admin)).to.be.revertedWith("Invalid manager address");
   });
 
   it("Should throw sender must be an admin to grant while set Manager", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin1);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
     await expect(liquidityManager.setManager(this.mockOptionManager.address)).to.be.revertedWith(
       "sender must be an admin to grant",
     );
   });
 
   it("Should be able to successfully remove Manager", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(liquidityManager.removeManager(this.mockOptionManager.address)).to.emit(
       liquidityManager,
@@ -112,31 +109,43 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should throw sender must be an admin to grant while remove Manager", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin1);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
     await expect(liquidityManager.removeManager(this.mockOptionManager.address)).to.be.revertedWith(
       "sender must be an admin to revoke",
     );
   });
 
   it("Should be able to successfully lock pool", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.lock(0)).to.be.ok;
   });
 
   it("Should throw caller has no access to the method while lock pool", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await expect(mockOptionManager.lock(0)).to.be.revertedWith("LP Error: caller has no access to the method");
   });
 
   it("Should be able to successfully unlock pool", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock(0);
     await expect(mockOptionManager.unlock()).to.be.ok;
@@ -148,18 +157,26 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should be able to successfully send token to user", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000)).to.emit(liquidityManager, "Profit");
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000)).to.emit(this.oddzDefaultPool, "Profit");
   });
   it("Should be able to successfully send and emit loss event", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000)).to.emit(liquidityManager, "Loss");
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000)).to.emit(this.oddzDefaultPool, "Loss");
   });
 
   it("Should throw caller has no access to the method while send token to user", async function () {
@@ -170,11 +187,15 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should be able to successfully send UA token to user", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000)).to.emit(liquidityManager, "Profit");
+    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000)).to.emit(this.oddzDefaultPool, "Profit");
   });
 
   it("Should throw caller has no access to the method while send UA token to user", async function () {
@@ -185,16 +206,20 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should revert for underflow operation while locking without add liquidty", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.lock(0)).to.be.revertedWith("revert");
   });
 
   it("Should revert for underflow operation while unlocking again", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock(0);
     await expect(mockOptionManager.unlock()).to.be.ok;
@@ -202,84 +227,96 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should use msg.sender instead of account sent for add liquidity", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const depositAmount = 1000;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1))
-      .to.emit(liquidityManager, "AddLiquidity")
-      .withArgs(this.accounts.admin, depositAmount, depositAmount);
+    await expect(liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin1))
+      .to.emit(this.oddzDefaultPool, "AddLiquidity")
+      .withArgs(this.accounts.admin, depositAmount);
   });
 
   it("Should revert set sdk for non owner", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin1);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
     await expect(liquidityManager.setSdk(this.mockOptionManager.address)).to.be.revertedWith(
       "LP Error: caller has no access to the method",
     );
   });
 
   it("Should revert set sdk for non contract address", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setSdk(this.accounts.admin)).to.be.revertedWith("invalid SDK contract address");
   });
 
   it("Should set sdk for contract address", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setSdk(this.mockOptionManager.address)).to.be.ok;
     expect(await liquidityManager.sdk()).to.equal(this.mockOptionManager.address);
   });
 
   it("Should revert add liquidity for zero amount", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const depositAmount = 0;
-    await expect(liquidityManager.addLiquidity(depositAmount, this.accounts.admin1)).to.be.revertedWith(
-      "LP Error: Amount is too small",
-    );
+    await expect(
+      liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin1),
+    ).to.be.revertedWith("LP Error: Amount is too small");
   });
 
   it("should revert remove liquidity for more than deposited", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     let depositAmount = 1000;
-    await liquidityManager.addLiquidity(depositAmount, this.accounts.admin);
+    await liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin);
     depositAmount = 10000;
-    await liquidityManager.connect(this.signers.admin1).addLiquidity(depositAmount, this.accounts.admin1);
+    await liquidityManager
+      .connect(this.signers.admin1)
+      .addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin1);
     const withdrawalAmount = 1001;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "LP Error: Amount is too large",
-    );
+    await expect(
+      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+    ).to.be.revertedWith("LP Error: Amount is too large");
   });
 
   it("should revert remove liquidity for invalid amount", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     let depositAmount = 1000;
-    await liquidityManager.addLiquidity(depositAmount, this.accounts.admin);
+    await liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin);
     depositAmount = 10000;
-    await liquidityManager.connect(this.signers.admin1).addLiquidity(depositAmount, this.accounts.admin1);
+    await liquidityManager
+      .connect(this.signers.admin1)
+      .addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin1);
     const withdrawalAmount = 0;
-    await expect(liquidityManager.removeLiquidity(BigNumber.from(withdrawalAmount))).to.be.revertedWith(
-      "LP Error: Amount is too small",
-    );
+    await expect(
+      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+    ).to.be.revertedWith("LP Error: Amount is too small");
   });
 
   it("Should revert lock liquidity with invalid id", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.lock(1)).to.be.revertedWith("LP Error: Invalid id");
   });
   it("Should return usd balance zero", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     expect(await liquidityManager.usdBalanceOf(this.accounts.admin)).to.be.equal(0);
   });
   it("Should return usd balance of user", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const depositAmount = 1000;
-    await liquidityManager.addLiquidity(depositAmount, this.accounts.admin);
+    await liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount, this.accounts.admin);
     expect(await liquidityManager.usdBalanceOf(this.accounts.admin)).to.be.equal(depositAmount);
   });
   it("Should revert send for invalid address", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.send(constants.AddressZero, 10000000000)).to.be.revertedWith(
       "LP Error: Invalid address",
@@ -287,24 +324,28 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
   });
 
   it("Should revert setReqBalance for non owner", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin1);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
     await expect(liquidityManager.setReqBalance(5)).to.be.revertedWith("caller has no access to the method");
   });
 
   it("Should revert setReqBalance for invalid value", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setReqBalance(5)).to.be.revertedWith("LP Error: required balance valid range");
   });
 
   it("Should set setReqBalance", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await liquidityManager.setReqBalance(6);
     expect(await liquidityManager.reqBalance()).to.equal(6);
   });
 
   it("Should successfully remove liquidity while some part of premium will be forfeited", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await this.mockOptionManager.lock(0);
     await provider.send("evm_snapshot", []);
@@ -315,24 +356,38 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     //execution day +(2 +1)
     await provider.send("evm_increaseTime", [getExpiry(1)]);
     await expect(
-      liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin),
-    ).to.emit(liquidityManager, "AddLiquidity");
-    await liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]);
-    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("10000000000");
+      liquidityManager.addLiquidity(
+        this.oddzDefaultPool.address,
+        BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+        this.accounts.admin,
+      ),
+    ).to.emit(this.oddzDefaultPool, "AddLiquidity");
+    await liquidityManager.distributePremium(
+      addDaysAndGetSeconds(2),
+      [this.accounts.admin],
+      this.oddzDefaultPool.address,
+    );
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).lpPremium(this.accounts.admin)).to.equal(
+      "10000000000",
+    );
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout)).div(1000);
-    await expect(liquidityManager.removeLiquidity(removeAmount))
-      .to.emit(liquidityManager, "PremiumForfeited")
-      .withArgs(this.accounts.admin, "5002501")
-      .to.emit(liquidityManager, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, "9999999999999989999861", "10000000000000000000000");
+    await expect(liquidityManager.removeLiquidity(this.oddzDefaultPool.address, removeAmount))
+      .to.emit(this.oddzDefaultPool, "PremiumForfeited")
+      .withArgs(this.accounts.admin, "5000000")
+      .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, "9999999999999499999568", "10000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("Should successfully get premium, remove liquidity  after lockup", async function () {
-    const liquidityManager = await this.oddzLiquidityPool.connect(this.signers.admin);
-    await liquidityManager.addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin);
+  it("Should successfully get premium, remove liquidity after lockup", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await this.mockOptionManager.connect(this.signers.admin1).lock(0);
     await provider.send("evm_snapshot", []);
@@ -345,21 +400,27 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(
       liquidityManager
         .connect(this.signers.admin1)
-        .addLiquidity(BigNumber.from(utils.parseEther(this.transferTokenAmout)), this.accounts.admin1),
-    ).to.emit(liquidityManager, "AddLiquidity");
+        .addLiquidity(
+          this.oddzDefaultPool.address,
+          BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+          this.accounts.admin1,
+        ),
+    ).to.emit(this.oddzDefaultPool, "AddLiquidity");
 
-    await expect(liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin]))
-      .to.emit(liquidityManager, "PremiumCollected")
+    await expect(
+      liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin], this.oddzDefaultPool.address),
+    )
+      .to.emit(this.oddzDefaultPool, "PremiumCollected")
       .withArgs(this.accounts.admin, "10000000000");
 
-    expect(await liquidityManager.lpPremium(this.accounts.admin)).to.equal("0");
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).lpPremium(this.accounts.admin)).to.equal("0");
     expect(await liquidityManager.balanceOf(this.accounts.admin)).to.equal(
       BigNumber.from(utils.parseEther(this.transferTokenAmout).add(BigNumber.from("10000000000"))),
     );
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
-    await expect(liquidityManager.removeLiquidity(removeAmount))
-      .to.emit(liquidityManager, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, "9999999999999994999659580", "10000000000000000000000000");
+    await expect(liquidityManager.removeLiquidity(this.oddzDefaultPool.address, removeAmount))
+      .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, "9999999999999499999568317", "10000000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);

@@ -186,7 +186,7 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         dayPremium.collected = dayPremium.collected + _amount;
         daysExercise[date] += _amount;
 
-        if (_amount > _transfer) emit Profit(_lid, _amount - _transfer);
+        if (_amount >= _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);
     }
 

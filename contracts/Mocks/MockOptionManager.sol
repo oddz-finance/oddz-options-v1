@@ -10,7 +10,7 @@ contract MockOptionManager {
     }
 
     function lock(uint256 _id) public {
-        pool.lockLiquidity(_id, 1000000000000, 10000000000, 0xFCb06D25357ef01726861B30b0b83e51482db417, "B_S", 10);
+        pool.lockLiquidity(_id, 1000000000000, 10000000000, 0xFCb06D25357ef01726861B30b0b83e51482db417, "B_S", 86400);
     }
 
     function unlock() public {

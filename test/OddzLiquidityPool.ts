@@ -1,9 +1,9 @@
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
-import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPool.sol/OddzLiquidityPool.json";
 import { Accounts, Signers } from "../types";
 import {
-  OddzLiquidityPool,
+  OddzLiquidityPoolManager,
+  OddzDefaultPool,
   MockERC20,
   DexManager,
   OddzAssetManager,
@@ -12,6 +12,8 @@ import {
 } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
+import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
+import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzDefaultPool.sol/OddzDefaultPool.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import MockOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
@@ -85,22 +87,54 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       this.usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
-      this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
+      this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
+
+      this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolManagerArtifact, [
         this.usdcToken.address,
         this.dexManager.address,
-      ])) as OddzLiquidityPool;
-      this.dexManager.setSwapper(this.oddzLiquidityPool.address);
+      ])) as OddzLiquidityPoolManager;
+      this.dexManager.setSwapper(this.oddzLiquidityPoolManager.address);
 
       this.mockOptionManager = (await deployContract(this.signers.admin, MockOptionManagerArtifact, [
-        this.oddzLiquidityPool.address,
+        this.oddzLiquidityPoolManager.address,
       ])) as MockOptionManager;
 
-      await this.usdcToken.approve(this.oddzLiquidityPool.address, BigNumber.from(utils.parseEther(totalSupply)));
-      await usdcToken1.approve(this.oddzLiquidityPool.address, BigNumber.from(utils.parseEther(totalSupply)));
-      await this.usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPool.address);
-      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPool.address);
+      await this.usdcToken.approve(
+        this.oddzLiquidityPoolManager.address,
+        BigNumber.from(utils.parseEther(totalSupply)),
+      );
+      await usdcToken1.approve(this.oddzLiquidityPoolManager.address, BigNumber.from(utils.parseEther(totalSupply)));
+      await this.usdcToken.allowance(this.accounts.admin, this.oddzLiquidityPoolManager.address);
+      await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPoolManager.address);
       await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
       await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
+
+      await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 1, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 2, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 7, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 14, [
+          this.oddzDefaultPool.address,
+        ]);
+      await this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", utils.formatBytes32String("B_S"), 30, [
+          this.oddzDefaultPool.address,
+        ]);
     });
     shouldBehaveLikeOddzLiquidityPool();
   });
