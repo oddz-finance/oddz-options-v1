@@ -8,6 +8,7 @@ import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
 contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
     using Address for address;
+    uint256 public delayInSeconds = 30 * 60;
 
     mapping(bytes32 => mapping(bytes32 => address)) addressMap;
 
@@ -22,14 +23,10 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         require(aggregator != address(0), "No aggregator");
 
         (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
-
-        uint256 delayInSeconds = 30 * 60;
-        uint256 dateTime = block.timestamp;
-
         price = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
 
-        require(updatedAt > dateTime - delayInSeconds, "Chain link Price Out Of Sync");
+        require(updatedAt > uint256(block.timestamp) - delayInSeconds, "Chain link Price Out Of Sync");
     }
 
     function setPairContract(
@@ -41,5 +38,9 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         addressMap[_underlying][_strike] = _aggregator;
 
         emit AddAssetPairAggregator(_underlying, _strike, address(this), _aggregator);
+    }
+
+    function setDelay(uint256 _delay) external {
+        delayInSeconds = _delay;
     }
 }
