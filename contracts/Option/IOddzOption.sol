@@ -39,7 +39,7 @@ interface IOddzOption {
 
     struct OptionDetails {
         bytes32 _optionModel;
-        uint8 _expiration;
+        uint256 _expiration;
         address _pair;
         uint256 _amount;
         uint256 _strike;

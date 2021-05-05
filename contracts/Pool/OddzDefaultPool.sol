@@ -13,7 +13,7 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
      * @dev Liquidity specific data definitions
      */
     uint256 public poolBalance;
-    uint256 private oUsdSupply;
+    uint256 public oUsdSupply;
     uint256 public lockedAmount;
     struct LPBalance {
         uint256 currentBalance;
@@ -73,7 +73,11 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         emit AddLiquidity(_account, _amount);
     }
 
-    function removeLiquidity(uint256 _amount, address _account) public override onlyManager(msg.sender) {
+    function removeLiquidity(
+        uint256 _amount,
+        uint256 _oUSD,
+        address _account
+    ) public override onlyManager(msg.sender) {
         LPBalance[] memory lpBalance = lpBalanceMap[_account];
         require(
             _amount <= lpBalance[lpBalance.length - 1].currentBalance - negativeLpBalance[_account],
@@ -84,20 +88,25 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         uint256 date = getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date, _amount, _account);
-        oUsdSupply -= _amount;
+        oUsdSupply -= _oUSD;
 
-        emit RemoveLiquidity(_account, _amount);
+        emit RemoveLiquidity(_account, _amount, _oUSD);
     }
 
     function lockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         lockedAmount = lockedAmount + _amount;
+        oUsdSupply += _amount;
     }
 
     function unlockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         require(_amount > 0, "LP Error: Amount is too small");
         lockedAmount = lockedAmount - _amount;
+    }
+
+    function latestLiquidityDate(address _account) public view override returns (uint256) {
+        return latestLiquidityDateMap[_account];
     }
 
     /**
@@ -107,10 +116,6 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
      */
     function activeLiquidity(address _account) public view override returns (uint256) {
         return activeLiquidityByDate(_account, getPresentDayTimestamp());
-    }
-
-    function latestLiquidityDate(address _account) public view override returns (uint256) {
-        return latestLiquidityDateMap[_account];
     }
 
     /**
@@ -181,7 +186,7 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         dayPremium.collected = dayPremium.collected + _amount;
         daysExercise[date] += _amount;
 
-        if (_transfer <= _amount) emit Profit(_lid, _amount - _transfer);
+        if (_amount > _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);
     }
 
@@ -230,11 +235,6 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         emit PremiumCollected(_account, premium);
     }
 
-    function updateSupply(uint256 _amount, TransactionType _type) public override onlyManager(msg.sender) {
-        if (_type == TransactionType.ADD) oUsdSupply += _amount;
-        else oUsdSupply -= _amount;
-    }
-
     /**
      * @notice Updates liquidity for a given date
      * @param _date liquidity date
@@ -246,8 +246,13 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         uint256 _amount,
         TransactionType _type
     ) private {
-        if (_type == TransactionType.ADD) daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) + _amount;
-        else daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) - _amount;
+        if (_type == TransactionType.ADD) {
+            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) + _amount;
+            poolBalance += _amount;
+        } else {
+            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) - _amount;
+            poolBalance -= _amount;
+        }
 
         latestLiquidityEvent = _date;
     }

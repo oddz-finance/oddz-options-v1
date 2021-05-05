@@ -28,7 +28,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     // Liquidity lock and distribution data definitions
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
-    mapping(uint8 => uint8) public periodMapper;
+    mapping(uint256 => uint256) public periodMapper;
 
     /**
      * @dev Premium specific data definitions
@@ -62,7 +62,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     modifier validLiquidty(uint256 _id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
-        require(ll._locked, "LP Error: LockedLiquidity with given id has already been unlocked");
+        require(ll._locked, "LP Error: liquidity has already been unlocked");
         _;
     }
 
@@ -72,7 +72,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
-        require(address(_sdk).isContract(), "invalid SDK contract address");
+        require(address(_sdk).isContract(), "LP Error: invalid SDK contract address");
         sdk = _sdk;
     }
 
@@ -113,14 +113,15 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mapPeriod(30, 30);
     }
 
-    function mapPeriod(uint8 _source, uint8 _dest) public onlyOwner(msg.sender) {
+    function mapPeriod(uint256 _source, uint256 _dest) public onlyOwner(msg.sender) {
+        // valid _dest period check
         periodMapper[_source] = _dest;
     }
 
     function mapPool(
         address _pair,
         bytes32 _model,
-        uint8 _period,
+        uint256 _period,
         IOddzLiquidityPool[] memory _pools
     ) public onlyOwner(msg.sender) {
         // TODO: Add additional validation to check pools are repeated
@@ -136,9 +137,10 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
-        _pool.addLiquidity(_amount, sender_);
         // transfer user eligible premium
         transferEligiblePremium(date, sender_, _pool);
+
+        _pool.addLiquidity(_amount, sender_);
 
         _mint(sender_, mint);
         token.safeTransferFrom(sender_, address(this), _amount);
@@ -156,12 +158,14 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
         require(burn > 0, "LP Error: Amount is too small");
 
-        // Pools should hold only oUSD not USDC
-        _pool.removeLiquidity(burn, msg.sender);
         // Forfeit premium if less than premium locked period
-        updateUserPremium(_amount, date, _pool);
+        forfeitPremiumIfApplicable(_amount, date, _pool);
+
         uint256 transferAmount =
             ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), burn);
+        // TODO: Pools should hold reference to USDC and oUSD
+        _pool.removeLiquidity(transferAmount, burn, msg.sender);
+
         _burn(msg.sender, burn);
         token.safeTransfer(msg.sender, transferAmount);
     }
@@ -172,11 +176,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _premium,
         address _pair,
         bytes32 _model,
-        uint8 _period
+        uint256 _expiration
     ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
-        (IOddzLiquidityPool[] memory pools, uint256[] memory poolBalances) =
-            getSortedEligiblePools(_pair, _model, _period, _amount);
+        (address[] memory pools, uint256[] memory poolBalances) =
+            getSortedEligiblePools(_pair, _model, _expiration, _amount);
         require(pools.length > 0, "LP Error: No pool balance");
 
         uint8 count = 0;
@@ -187,10 +191,10 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             if (base > poolBalances[count]) {
                 totalAmount -= poolBalances[count];
                 share[count] = poolBalances[count];
-                pools[count].lockLiquidity(poolBalances[count]);
+                IOddzLiquidityPool(pools[count]).lockLiquidity(poolBalances[count]);
             } else {
                 share[count] = base;
-                pools[count].lockLiquidity(base);
+                IOddzLiquidityPool(pools[count]).lockLiquidity(base);
             }
             base = totalAmount / (pools.length - count);
             count++;
@@ -203,8 +207,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         for (uint8 i = 0; i < ll._pools.length; i++) {
-            ll._pools[i].unlockLiquidity(ll._share[i]);
-            ll._pools[i].unlockPremium(_id, (ll._premium * ll._share[i]) / ll._amount);
+            IOddzLiquidityPool(ll._pools[i]).unlockLiquidity(ll._share[i]);
+            IOddzLiquidityPool(ll._pools[i]).unlockPremium(_id, (ll._premium * ll._share[i]) / ll._amount);
         }
         ll._locked = false;
     }
@@ -214,7 +218,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         address _account,
         uint256 _amount
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
-        (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+        (, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
     }
@@ -227,7 +231,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         bytes32 _strike,
         uint32 _deadline
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
-        (uint256 lockedPremium, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+        (, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
         // Transfer Funds
         token.safeTransfer(exchange, transferAmount);
@@ -327,7 +331,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _date liquidity date
      * @param _pool liquidity pool
      */
-    function updateUserPremium(
+    function forfeitPremiumIfApplicable(
         uint256 _amount,
         uint256 _date,
         IOddzLiquidityPool _pool
@@ -356,11 +360,15 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         ll._locked = false;
         lockedPremium = ll._premium;
         transferAmount = _amount;
-        if (_amount > ll._amount) transferAmount = ll._amount;
+        if (transferAmount > ll._amount) transferAmount = ll._amount;
 
         for (uint8 i = 0; i < ll._pools.length; i++) {
-            ll._pools[i].unlockLiquidity(ll._share[i]);
-            ll._pools[i].unlockPremium(_lid, (ll._premium * ll._share[i]) / ll._amount);
+            IOddzLiquidityPool(ll._pools[i]).unlockLiquidity(ll._share[i]);
+            IOddzLiquidityPool(ll._pools[i]).exercisePremium(
+                _lid,
+                (lockedPremium * ll._share[i]) / ll._amount,
+                (transferAmount * ll._share[i]) / ll._amount
+            );
             // TODO: update oUSD supply in the pool
         }
     }
@@ -401,10 +409,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     function getSortedEligiblePools(
         address _pair,
         bytes32 _model,
-        uint8 _period,
+        uint256 _expiration,
         uint256 _amount
-    ) public view returns (IOddzLiquidityPool[] memory pools, uint256[] memory poolBalance) {
-        IOddzLiquidityPool[] memory allPools = poolMapper[keccak256(abi.encode(_pair, _model, periodMapper[_period]))];
+    ) public view returns (address[] memory pools, uint256[] memory poolBalance) {
+        IOddzLiquidityPool[] memory allPools =
+            poolMapper[keccak256(abi.encode(_pair, _model, periodMapper[_expiration / 1 days]))];
         uint256 balance = 0;
         uint256 count = 0;
         for (uint8 i = 0; i < allPools.length; i++) {
@@ -414,23 +423,24 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             }
         }
         poolBalance = new uint256[](count);
+        pools = new address[](count);
         for (uint256 i = 0; i < count; i++) {
-            pools[i] = allPools[i];
+            pools[i] = address(allPools[i]);
             poolBalance[i] = allPools[i].availableBalance();
         }
         (poolBalance, pools) = sort(poolBalance, pools);
-        require(balance > _amount, "LP Error: Amount is too large.");
+        require(balance > _amount, "LP Error: Amount is too large");
     }
 
-    function sort(uint256[] memory data, IOddzLiquidityPool[] memory pools)
-        internal
+    function sort(uint256[] memory data, address[] memory pools)
+        private
         pure
-        returns (uint256[] memory, IOddzLiquidityPool[] memory)
+        returns (uint256[] memory, address[] memory)
     {
         uint256 length = data.length;
         for (uint256 i = 1; i < length; i++) {
             uint256 key = data[i];
-            IOddzLiquidityPool val = pools[i];
+            address val = pools[i];
             uint256 j = i - 1;
             while ((int256(j) >= 0) && (data[j] > key)) {
                 data[j + 1] = data[j];

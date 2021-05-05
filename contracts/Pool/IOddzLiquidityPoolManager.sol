@@ -14,7 +14,7 @@ interface IOddzLiquidityPoolManager {
         uint256 _amount;
         uint256 _premium;
         bool _locked;
-        IOddzLiquidityPool[] _pools;
+        address[] _pools;
         uint256[] _share;
     }
 
@@ -52,7 +52,7 @@ interface IOddzLiquidityPoolManager {
         uint256 _premium,
         address _pair,
         bytes32 _model,
-        uint8 _period
+        uint256 _expiration
     ) external;
 
     /**

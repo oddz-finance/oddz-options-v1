@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 interface IOddzLiquidityPool {
     event AddLiquidity(address indexed _account, uint256 _amount);
-    event RemoveLiquidity(address indexed _account, uint256 _amount);
+    event RemoveLiquidity(address indexed _account, uint256 _amount, uint256 _burn);
     event PremiumCollected(address indexed _accoint, uint256 _amount);
     event PremiumForfeited(address indexed _accoint, uint256 _amount);
     event Profit(uint256 indexed _id, uint256 _amount);
@@ -28,9 +28,14 @@ interface IOddzLiquidityPool {
     /**
      * @notice Provider burns oUSD and receives USD from the pool
      * @param _amount Amount of USD to receive
+     * @param _oUSD Amount of oUSD to be burnt
      * @param _account Address of the Liquidity Provider
      */
-    function removeLiquidity(uint256 _amount, address _account) external;
+    function removeLiquidity(
+        uint256 _amount,
+        uint256 _oUSD,
+        address _account
+    ) external;
 
     /**
      * @notice called by Oddz call options to lock the funds
@@ -67,13 +72,6 @@ interface IOddzLiquidityPool {
      * @return balance total supply allocated to the pool
      */
     function totalSupply() external view returns (uint256);
-
-    /**
-     * @notice Updates total supply of the pool
-     * @param _amount allocated supply amount
-     * @param _type Transaction type
-     */
-    function updateSupply(uint256 _amount, TransactionType _type) external;
 
     /**
      * @notice active liquitdity for the date
