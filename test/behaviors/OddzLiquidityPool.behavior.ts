@@ -21,9 +21,6 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       liquidityManager,
       "AddLiquidity",
     );
-    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 0)).transactionValue.toNumber()).to.equal(
-      depositAmount,
-    );
     const availableBalance = await liquidityManager.availableBalance();
     expect(availableBalance.toNumber()).to.equal(depositAmount);
 
@@ -31,15 +28,11 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       liquidityManager,
       "AddLiquidity",
     );
-    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 1)).transactionValue.toNumber()).to.equal(
-      depositAmount,
-    );
 
     const newavailableBalance = await liquidityManager.availableBalance();
     expect(newavailableBalance.toNumber()).to.equal(depositAmount + depositAmount);
     expect(await liquidityManager.daysActiveLiquidity(BigNumber.from(date))).to.equal(2000);
-
-    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 1)).currentBalance.toNumber()).to.equal(
+    expect((await liquidityManager.lpBalanceMap(this.accounts.admin, 0)).currentBalance.toNumber()).to.equal(
       depositAmount * 2,
     );
   });
