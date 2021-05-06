@@ -190,15 +190,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 base = totalAmount / pools.length;
         uint256[] memory share = new uint256[](pools.length);
         while (count < pools.length) {
-            if (base > poolBalances[count]) {
-                totalAmount -= poolBalances[count];
-                share[count] = poolBalances[count];
-                IOddzLiquidityPool(pools[count]).lockLiquidity(poolBalances[count]);
-            } else {
-                share[count] = base;
-                IOddzLiquidityPool(pools[count]).lockLiquidity(base);
-            }
-            base = totalAmount / (pools.length - count);
+            if (base > poolBalances[count]) share[count] = poolBalances[count];
+            else share[count] = base;
+            IOddzLiquidityPool(pools[count]).lockLiquidity(share[count]);
+            totalAmount -= share[count];
+            if (totalAmount > 0) base = totalAmount / (pools.length - (count + 1));
             count++;
         }
         lockedLiquidity.push(LockedLiquidity(_amount, _premium, true, pools, share));
@@ -440,18 +436,17 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         pure
         returns (uint256[] memory, address[] memory)
     {
-        uint256 length = data.length;
-        for (uint256 i = 1; i < length; i++) {
+        for (uint8 i = 1; i < data.length; i++) {
             uint256 key = data[i];
             address val = pools[i];
-            uint256 j = i - 1;
-            while ((int256(j) >= 0) && (data[j] > key)) {
-                data[j + 1] = data[j];
-                pools[j + 1] = pools[j];
+            int8 j = int8(i - 1);
+            while ((j >= 0) && (data[uint8(j)] > key)) {
+                data[uint8(j + 1)] = data[uint8(j)];
+                pools[uint8(j + 1)] = pools[uint8(j)];
                 j--;
             }
-            data[j + 1] = key;
-            pools[j + 1] = val;
+            data[uint8(j + 1)] = key;
+            pools[uint8(j + 1)] = val;
         }
         return (data, pools);
     }
