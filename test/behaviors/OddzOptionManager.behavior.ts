@@ -2126,4 +2126,138 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       "Buy",
     );
   });
+
+  it("should buy option if the asset pair is supported and emit buy event with 2 pools", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    await this.oddzLiquidityPoolManager
+      .connect(this.signers.admin)
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(160000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      0.05,
+      this.accounts.admin,
+      false,
+    );
+
+    await expect(oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin)).to.emit(
+      oddzOptionManager,
+      "Buy",
+    );
+  });
+
+  it("should distribute premium with more pools", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    await provider.send("evm_snapshot", []);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    await this.oddzLiquidityPoolManager
+      .connect(this.signers.admin)
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("10")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
+
+    const oddzLiquidityPoolManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+
+    const optionDetails1 = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(14),
+      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(145000000000),
+      OptionType.Call,
+    );
+
+    await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails1, 0.05, this.accounts.admin, true);
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 5 <= (2 + 3)
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await oddzLiquidityPoolManager.distributePremium(
+      addDaysAndGetSeconds(2),
+      [this.accounts.admin],
+      this.oddzDefaultPool.address,
+    );
+    await oddzLiquidityPoolManager.distributePremium(
+      addDaysAndGetSeconds(2),
+      [this.accounts.admin],
+      this.oddzEthUsdCallBS30Pool.address,
+    );
+    // total: 1714.1460393
+    await expect(
+      ((await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18).toString(),
+    ).to.equal("1655.0375551862069");
+    await expect(
+      (
+        (await this.oddzEthUsdCallBS30Pool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18
+      ).toString(),
+    ).to.equal("59.108484113793104");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 15 <= (2 + 3 + 10)
+    await provider.send("evm_increaseTime", [getExpiry(10)]);
+    await expect(oddzOptionManager.unlock(1)).to.emit(oddzOptionManager, "Expire");
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 16  <= (2 + 3 + 10 + 1)
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    await oddzLiquidityPoolManager.distributePremium(
+      addDaysAndGetSeconds(15),
+      [this.accounts.admin],
+      this.oddzDefaultPool.address,
+    );
+
+    await expect(((await oddzLiquidityPoolManager.balanceOf(this.accounts.admin)) / 1e18).toString()).to.equal(
+      "1003228.4928454862",
+    );
+    await expect(
+      (await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)).toNumber(),
+    ).to.equal(0);
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
 }

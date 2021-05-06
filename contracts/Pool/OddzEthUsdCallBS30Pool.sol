@@ -6,7 +6,7 @@ import "../Libs/DateTimeLibrary.sol";
 import "../Libs/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
+contract OddzEthUsdCallBS30Pool is AccessControl, IOddzLiquidityPool {
     using Address for address;
     /**
      * @dev Liquidity specific data definitions

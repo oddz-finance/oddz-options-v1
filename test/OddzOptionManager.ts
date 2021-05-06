@@ -12,6 +12,7 @@ import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/Oddz
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzDefaultPool.sol/OddzDefaultPool.json";
+import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzEthUsdCallBS30Pool.sol/OddzEthUsdCallBS30Pool.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import { OptionType } from "../test-utils";
@@ -25,6 +26,7 @@ import {
   MockERC20,
   OddzLiquidityPoolManager,
   OddzDefaultPool,
+  OddzEthUsdCallBS30Pool,
   OddzPriceOracleManager,
   OddzAssetManager,
   DexManager,
@@ -138,6 +140,11 @@ describe("Oddz Option Manager Unit tests", function () {
       ])) as MockERC20;
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
+      this.oddzEthUsdCallBS30Pool = (await deployContract(
+        this.signers.admin,
+        OddzEthUsdCallBS30PoolArtifact,
+        [],
+      )) as OddzEthUsdCallBS30Pool;
 
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [
@@ -199,30 +206,37 @@ describe("Oddz Option Manager Unit tests", function () {
       );
       await oddzOptionPremiumManager.setManager(this.oddzOptionManager.address);
       await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzEthUsdCallBS30Pool.setManager(this.oddzLiquidityPoolManager.address);
+
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
           this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
           this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
           this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
           this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
         ]);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
           this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
         ]);
 
       // Put
