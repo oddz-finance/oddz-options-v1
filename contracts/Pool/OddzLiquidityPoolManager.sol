@@ -27,8 +27,9 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     IERC20 public token;
 
     // Liquidity lock and distribution data definitions
-    mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
+    mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
+    mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
 
     /**
      * @dev Premium specific data definitions
@@ -69,6 +70,19 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     modifier reqBalanceValidRange(uint8 _reqBalance) {
         require(_reqBalance >= 6 && _reqBalance <= 10, "LP Error: required balance valid range [6 - 10]");
         _;
+    }
+
+    modifier validMaxExpiration(uint256 _maxExpiration) {
+        require(allowedMaxExpiration[_maxExpiration] == true, "Invalid aggregator period");
+        _;
+    }
+
+    /**
+     @notice Add/update allowed max expiration
+     @param _maxExpiration maximum expiration time of option
+     */
+    function addAllowedMaxExpiration(uint256 _maxExpiration) public onlyOwner(msg.sender) {
+        allowedMaxExpiration[_maxExpiration] = true;
     }
 
     function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
@@ -113,8 +127,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mapPeriod(30, 30);
     }
 
-    function mapPeriod(uint256 _source, uint256 _dest) public onlyOwner(msg.sender) {
-        // valid _dest period check
+    function mapPeriod(uint256 _source, uint256 _dest) public validMaxExpiration(_dest) onlyOwner(msg.sender) {
         periodMapper[_source] = _dest;
     }
 
