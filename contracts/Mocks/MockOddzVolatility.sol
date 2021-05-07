@@ -6,8 +6,9 @@ import "../Oracle/IOddzVolatilityOracle.sol";
 contract MockOddzVolatility is IOddzVolatilityOracle {
     uint256 iv = 180000;
     uint8 decimals = 5;
-    uint256 public updatedAt =uint256(block.timestamp);
+    uint256 public updatedAt = uint256(block.timestamp);
     uint256 public delayInSeconds = 30 * 60;
+
     function getIv(
         bytes32 _undelying,
         bytes32 _strike,

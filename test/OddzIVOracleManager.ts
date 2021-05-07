@@ -2,7 +2,6 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 
 import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
-import OddzVolatilityArtifact from "../artifacts/contracts/Integrations/VolatilityOracle/Oddz/OddzVolatility.sol/OddzVolatility.json";
 import MockIVManagerArtifact from "../artifacts/contracts/Mocks/MockIVManager.sol/MockIVManager.json";
 
 
@@ -16,7 +15,6 @@ import { OddzIVOracleManager } from "../typechain/OddzIVOracleManager";
 import { OddzVolatility } from "../typechain/OddzVolatility";
 import { MockIVManager } from "../typechain/MockIVManager";
 import { shouldBehaveLikeOddzIVOracleManager } from "./behaviors/OddzIVOracleManager.behavior";
-import { utils } from "ethers";
 
 describe("Oddz IV Oracle Manager Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();

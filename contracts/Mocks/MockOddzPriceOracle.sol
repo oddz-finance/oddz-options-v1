@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
     uint256 public price;
     uint8 public decimals = 8;
-    uint256 public updatedAt =uint256(block.timestamp);
+    uint256 public updatedAt = uint256(block.timestamp);
     uint256 public delayInSeconds = 30 * 60;
+
     constructor(uint256 _price) {
         price = _price;
     }
@@ -30,7 +31,6 @@ contract MockOddzPriceOracle is Ownable, IOddzPriceOracle {
     function setUpdatedAt(uint256 _delay) external {
         updatedAt = uint256(block.timestamp) - _delay;
     }
-
 
     function setPairContract(
         bytes32 _underlying,

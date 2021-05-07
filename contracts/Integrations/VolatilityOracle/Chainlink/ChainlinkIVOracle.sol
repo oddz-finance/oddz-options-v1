@@ -113,7 +113,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         address aggregator = addressMap[agHash];
         require(aggregator != address(0), "No aggregator");
 
-        (, int256 answer,uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
+        (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
 
@@ -137,7 +137,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         emit AddAssetPairIVAggregator(_underlying, _strike, address(this), _aggregator, _aggregatorPeriod);
     }
 
-    function setDelay(uint256 _delay) external{
+    function setDelay(uint256 _delay) external {
         delayInSeconds = _delay;
     }
 }
