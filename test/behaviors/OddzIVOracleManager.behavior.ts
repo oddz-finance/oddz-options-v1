@@ -156,9 +156,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     // await this.oddzIVOracle.setUpdatedAt(2000);
     await this.oddzIVOracle.setUpdatedAt(2000);
 
-    await expect(
-      mockIVManager.calculateIv(getExpiry(1)),
-    ).to.be.revertedWith("Chain link IV Out Of Sync");
+    await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("Chain link IV Out Of Sync");
   });
 
   it("Should throw caller has no access to the method while calling calculate IV", async function () {

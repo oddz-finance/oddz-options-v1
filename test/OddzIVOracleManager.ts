@@ -4,9 +4,7 @@ import { ethers, waffle } from "hardhat";
 import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 import MockIVManagerArtifact from "../artifacts/contracts/Mocks/MockIVManager.sol/MockIVManager.json";
 
-
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
-
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
@@ -45,9 +43,7 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
       ])) as MockIVManager;
       await this.oddzIVOracleManager.setManager(this.mockIVManager.address);
 
-      await this.oddzIVOracle
-        .connect(this.signers.admin)
-        .setIv(180000, 5);
+      await this.oddzIVOracle.connect(this.signers.admin).setIv(180000, 5);
     });
 
     shouldBehaveLikeOddzIVOracleManager();
