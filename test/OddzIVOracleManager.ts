@@ -5,6 +5,10 @@ import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOra
 import OddzVolatilityArtifact from "../artifacts/contracts/Integrations/VolatilityOracle/Oddz/OddzVolatility.sol/OddzVolatility.json";
 import MockIVManagerArtifact from "../artifacts/contracts/Mocks/MockIVManager.sol/MockIVManager.json";
 
+
+import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
+
+
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
@@ -30,7 +34,7 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
 
   describe("Oddz IV oracle", function () {
     beforeEach(async function () {
-      this.oddzIVOracle = (await deployContract(this.signers.admin, OddzVolatilityArtifact, [])) as OddzVolatility;
+      this.oddzIVOracle = (await deployContract(this.signers.admin, MockOddzVolatilityArtifact, [])) as OddzVolatility;
 
       this.oddzIVOracleManager = (await deployContract(
         this.signers.admin,
@@ -45,7 +49,7 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
 
       await this.oddzIVOracle
         .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 5);
+        .setIv(180000, 5);
     });
 
     shouldBehaveLikeOddzIVOracleManager();

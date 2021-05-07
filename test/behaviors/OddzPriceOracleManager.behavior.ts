@@ -45,6 +45,41 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
     await expect(
       oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
     ).to.be.revertedWith("No aggregator");
+
+  });
+
+  it.only("Should not return underlying price and throw out of synch message when price is not in synch", async function () {
+    const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
+
+
+    await oracleManager.addAggregator(
+      utils.formatBytes32String("ETH"),
+      utils.formatBytes32String("USD"),
+      this.oddzPriceOracle.address,
+      this.oddzPriceOracle.address,
+    );
+
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "address"],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzPriceOracle.address],
+      ),
+    );
+
+    await expect(oracleManager.setActiveAggregator(hash))
+      .to.emit(oracleManager, "SetAggregator")
+      .withArgs(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        constants.AddressZero,
+        this.oddzPriceOracle.address,
+      );
+
+    await this.oddzPriceOracle.setUpdatedAt(2000);
+    await expect(
+      oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
+    ).to.be.revertedWith("Chain link Price Out Of Sync");
+
   });
 
   it("Should return underlying price when an aggregator is set", async function () {

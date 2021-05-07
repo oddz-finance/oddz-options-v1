@@ -40,7 +40,7 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         emit AddAssetPairAggregator(_underlying, _strike, address(this), _aggregator);
     }
 
-    function setDelay(uint256 _delay) external {
+    function setDelay(uint256 _delay) external{
         delayInSeconds = _delay;
     }
 }

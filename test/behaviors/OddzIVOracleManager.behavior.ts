@@ -125,6 +125,42 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     expect(decimals).to.equal(5);
   });
 
+  it.only("Should not return underlying price when throw out of synch message when price is not in sync", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await oracleManager.addIVAggregator(
+      utils.formatBytes32String("ETH"),
+      utils.formatBytes32String("USD"),
+      this.oddzIVOracle.address,
+      this.oddzIVOracle.address,
+      1,
+    );
+
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "address"],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzIVOracle.address],
+      ),
+    );
+
+    await expect(oracleManager.setActiveIVAggregator(hash))
+      .to.emit(oracleManager, "SetIVAggregator")
+      .withArgs(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        constants.AddressZero,
+        this.oddzIVOracle.address,
+      );
+
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+    // await this.oddzIVOracle.setUpdatedAt(2000);
+    await this.oddzIVOracle.setUpdatedAt(2000);
+
+    await expect(
+      mockIVManager.calculateIv(getExpiry(1)),
+    ).to.be.revertedWith("Chain link IV Out Of Sync");
+  });
+
   it("Should throw caller has no access to the method while calling calculate IV", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 

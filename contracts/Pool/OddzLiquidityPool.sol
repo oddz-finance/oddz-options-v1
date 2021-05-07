@@ -214,7 +214,7 @@ contract OddzLiquidityPool is AccessControl, IOddzLiquidityPool, ERC20("Oddz USD
      * @return share liquidity provider's active liquidity
      */
     function activeLiquidity(address _account) public view returns (uint256 share) {
-        share = activeLiquidityByDate(_account, getPresentDayTimestamp());
+        share = activeLiquidityByDate(_account, DateTimeLibrary.getPresentDayTimestamp());
     }
 
     /**
