@@ -413,19 +413,23 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     ) public view returns (address[] memory pools, uint256[] memory poolBalance) {
         IOddzLiquidityPool[] memory allPools =
             poolMapper[keccak256(abi.encode(_pair, _type, _model, periodMapper[_expiration / 1 days]))];
-        uint256 balance = 0;
         uint256 count = 0;
         for (uint8 i = 0; i < allPools.length; i++) {
             if (allPools[i].availableBalance() > 0) {
                 count++;
-                balance += allPools[i].availableBalance();
             }
         }
         poolBalance = new uint256[](count);
         pools = new address[](count);
-        for (uint256 i = 0; i < count; i++) {
-            pools[i] = address(allPools[i]);
-            poolBalance[i] = allPools[i].availableBalance();
+        uint256 j = 0;
+        uint256 balance = 0;
+        for (uint256 i = 0; i < allPools.length; i++) {
+            if (allPools[i].availableBalance() > 0) {
+                pools[j] = address(allPools[i]);
+                poolBalance[j] = allPools[i].availableBalance();
+                balance += poolBalance[j];
+                j++;
+            }
         }
         (poolBalance, pools) = sort(poolBalance, pools);
         require(balance > _amount, "LP Error: Amount is too large");
@@ -436,17 +440,27 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         pure
         returns (uint256[] memory, address[] memory)
     {
-        for (uint8 i = 1; i < data.length; i++) {
-            uint256 key = data[i];
-            address val = pools[i];
-            int8 j = int8(i - 1);
-            while ((j >= 0) && (data[uint8(j)] > key)) {
-                data[uint8(j + 1)] = data[uint8(j)];
-                pools[uint8(j + 1)] = pools[uint8(j)];
+        // Higher deployment cost but betters execution cost
+        int256 j;
+        uint256 unsignedJ;
+        uint256 unsignedJplus1;
+        uint256 key;
+        address val;
+        for (uint256 i = 1; i < data.length; i++) {
+            key = data[i];
+            val = pools[i];
+            j = int256(i - 1);
+            unsignedJ = uint256(j);
+            while ((j >= 0) && (data[unsignedJ] > key)) {
+                unsignedJplus1 = unsignedJ + 1;
+                data[unsignedJplus1] = data[unsignedJ];
+                pools[unsignedJplus1] = pools[unsignedJ];
                 j--;
+                unsignedJ = uint256(j);
             }
-            data[uint8(j + 1)] = key;
-            pools[uint8(j + 1)] = val;
+            unsignedJplus1 = uint256(j + 1);
+            data[unsignedJplus1] = key;
+            pools[unsignedJplus1] = val;
         }
         return (data, pools);
     }
