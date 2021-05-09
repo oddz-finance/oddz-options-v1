@@ -30,6 +30,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
+    mapping(bytes32 => bool) public uniquePoolMapper;
 
     /**
      * @dev Premium specific data definitions
@@ -73,7 +74,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     modifier validMaxExpiration(uint256 _maxExpiration) {
-        require(allowedMaxExpiration[_maxExpiration] == true, "Invalid aggregator period");
+        require(allowedMaxExpiration[_maxExpiration] == true, "LP Error: invalid maximum expiration");
         _;
     }
 
@@ -95,6 +96,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         token = _token;
         dexManager = _dexManager;
 
+        addAllowedMaxExpiration(1);
+        addAllowedMaxExpiration(2);
+        addAllowedMaxExpiration(7);
+        addAllowedMaxExpiration(14);
+        addAllowedMaxExpiration(30);
         mapPeriod(1, 1);
         mapPeriod(2, 2);
         mapPeriod(3, 7);
@@ -138,8 +144,22 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _period,
         IOddzLiquidityPool[] memory _pools
     ) public onlyOwner(msg.sender) {
-        // TODO: Add additional validation to check pools are repeated
-        poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))] = _pools;
+        require(_pools.length <= 10, "LP Error: pools length should be <= 10");
+        // delete all the existing pool mapping
+        delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
+        for (uint256 i = 0; i < _pools.length; i++) {
+            delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
+        }
+
+        // add unique pool mapping
+        bytes32 uPool;
+        for (uint256 i = 0; i < _pools.length; i++) {
+            uPool = keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]));
+            if (!uniquePoolMapper[uPool]) {
+                poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
+                uniquePoolMapper[uPool] = true;
+            }
+        }
     }
 
     function addLiquidity(
