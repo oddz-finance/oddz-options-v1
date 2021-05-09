@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
-import { getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
+import { OptionType, getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
 
@@ -424,5 +424,46 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should not add duplicate pool to pool mapper", async function () {
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["address", "uint256", "bytes32", "uint256"],
+        ["0xfcb06d25357ef01726861b30b0b83e51482db417", 0, utils.formatBytes32String("B_S"), 7],
+      ),
+    );
+    const oddzLiquidityPoolManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    expect(await oddzLiquidityPoolManager.poolMapper(hash, 0)).to.equal(this.oddzDefaultPool.address);
+    await oddzLiquidityPoolManager.mapPool(
+      "0xfcb06d25357ef01726861b30b0b83e51482db417",
+      OptionType.Call,
+      utils.formatBytes32String("B_S"),
+      7,
+      [this.oddzDefaultPool.address, this.oddzEthUsdCallBS30Pool.address, this.oddzDefaultPool.address],
+    );
+    expect(await oddzLiquidityPoolManager.poolMapper(hash, 0)).to.equal(this.oddzDefaultPool.address);
+    expect(await oddzLiquidityPoolManager.poolMapper(hash, 1)).to.equal(this.oddzEthUsdCallBS30Pool.address);
+    await expect(oddzLiquidityPoolManager.poolMapper(hash, 2)).to.be.reverted;
+  });
+
+  it("should revert pools length should be <= 10 while map pools", async function () {
+    await expect(
+      this.oddzLiquidityPoolManager
+        .connect(this.signers.admin)
+        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+          this.oddzDefaultPool.address,
+          this.oddzEthUsdCallBS30Pool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+          this.oddzDefaultPool.address,
+        ]),
+    ).to.be.revertedWith("LP Error: pools length should be <= 10");
   });
 }

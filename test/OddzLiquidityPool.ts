@@ -4,6 +4,7 @@ import { Accounts, Signers } from "../types";
 import {
   OddzLiquidityPoolManager,
   OddzDefaultPool,
+  OddzEthUsdCallBS30Pool,
   MockERC20,
   DexManager,
   OddzAssetManager,
@@ -14,6 +15,7 @@ import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool
 import { MockProvider } from "ethereum-waffle";
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzDefaultPool.sol/OddzDefaultPool.json";
+import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzEthUsdCallBS30Pool.sol/OddzEthUsdCallBS30Pool.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import MockOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
@@ -89,6 +91,11 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
+      this.oddzEthUsdCallBS30Pool = (await deployContract(
+        this.signers.admin,
+        OddzEthUsdCallBS30PoolArtifact,
+        [],
+      )) as OddzEthUsdCallBS30Pool;
 
       this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolManagerArtifact, [
         this.usdcToken.address,
