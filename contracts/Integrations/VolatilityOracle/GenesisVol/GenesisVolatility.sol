@@ -1,6 +1,5 @@
 pragma solidity 0.8.3;
 
-import "../../../Oracle/OddzPriceOracleManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -9,7 +8,6 @@ contract GenesisVolatility is AccessControl {
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    OddzPriceOracleManager oracle;
 
     uint256 public volatilityPrecision = 2;
 
@@ -26,9 +24,8 @@ contract GenesisVolatility is AccessControl {
         _;
     }
 
-    constructor(OddzPriceOracleManager _oracle) {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        oracle = _oracle;
     }
 
     function setManager(address _address) public {
