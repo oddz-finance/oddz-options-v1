@@ -9,7 +9,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    uint256 public delayInSeconds = 30000 * 60;
+    uint256 public delayInSeconds = 90000 * 60;
     mapping(uint8 => bool) public allowedPeriods;
     mapping(uint256 => uint8) public ivPeriodMap;
 
