@@ -320,12 +320,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(optionDetails._pair);
         uint256 price = getCurrentPrice(pair);
         (iv, ivDecimal) = volatility.calculateIv(
-                                            pair._primary, 
-                                            pair._strike, 
-                                            optionDetails._expiration, 
-                                            price, 
-                                            optionDetails._strike
-                                            );
+            pair._primary,
+            pair._strike,
+            optionDetails._expiration,
+            price,
+            optionDetails._strike
+        );
 
         optionPremium = premiumManager.getPremium(
             optionDetails._optionType == IOddzOption.OptionType.Call ? true : false,
