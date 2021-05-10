@@ -131,15 +131,15 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     await oracleManager.addIVAggregator(
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
-      this.oddzIVOracle.address,
-      this.oddzIVOracle.address,
+      this.oddzIVOracleMock.address,
+      this.oddzIVOracleMock.address,
       1,
     );
 
     const hash = utils.keccak256(
       utils.defaultAbiCoder.encode(
         ["bytes32", "bytes32", "address"],
-        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzIVOracle.address],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzIVOracleMock.address],
       ),
     );
 
@@ -149,13 +149,13 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         constants.AddressZero,
-        this.oddzIVOracle.address,
+        this.oddzIVOracleMock.address,
       );
 
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
-    // await this.oddzIVOracle.setUpdatedAt(2000);
-    await this.oddzIVOracle.setUpdatedAt(2000);
 
+    await mockIVManager.setManager(this.oracleManager.address);
+    await this.oddzIVOracleMock.setUpdatedAt(2000);
     await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("Chain link IV Out Of Sync");
   });
 

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
-
 import "../../../Oracle/IOddzVolatilityOracle.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -10,7 +9,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    uint256 public delayInSeconds = 30 * 60;
+    uint256 public delayInSeconds = 3000000 * 60;
     mapping(uint8 => bool) public allowedPeriods;
     mapping(uint256 => uint8) public ivPeriodMap;
 
@@ -116,8 +115,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
-
-        require(updatedAt > uint256(block.timestamp) - delayInSeconds, "Chain link IV Out Of Sync");
+        require(updatedAt > (uint256(block.timestamp) - delayInSeconds), "Chain link IV Out Of Sync");
 
         // converting iv from percentage to value
         iv = iv / 100;
