@@ -81,7 +81,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     function validExpiration(uint256 _expiration, address _pair) private view {
-        // TODO: _expiration has to be in days
         require(_expiration <= assetManager.getMaxPeriod(_pair), "Expiration is greater than max expiry");
         require(_expiration >= assetManager.getMinPeriod(_pair), "Expiration is less than min expiry");
     }

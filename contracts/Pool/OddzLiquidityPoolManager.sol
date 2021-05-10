@@ -444,8 +444,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _expiration,
         uint256 _amount
     ) public view returns (address[] memory pools, uint256[] memory poolBalance) {
+        // if _expiration is 86401 i.e. 1 day 1 second, then max 1 day expiration pool will not be eligible
         IOddzLiquidityPool[] memory allPools =
-            poolMapper[keccak256(abi.encode(_pair, _type, _model, periodMapper[_expiration / 1 days]))];
+            poolMapper[
+                keccak256(abi.encode(_pair, _type, _model, periodMapper[getActiveDayTimestamp(_expiration) / 1 days]))
+            ];
         uint256 count = 0;
         for (uint8 i = 0; i < allPools.length; i++) {
             if (allPools[i].availableBalance() > 0) {
@@ -499,10 +502,21 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     /**
-     * @dev get day based on the timestamp
+     * @notice get day based on the timestamp
      */
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
         (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
+        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
+    }
+
+    /**
+     * @notice get active day based on user input timestamp
+     * @param _timestamp epoch time
+     */
+    function getActiveDayTimestamp(uint256 _timestamp) internal pure returns (uint256 activationDate) {
+        // activation date should be next day 00 hours if _timestamp % 86400 is greater than 0
+        if ((_timestamp % 1 days) > 0) _timestamp = _timestamp + 1 days;
+        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(_timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 }
