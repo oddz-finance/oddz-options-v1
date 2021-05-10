@@ -135,7 +135,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         emit AddAssetPairIVAggregator(_underlying, _strike, address(this), _aggregator, _aggregatorPeriod);
     }
 
-    function setDelay(uint256 _delay) public onlyOwner {
+    function setDelay(uint256 _delay) public onlyOwner(msg.sender) {
         delayInSeconds = _delay;
     }
 }
