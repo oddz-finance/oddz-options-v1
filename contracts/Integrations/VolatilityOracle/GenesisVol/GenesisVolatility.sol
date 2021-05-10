@@ -1,6 +1,11 @@
 pragma solidity 0.8.3;
 
-contract GenesisVolatility{
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+
+contract GenesisVolatility is AccessControl{
+    using Address for address;
+
     OddzOracleManager oracle;
 
     uint256 public volatilityPrecision = 2;
@@ -8,13 +13,33 @@ contract GenesisVolatility{
     //bytes(underlying,strike,expiry) => volPerc => val
     mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
 
+     modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
     constructor(
         OddzOracleManager _oracle
     ){
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         oracle = _oracle;
     }
 
-    function setVolatilityPrecision(uint8 _precision) public {
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
+    function setVolatilityPrecision(uint8 _precision) public onlyOwner(msg.sender){
         volatilityPrecision = _precision;
     }
 
@@ -60,7 +85,7 @@ contract GenesisVolatility{
         uint8 _expiration,
         uint8 _volPerc,
         uint256 _volatility
-    ) public {
+    ) public onlyOwner(msg.sender){
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
         volatility[volHash][_volPerc] = _volatility * volatilityPrecision; 
     }
@@ -69,8 +94,8 @@ contract GenesisVolatility{
         bytes32 _underlying,
         bytes32 _strike,
         uint8 _expiration
-    ) public returns (uint256){
-       (uint256 price, uint8 decimal) = oracle.getUnderlyingPrice(_underlying, _strike);
+    ) public onlyManager(msg.sender) returns (uint256){
+       (uint256 price, ) = oracle.getUnderlyingPrice(_underlying, _strike);
        uint256 perc;
        uint256 volPerc;
        bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
