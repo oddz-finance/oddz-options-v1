@@ -154,7 +154,6 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
 
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    await mockIVManager.setManager(this.oracleManager.address);
     await this.oddzIVOracleMock.setUpdatedAt(2000);
     await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("Chain link IV Out Of Sync");
   });
