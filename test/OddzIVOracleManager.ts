@@ -33,7 +33,11 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
   describe("Oddz IV oracle", function () {
     beforeEach(async function () {
       this.oddzIVOracle = (await deployContract(this.signers.admin, OddzVolatilityArtifact, [])) as OddzVolatility;
-      this.oddzIVOracleMock = (await deployContract(this.signers.admin, MockOddzVolatilityArtifact, [])) as MockOddzVolatility;
+      this.oddzIVOracleMock = (await deployContract(
+        this.signers.admin,
+        MockOddzVolatilityArtifact,
+        [],
+      )) as MockOddzVolatility;
 
       this.oddzIVOracleManager = (await deployContract(
         this.signers.admin,
@@ -46,7 +50,9 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
       ])) as MockIVManager;
       await this.oddzIVOracleManager.setManager(this.mockIVManager.address);
 
-      await this.oddzIVOracle.connect(this.signers.admin).setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 5);
+      await this.oddzIVOracle
+        .connect(this.signers.admin)
+        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 5);
     });
 
     shouldBehaveLikeOddzIVOracleManager();
