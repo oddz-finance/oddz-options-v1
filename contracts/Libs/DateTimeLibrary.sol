@@ -131,7 +131,7 @@ library DateTimeLibrary {
      * @dev get day based on the timestamp
      */
     function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
+        (uint256 year, uint256 month, uint256 day) = timestampToDate(block.timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 }
