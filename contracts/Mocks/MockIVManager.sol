@@ -12,6 +12,6 @@ contract MockIVManager {
     }
 
     function calculateIv(uint256 _time) public view returns (uint256 iv, uint8 decimals) {
-        (iv, decimals) = ivManager.calculateIv("ETH", "USD", _time);
+        (iv, decimals) = ivManager.calculateIv("ETH", "USD", _time, 161200000000, 160000000000);
     }
 }

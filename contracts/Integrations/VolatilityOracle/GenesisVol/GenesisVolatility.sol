@@ -1,12 +1,15 @@
 pragma solidity 0.8.3;
 
+import "../../../Oracle/OddzPriceOracleManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract GenesisVolatility is AccessControl{
     using Address for address;
 
-    OddzOracleManager oracle;
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
+    OddzPriceOracleManager oracle;
 
     uint256 public volatilityPrecision = 2;
 
@@ -24,7 +27,7 @@ contract GenesisVolatility is AccessControl{
     }
 
     constructor(
-        OddzOracleManager _oracle
+        OddzPriceOracleManager _oracle
     ){
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         oracle = _oracle;
@@ -51,7 +54,7 @@ contract GenesisVolatility is AccessControl{
         }
     }
 
-    function _getNegPercentage(uint256 _perc) private view returns (uint256 _volPerc){
+    function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPerc){
             if (_perc > 0 && _perc<=5 ){
                 _volPerc = 5;
             }else if (_perc >5 && _perc<=10){
@@ -65,7 +68,7 @@ contract GenesisVolatility is AccessControl{
             }
     }
 
-    function _getPosPercentage(uint256 _perc) private view returns (uint256 _volPerc){
+    function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPerc){
             if (_perc > 0 && _perc<=5 ){
                 _volPerc = 105;
             }else if (_perc >5 && _perc<=10){
@@ -93,17 +96,18 @@ contract GenesisVolatility is AccessControl{
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
-        uint8 _expiration
-    ) public onlyManager(msg.sender) returns (uint256){
-       (uint256 price, ) = oracle.getUnderlyingPrice(_underlying, _strike);
+        uint8 _expiration,
+        uint256 _currentPrice,
+        uint256 _strikePrice
+    ) public view onlyManager(msg.sender) returns (uint256){
        uint256 perc;
-       uint256 volPerc;
+       uint8 volPerc;
        bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
-        if (_strike > price){
-            perc = (_strike - price)/ price * 100;
+        if (_strikePrice > _currentPrice){
+            perc = (_strikePrice - _currentPrice)/ _currentPrice * 100;
            volPerc= getVolPercentage(perc, false);
-        }else if (_strike > price){
-            perc = (price - _strike) / _strike * 100;
+        }else if (_strikePrice > _currentPrice){
+            perc = (_currentPrice - _strikePrice) / _strikePrice * 100;
             volPerc =getVolPercentage(perc, true);
         }
 

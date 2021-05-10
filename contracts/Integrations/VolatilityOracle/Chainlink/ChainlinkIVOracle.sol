@@ -103,7 +103,9 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _currentPrice,
+        uint256 _strikePrice
     ) public view override onlyManager(msg.sender) returns (uint256 iv, uint8 decimals) {
         uint256 _expirationDay = (_expiration / 1 days);
         require(ivPeriodMap[_expirationDay] != 0, "Chainlink IV: Invalid expiration");
