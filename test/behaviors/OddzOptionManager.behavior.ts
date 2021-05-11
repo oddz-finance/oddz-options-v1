@@ -408,7 +408,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     ).to.be.revertedWith("Premium is low");
   });
 
-  it("Call option - excercise flow", async function () {
+  it("should successfully exercise call option", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -446,7 +446,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
   });
 
-  it("Put option - excercise flow", async function () {
+  it("should successfully exercise put option", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1690,6 +1690,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin),
     ).to.be.revertedWith("Premium crossed slippage tolerance");
   });
+
   it("should revert buy when premium crosses slippage limit of 1%", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const oddzVolatility = await this.oddzVolatility.connect(this.signers.admin);
@@ -1815,7 +1816,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
   });
 
-  it("Should use msg.sender instead of account sent for buy option", async function () {
+  it("should use msg.sender instead of account sent for buy option", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
