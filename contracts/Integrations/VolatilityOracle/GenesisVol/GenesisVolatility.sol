@@ -4,6 +4,14 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract GenesisVolatility is AccessControl {
+
+    event AddedVolatilityMapping(
+        bytes32 indexed _underlying,
+        bytes32 indexed _strike,
+        uint256 _expiration,
+        uint8 _volPercentage,
+        uint256 _volatility 
+    );
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -41,7 +49,7 @@ contract GenesisVolatility is AccessControl {
         volatilityPrecision = _precision;
     }
 
-    function getVolPercentage(uint256 _perc, bool _isNeg) public pure returns (uint8 _volPercentage) {
+    function getVolPercentage(uint256 _perc, bool _isNeg) public view returns (uint8 _volPercentage) {
         if (_isNeg) {
             _volPercentage = _getNegPercentage(_perc);
         } else {
@@ -49,7 +57,7 @@ contract GenesisVolatility is AccessControl {
         }
     }
 
-    function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
+    function _getNegPercentage(uint256 _perc) private view returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) {
             _volPercentage = 5;
         } else if (_perc > 5 && _perc <= 10) {
@@ -63,7 +71,7 @@ contract GenesisVolatility is AccessControl {
         }
     }
 
-    function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
+    function _getPosPercentage(uint256 _perc) private view returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) {
             _volPercentage = 105;
         } else if (_perc > 5 && _perc <= 10) {
@@ -77,15 +85,16 @@ contract GenesisVolatility is AccessControl {
         }
     }
 
-    function addMapping(
+    function addVolatilityMapping(
         bytes32 _underlying,
         bytes32 _strike,
         uint256 _expiration,
         uint8 _volPercentage,
-        uint256 _volatility
+        uint256 _volatility // 96.68 => 9668
     ) public onlyOwner(msg.sender) {
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
-        volatility[volHash][_volPercentage] = _volatility * (10**volatilityPrecision);
+        volatility[volHash][_volPercentage] = _volatility;
+        emit AddedVolatilityMapping(_underlying, _strike, _expiration, _volPercentage, _volatility);
     }
 
     function getIv(
@@ -101,12 +110,15 @@ contract GenesisVolatility is AccessControl {
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
         if (_strikePrice > _currentPrice) {
             perc = (_strikePrice - _currentPrice) * 100 / _currentPrice ;
-           return  volatility[volHash][getVolPercentage(perc, false)] * _ivDecimal / volatilityPrecision;
-        } else if (_strikePrice > _currentPrice) {
+            uint8 volPercentage = getVolPercentage(perc, false);
+           return  volatility[volHash][volPercentage] * (10**_ivDecimal) / (10**volatilityPrecision);
+        } else if (_strikePrice < _currentPrice) {
             perc = (_currentPrice - _strikePrice) * 100 / _strikePrice ;
-            return volatility[volHash][getVolPercentage(perc, true)] * _ivDecimal / volatilityPrecision;
+            uint8 volPercentage = getVolPercentage(perc, true);
+            return volatility[volHash][volPercentage] * (10**_ivDecimal) / (10**volatilityPrecision);
         }
-
         return _chainlinkVol;
     }
+
+    
 }

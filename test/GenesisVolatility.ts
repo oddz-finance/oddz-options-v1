@@ -1,8 +1,10 @@
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers, waffle } from "hardhat";
 import GenesisVolatilityArtifact from "../artifacts/contracts/Integrations/VolatilityOracle/GenesisVol/GenesisVolatility.sol/GenesisVolatility.json";
+import MockIvArtifact from "../artifacts/contracts/Mocks/MockIv.sol/MockIv.json";
+
 import { Accounts, Signers } from "../types";
-import { GenesisVolatility } from "../typechain";
+import { GenesisVolatility , MockIv } from "../typechain";
 import { shouldBehaveLikeGenesisVolatilty } from "./behaviors/GenesisVolatility.behavior";
 import { MockProvider } from "ethereum-waffle";
 
@@ -30,7 +32,12 @@ describe("Genesis Volatility Unit tests", function () {
         GenesisVolatilityArtifact,
         [],
       )) as GenesisVolatility;
-      const totalSupply = 1000000000000000;
+
+      this.oddzVolatility = (await deployContract(
+        this.signers.admin,
+        MockIvArtifact,
+        [this.genesisVolatility.address],
+      )) as MockIv;
 
       
     });
