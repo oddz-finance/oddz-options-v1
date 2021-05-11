@@ -11,8 +11,8 @@ import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexMa
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
-import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzDefaultPool.sol/OddzDefaultPool.json";
-import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzEthUsdCallBS30Pool.sol/OddzEthUsdCallBS30Pool.json";
+import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
+import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS30Pool.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import { OptionType } from "../test-utils";

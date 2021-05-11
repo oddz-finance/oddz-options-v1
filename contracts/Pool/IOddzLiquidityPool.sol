@@ -17,6 +17,27 @@ interface IOddzLiquidityPool {
     event Loss(uint256 indexed _id, uint256 _amount);
 
     enum TransactionType { ADD, REMOVE }
+    struct PoolDetails {
+        bytes32 _strike;
+        bytes32 _underlying;
+        bytes32 _optionType;
+        bytes32 _model;
+        bytes32 _maxExpiration;
+    }
+
+    /**
+     * @notice returns pool parameters info
+     */
+    function poolDetails()
+        external
+        view
+        returns (
+            bytes32 _strike,
+            bytes32 _underlying,
+            bytes32 _optionType,
+            bytes32 _model,
+            bytes32 _maxExpiration
+        );
 
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
