@@ -12,13 +12,10 @@ contract MockIVManager {
     }
 
     function calculateIv(
-                    uint256 _time, 
-                    uint256 _currentPrice, 
-                    uint256 _strikePrice
-                    ) 
-                    public 
-                    view 
-                    returns (uint256 iv, uint8 decimals) {
+        uint256 _time,
+        uint256 _currentPrice,
+        uint256 _strikePrice
+    ) public view returns (uint256 iv, uint8 decimals) {
         (iv, decimals) = ivManager.calculateIv("ETH", "USD", _time, _currentPrice, _strikePrice);
     }
 }

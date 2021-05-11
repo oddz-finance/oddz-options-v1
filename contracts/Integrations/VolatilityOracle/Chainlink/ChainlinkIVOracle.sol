@@ -121,12 +121,12 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         (, int256 answer, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
-        
+
         decimals = AggregatorV3Interface(aggregator).decimals();
-        uint256 _iv = _getIv(_underlying, _strike, _expirationDay,_currentPrice, _strikePrice, iv, decimals);
+        uint256 _iv = _getIv(_underlying, _strike, _expirationDay, _currentPrice, _strikePrice, iv, decimals);
 
         // _iv can be 0 when there are no entries to mapping
-        if (_iv > 0){
+        if (_iv > 0) {
             iv = _iv;
         }
 
@@ -210,15 +210,14 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 perc;
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
         if (_strikePrice > _currentPrice) {
-            perc = (_strikePrice - _currentPrice) * 100 / _currentPrice ;
+            perc = ((_strikePrice - _currentPrice) * 100) / _currentPrice;
             uint8 volPercentage = _getVolPercentage(perc, false);
-           return  volatility[volHash][volPercentage] * (10**_ivDecimal) / (10**volatilityPrecision);
+            return (volatility[volHash][volPercentage] * (10**_ivDecimal)) / (10**volatilityPrecision);
         } else if (_strikePrice < _currentPrice) {
-            perc = (_currentPrice - _strikePrice) * 100 / _strikePrice ;
+            perc = ((_currentPrice - _strikePrice) * 100) / _strikePrice;
             uint8 volPercentage = _getVolPercentage(perc, true);
-            return volatility[volHash][volPercentage] * (10**_ivDecimal) / (10**volatilityPrecision);
+            return (volatility[volHash][volPercentage] * (10**_ivDecimal)) / (10**volatilityPrecision);
         }
         return _chainlinkVol;
     }
-
 }

@@ -4,7 +4,6 @@ pragma solidity 0.8.3;
 import "../Oracle/IOddzVolatilityOracle.sol";
 
 contract MockOddzVolatility is IOddzVolatilityOracle {
-
     uint256 iv = 180000;
     uint8 decimals = 5;
 
