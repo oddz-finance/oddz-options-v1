@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { getExpiry } from "../../test-utils";
+import {  utils } from "ethers";
 
 export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 1 day IV", async function () {
@@ -269,5 +270,187 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should throw Invalid aggregator period while mapping days to IV periods", async function () {
     const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
     await expect(chainlinkIVOracle.mapDaysToIVPeriod(10, 10)).to.be.revertedWith("Invalid aggregator period");
+  });
+
+  it("should revert setting volatility precision for non owner", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin1);
+    await expect(chainlinkIVOracle.setVolatilityPrecision(3))
+            .to.be.revertedWith("caller has no access to the method");
+  });
+
+  it("should set volatility precision", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+      await chainlinkIVOracle.setVolatilityPrecision(3);
+      expect(await chainlinkIVOracle.volatilityPrecision()).to.equal(3)   
+  });
+
+  it("should revert adding volatility mapping for non owner", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin1);
+      await expect(chainlinkIVOracle.addVolatilityMapping(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          getExpiry(1),
+          10,
+          9668 //96.68
+          ))
+          .to.be.revertedWith("caller has no access to the method");
+          
+  });
+
+  it("should add volatility mapping", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+      await chainlinkIVOracle.addVolatilityMapping(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          getExpiry(1),
+          10,
+          9668
+          );
+          
+      const hash= utils.keccak256(
+          utils.defaultAbiCoder.encode(
+            ["bytes32", "bytes32", "uint256"],
+            [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)],
+          )
+        );
+      expect(await chainlinkIVOracle.volatility(hash, 10)).to.equal(9668);     
+  });
+
+  it("should get volatility for at the money option", async function () {
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+     
+      const {iv,decimals}= await mockIVManager.calculateIv(
+                                    getExpiry(1),
+                                    160000000000,
+                                    160000000000
+                                );
+        expect(iv).to.equal(83790000)
+        expect(decimals).to.equal(8)
+                              
+  });
+
+  it("should get at the money iv if there is no iv retrieved", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    const {iv,decimals}= await mockIVManager.calculateIv(
+                                    getExpiry(1),
+                                    160000000000,
+                                    176000000000
+                                );
+     
+    expect(iv).to.equal(83790000)
+    expect(decimals).to.equal(8)                            
+  });
+
+  it("should get volatility for 10 %", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    await chainlinkIVOracle.addVolatilityMapping(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        1,
+        110,
+        9668
+        );
+        
+    const {iv,decimals}= await mockIVManager.calculateIv(
+                                    getExpiry(1),
+                                    160000000000,
+                                    176000000000
+                                );
+     
+    expect(iv).to.equal(96680000)
+    expect(decimals).to.equal(8)                            
+                               
+  });
+
+  it.only("should get volatility of plus5% with 2% difference in current and strike", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    await chainlinkIVOracle.addVolatilityMapping(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        1,
+        105,
+        9668
+        );
+        
+    const {iv,decimals}= await this.mockIVManager.calculateIv(
+                                    getExpiry(1),
+                                    160000000000,
+                                    163200000000
+                                );
+        
+    expect(iv).to.equal(96680000)
+    expect(decimals).to.equal(8)                             
+  });
+
+  it.only("should get volatility for less5% with 2% difference in current and strike", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+      await chainlinkIVOracle.addVolatilityMapping(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          1,
+          5,
+          9668
+          );
+          
+      const {iv,decimals}= await mockIVManager.calculateIv(
+                                      getExpiry(1),
+                                      160000000000,
+                                      156800000000
+                                  );
+          
+      expect(iv).to.equal(96680000)
+      expect(decimals).to.equal(8)                           
+  });
+
+  it.only("should get volatility for plus90% with 90% difference in current and strike", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+      await chainlinkIVOracle.addVolatilityMapping(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          1,
+          190,
+          9668
+          );
+          
+      const {iv,decimals}= await mockIVManager.calculateIv(
+                                      getExpiry(1),
+                                      160000000000,
+                                      304000000000
+                                  );
+          
+      expect(iv).to.equal(96680000)
+      expect(decimals).to.equal(8)                           
+  });
+
+  it.only("should get volatility for less90% with 90% difference in current and strike", async function () {
+      const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+      await chainlinkIVOracle.addVolatilityMapping(
+          utils.formatBytes32String("ETH"),
+          utils.formatBytes32String("USD"),
+          1,
+          90,
+          9668
+          );
+          
+      const {iv,decimals}= await mockIVManager.calculateIv(
+                                      getExpiry(1),
+                                      160000000000,
+                                      16000000000
+                                  );
+          
+      expect(iv).to.equal(96680000)
+      expect(decimals).to.equal(8)                           
   });
 }

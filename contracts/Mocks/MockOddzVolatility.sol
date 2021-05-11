@@ -2,17 +2,11 @@
 pragma solidity 0.8.3;
 
 import "../Oracle/IOddzVolatilityOracle.sol";
-import "../Integrations/VolatilityOracle/GenesisVol/GenesisVolatility.sol";
 
 contract MockOddzVolatility is IOddzVolatilityOracle {
-    GenesisVolatility volatility;
 
     uint256 iv = 180000;
     uint8 decimals = 5;
-
-    constructor(GenesisVolatility _volatility){
-        volatility = _volatility;
-    }
 
     function getIv(
         bytes32 _underlying,
