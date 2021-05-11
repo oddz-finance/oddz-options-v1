@@ -32,6 +32,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         uint256 collected;
         uint256 eligible;
         uint256 distributed;
+        bool isNegative;
         bool enabled;
     }
     mapping(uint256 => PremiumPool) public premiumDayPool;
@@ -171,7 +172,13 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         PremiumPool storage premium = premiumDayPool[_date];
         require(!premium.enabled, "LP Error: Premium eligibilty already updated for the date");
         premium.enabled = true;
-        premium.eligible = premium.collected + surplus - daysExercise[_date];
+        if (premium.collected + surplus >= daysExercise[_date]) {
+            premium.eligible = premium.collected + surplus - daysExercise[_date];
+            premium.isNegative = false;
+        } else {
+            premium.eligible = daysExercise[_date] - premium.collected + surplus;
+            premium.isNegative = true;
+        }
         surplus = 0;
     }
 
@@ -193,7 +200,22 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         uint256 _date
     ) public override onlyManager(msg.sender) {
         lpPremiumDistributionMap[_account][_date] = _amount;
-        lpPremium[_account] += _amount;
+        if (premiumDayPool[_date].isNegative) {
+            if (lpPremium[_account] > _amount) lpPremium[_account] -= _amount;
+            else negativeLpBalance[_account] += _amount;
+        } else {
+            if (negativeLpBalance[_account] > 0) {
+                if (negativeLpBalance[_account] > _amount) {
+                    negativeLpBalance[_account] -= _amount;
+                    _amount = 0;
+                } else {
+                    _amount -= negativeLpBalance[_account];
+                    negativeLpBalance[_account] = 0;
+                }
+            }
+            lpPremium[_account] += _amount;
+        }
+
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + _amount;
     }
 
