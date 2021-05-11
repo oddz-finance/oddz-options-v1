@@ -41,71 +41,72 @@ contract GenesisVolatility is AccessControl {
         volatilityPrecision = _precision;
     }
 
-    function getVolPercentage(uint256 _perc, bool _isNeg) public view returns (uint8 _volPerc) {
+    function getVolPercentage(uint256 _perc, bool _isNeg) public pure returns (uint8 _volPercentage) {
         if (_isNeg) {
-            _volPerc = _getNegPercentage(_perc);
+            _volPercentage = _getNegPercentage(_perc);
         } else {
-            _volPerc = _getPosPercentage(_perc);
+            _volPercentage = _getPosPercentage(_perc);
         }
     }
 
-    function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPerc) {
+    function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) {
-            _volPerc = 5;
+            _volPercentage = 5;
         } else if (_perc > 5 && _perc <= 10) {
-            _volPerc = 10;
+            _volPercentage = 10;
         } else if (_perc > 10 && _perc <= 20) {
-            _volPerc = 20;
+            _volPercentage = 20;
         } else if (_perc > 20 && _perc <= 40) {
-            _volPerc = 40;
+            _volPercentage = 40;
         } else if (_perc > 40) {
-            _volPerc = 90;
+            _volPercentage = 90;
         }
     }
 
-    function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPerc) {
+    function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) {
-            _volPerc = 105;
+            _volPercentage = 105;
         } else if (_perc > 5 && _perc <= 10) {
-            _volPerc = 110;
+            _volPercentage = 110;
         } else if (_perc > 10 && _perc <= 20) {
-            _volPerc = 120;
+            _volPercentage = 120;
         } else if (_perc > 20 && _perc <= 40) {
-            _volPerc = 140;
+            _volPercentage = 140;
         } else if (_perc > 40) {
-            _volPerc = 190;
+            _volPercentage = 190;
         }
     }
 
     function addMapping(
         bytes32 _underlying,
         bytes32 _strike,
-        uint8 _expiration,
-        uint8 _volPerc,
+        uint256 _expiration,
+        uint8 _volPercentage,
         uint256 _volatility
     ) public onlyOwner(msg.sender) {
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
-        volatility[volHash][_volPerc] = _volatility * volatilityPrecision;
+        volatility[volHash][_volPercentage] = _volatility * (10**volatilityPrecision);
     }
 
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
-        uint8 _expiration,
+        uint256 _expiration,
         uint256 _currentPrice,
-        uint256 _strikePrice
+        uint256 _strikePrice,
+        uint256 _chainlinkVol,
+        uint256 _ivDecimal
     ) public view onlyManager(msg.sender) returns (uint256) {
         uint256 perc;
-        uint8 volPerc;
         bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
         if (_strikePrice > _currentPrice) {
-            perc = ((_strikePrice - _currentPrice) / _currentPrice) * 100;
-            volPerc = getVolPercentage(perc, false);
+            perc = (_strikePrice - _currentPrice) * 100 / _currentPrice ;
+           return  volatility[volHash][getVolPercentage(perc, false)] * _ivDecimal / volatilityPrecision;
         } else if (_strikePrice > _currentPrice) {
-            perc = ((_currentPrice - _strikePrice) / _strikePrice) * 100;
-            volPerc = getVolPercentage(perc, true);
+            perc = (_currentPrice - _strikePrice) * 100 / _strikePrice ;
+            return volatility[volHash][getVolPercentage(perc, true)] * _ivDecimal / volatilityPrecision;
         }
 
-        return volatility[volHash][volPerc];
+        return _chainlinkVol;
     }
 }

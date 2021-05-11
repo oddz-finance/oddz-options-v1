@@ -2,12 +2,14 @@
 pragma solidity 0.8.3;
 
 import "../../../Oracle/IOddzVolatilityOracle.sol";
+import "../GenesisVol/GenesisVolatility.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
 contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
+    GenesisVolatility volatility;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     mapping(uint8 => bool) public allowedPeriods;
@@ -30,8 +32,9 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         _;
     }
 
-    constructor() {
+    constructor( GenesisVolatility _volatility) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        volatility = _volatility;
         // Add default IV aggregation periods
         addAllowedPeriods(1);
         addAllowedPeriods(2);
@@ -117,9 +120,13 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         (, int256 answer, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
+        
+        
+        decimals = AggregatorV3Interface(aggregator).decimals();
+        iv = volatility.getIv(_underlying, _strike, _expirationDay,_currentPrice, _strikePrice, iv, decimals);
+
         // converting iv from percentage to value
         iv = iv / 100;
-        decimals = AggregatorV3Interface(aggregator).decimals();
     }
 
     function setPairContract(
