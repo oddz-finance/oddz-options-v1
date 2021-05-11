@@ -6,7 +6,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 1 day IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
     expect(iv).to.equal(83790000);
     expect(decimals).to.equal(8);
   });
@@ -14,7 +14,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 2 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(2));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(2),160000000000, 176000000000);
     expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
@@ -22,7 +22,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 3 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(3));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(3),160000000000, 176000000000);
     expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
@@ -30,7 +30,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 4 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(4));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(4),160000000000, 176000000000);
     expect(iv).to.equal(92370000);
     expect(decimals).to.equal(8);
   });
@@ -38,7 +38,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 5 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(5));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(5),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -46,7 +46,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 6 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(6));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(6),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -54,7 +54,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 7 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(7));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(7),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -62,7 +62,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 8 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(8));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(8),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -70,7 +70,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 9 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(9));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(9),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -78,7 +78,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 10 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(10));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(10),160000000000, 176000000000);
     expect(iv).to.equal(101540000);
     expect(decimals).to.equal(8);
   });
@@ -86,7 +86,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 11 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(11));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(11),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -94,7 +94,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 12 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(12));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(12),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -102,7 +102,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 13 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(13));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(13),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -110,7 +110,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 14 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(14));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(14),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -118,7 +118,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 15 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(15));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(15),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -126,7 +126,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 16 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(16));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(16),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -134,7 +134,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 17 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(17));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(17),160000000000, 176000000000);
     expect(iv).to.equal(104720000);
     expect(decimals).to.equal(8);
   });
@@ -142,7 +142,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 18 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(18));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(18),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -150,7 +150,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 19 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(19));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(19),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -158,7 +158,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 20 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(20));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(20),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -166,7 +166,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 21 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(21));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(21),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -174,7 +174,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 22 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(22));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(22),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -182,7 +182,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 23 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(23));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(23),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -190,7 +190,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 24 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(24));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(24),160000000000, 176000000000);
     expect(iv).to.equal(105860000);
     expect(decimals).to.equal(8);
   });
@@ -198,7 +198,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 25 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(25));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(25),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -206,7 +206,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 26 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(26));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(26),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -214,7 +214,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 27 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(27));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(27),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -222,7 +222,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 28 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(28));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(28),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -230,7 +230,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 29 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(29));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(29),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -238,7 +238,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 30 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(30));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(30),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -246,7 +246,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
   it("Should return 31 days IV", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(31));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(31),160000000000, 176000000000);
     expect(iv).to.equal(107590000);
     expect(decimals).to.equal(8);
   });
@@ -366,7 +366,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
                                
   });
 
-  it.only("should get volatility of plus5% with 2% difference in current and strike", async function () {
+  it("should get volatility of plus5% with 2% difference in current and strike", async function () {
     const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
@@ -388,7 +388,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     expect(decimals).to.equal(8)                             
   });
 
-  it.only("should get volatility for less5% with 2% difference in current and strike", async function () {
+  it("should get volatility for less5% with 2% difference in current and strike", async function () {
       const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
@@ -410,7 +410,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       expect(decimals).to.equal(8)                           
   });
 
-  it.only("should get volatility for plus90% with 90% difference in current and strike", async function () {
+  it("should get volatility for plus90% with 90% difference in current and strike", async function () {
       const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
@@ -432,7 +432,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       expect(decimals).to.equal(8)                           
   });
 
-  it.only("should get volatility for less90% with 90% difference in current and strike", async function () {
+  it("should get volatility for less90% with 90% difference in current and strike", async function () {
       const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
