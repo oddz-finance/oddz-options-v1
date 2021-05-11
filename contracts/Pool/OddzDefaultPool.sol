@@ -159,7 +159,8 @@ contract OddzDefaultPool is AccessControl, IOddzLiquidityPool {
         uint256 date = getPresentDayTimestamp();
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium.collected = dayPremium.collected + _amount;
-        daysExercise[date] += _amount;
+        daysExercise[date] += _transfer;
+        updateLiquidity(date, _transfer, TransactionType.REMOVE);
 
         if (_amount >= _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);

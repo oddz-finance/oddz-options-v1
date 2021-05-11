@@ -197,7 +197,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
         uint256 transferAmount =
             ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), burn);
-        // TODO: Pools should hold reference to USDC and oUSD
         _pool.removeLiquidity(transferAmount, burn, msg.sender);
 
         _burn(msg.sender, burn);
@@ -400,7 +399,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 (lockedPremium * ll._share[i]) / ll._amount,
                 (transferAmount * ll._share[i]) / ll._amount
             );
-            // TODO: update oUSD supply in the pool
         }
     }
 
