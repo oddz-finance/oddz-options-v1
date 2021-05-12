@@ -62,7 +62,6 @@ interface IOddzLiquidityPool {
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
      */
-
     function lockLiquidity(uint256 _amount) external;
 
     /**
@@ -70,11 +69,6 @@ interface IOddzLiquidityPool {
      * @param _amount Amount of funds that should be unlocked in an option
      */
     function unlockLiquidity(uint256 _amount) external;
-
-    /**
-     * @notice updates surplus amount
-     */
-    function updateSurplus(uint256 _amount, bool _positive) external;
 
     /**
      * @notice Returns the amount of USD available for withdrawals
@@ -123,6 +117,12 @@ interface IOddzLiquidityPool {
      */
     function unlockPremium(uint256 _lid, uint256 _amount) external;
 
+    /**
+     * @notice Allocate premium to pool
+     * @param _lid liquidity ID
+     * @param _amount Premium amount
+     * @param _transfer Amount i.e will be transferred to option owner
+     */
     function exercisePremium(
         uint256 _lid,
         uint256 _amount,

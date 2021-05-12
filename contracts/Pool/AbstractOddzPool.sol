@@ -62,6 +62,11 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    /**
+     * @notice Add liquidity for the day
+     * @param _amount USD value
+     * @param _account Address of the Liquidity Provider
+     */
     function addLiquidity(uint256 _amount, address _account) public override onlyManager(msg.sender) {
         require(_amount > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
@@ -73,6 +78,12 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         emit AddLiquidity(_account, _amount);
     }
 
+    /**
+     * @notice Provider burns oUSD and receives USD from the pool
+     * @param _amount Amount of USD to receive
+     * @param _oUSD Amount of oUSD to be burnt
+     * @param _account Address of the Liquidity Provider
+     */
     function removeLiquidity(
         uint256 _amount,
         uint256 _oUSD,
@@ -93,35 +104,48 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         emit RemoveLiquidity(_account, _amount, _oUSD);
     }
 
+    /**
+     * @notice called by Oddz call options to lock the funds
+     * @param _amount Amount of funds that should be locked in an option
+     */
     function lockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         lockedAmount = lockedAmount + _amount;
         oUsdSupply += _amount;
     }
 
+    /**
+     * @notice called by Oddz option to unlock the funds
+     * @param _amount Amount of funds that should be unlocked in an option
+     */
     function unlockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
         require(_amount > 0, "LP Error: Amount is too small");
         lockedAmount = lockedAmount - _amount;
     }
 
+    /**
+     * @notice latest transaction date of the user
+     * @param _account Address of the Liquidity Provider
+     * @return balance account balance
+     */
     function latestLiquidityDate(address _account) public view override returns (uint256) {
         return latestLiquidityDateMap[_account];
     }
 
     /**
-     * @notice Returns LP's active liquidty
-     * @param _account Liquidity provider's address
-     * @return balance liquidity provider's active liquidity
+     * @notice current balance of the user
+     * @param _account Address of the Liquidity Provider
+     * @return balance account balance
      */
     function activeLiquidity(address _account) public view override returns (uint256) {
         return activeLiquidityByDate(_account, getPresentDayTimestamp());
     }
 
     /**
-     * @notice Returns LP's active liqudity based on input date
-     * @param _account Liquidity provider's address
-     * @param _date unix timestamp of the date
-     * @return balance liquidity provider's active liquidity
+     * @notice active liquitdity for the date
+     * @param _date UTC timestamp of the date
+     * @param _account Address of the Liquidity Provider
+     * @return balance account balance
      */
     function activeLiquidityByDate(address _account, uint256 _date) public view override returns (uint256) {
         LPBalance[] storage lpBalanceList = lpBalanceMap[_account];
@@ -133,18 +157,29 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         else return 0;
     }
 
-    function updateSurplus(uint256 _amount, bool _positive) public override onlyManager(msg.sender) {
-        surplus = _positive ? surplus + _amount : surplus - _amount;
-    }
-
+    /**
+     * @notice returns user premium allocated for the date
+     * @param _account Address of the Liquidity Provider
+     * @param _date premium eligible date
+     * @return premium Premium distribution amount for the date
+     */
     function getPremiumDistribution(address _account, uint256 _date) public view override returns (uint256) {
         return lpPremiumDistributionMap[_account][_date];
     }
 
+    /**
+     * @notice fetches user premium
+     * @param _account Address of the Liquidity Provider
+     */
     function getPremium(address _account) public view override returns (uint256) {
         return lpPremium[_account];
     }
 
+    /**
+     * @notice Allocate premium to pool
+     * @param _lid liquidity ID
+     * @param _amount Premium amount
+     */
     function unlockPremium(uint256 _lid, uint256 _amount) public override onlyManager(msg.sender) {
         PremiumPool storage dayPremium = premiumDayPool[getPresentDayTimestamp()];
         dayPremium.collected = dayPremium.collected + _amount;
@@ -152,6 +187,12 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         emit Profit(_lid, _amount);
     }
 
+    /**
+     * @notice Allocate premium to pool
+     * @param _lid liquidity ID
+     * @param _amount Premium amount
+     * @param _transfer Amount i.e will be transferred to option owner
+     */
     function exercisePremium(
         uint256 _lid,
         uint256 _amount,
@@ -167,6 +208,10 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         else emit Loss(_lid, _transfer - _amount);
     }
 
+    /**
+     * @notice Enable premium distribution for a date
+     * @param _date Premium eligibility date
+     */
     function enablePremiumDistribution(uint256 _date) public override {
         require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
@@ -182,18 +227,36 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         surplus = 0;
     }
 
+    /**
+     * @notice gets premium distribution status for a date
+     * @param _date Premium eligibility date
+     */
     function isPremiumDistributionEnabled(uint256 _date) public view override returns (bool) {
         return premiumDayPool[_date].enabled;
     }
 
+    /**
+     * @notice returns eligible premium for a date
+     * @param _date Premium date
+     */
     function getEligiblePremium(uint256 _date) public view override returns (uint256) {
         return premiumDayPool[_date].eligible;
     }
 
+    /**
+     * @notice returns distributed premium for a date
+     * @param _date Premium date
+     */
     function getDistributedPremium(uint256 _date) public view override returns (uint256) {
         return premiumDayPool[_date].distributed;
     }
 
+    /**
+     * @notice allocated premium to provider
+     * @param _account Address of the Liquidity Provider
+     * @param _amount Premium amount
+     * @param _date premium eligible date
+     */
     function allocatePremiumToProvider(
         address _account,
         uint256 _amount,
@@ -219,13 +282,23 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + _amount;
     }
 
+    /**
+     * @notice forfeite user premium
+     * @param _account Address of the Liquidity Provider
+     * @param _amount Premium amount
+     */
     function forfeitPremium(address _account, uint256 _amount) public override onlyManager(msg.sender) {
         lpPremium[_account] -= _amount;
-        updateSurplus(_amount, true);
+        surplus += _amount;
 
         emit PremiumForfeited(_account, _amount);
     }
 
+    /**
+     * @notice helper to convert premium to oUSD and sets the premium to zero
+     * @param _account Address of the Liquidity Provider
+     * @return premium Premium balance
+     */
     function collectPremium(address _account) public override onlyManager(msg.sender) returns (uint256 premium) {
         premium = lpPremium[_account];
         lpPremium[_account] = 0;
@@ -249,14 +322,26 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         _liquidity = daysActiveLiquidity[_date];
     }
 
+    /**
+     * @notice Returns the amount of USD available for withdrawals
+     * @return balance Unlocked balance
+     */
     function availableBalance() public view override returns (uint256) {
         return totalBalance() - lockedAmount;
     }
 
+    /**
+     * @notice Returns the total balance of USD provided to the pool
+     * @return balance Pool balance
+     */
     function totalBalance() public view override returns (uint256) {
         return poolBalance;
     }
 
+    /**
+     * @notice Returns the total supply allocated for the pool
+     * @return balance total supply allocated to the pool
+     */
     function totalSupply() public view override returns (uint256) {
         return oUsdSupply;
     }
