@@ -4,7 +4,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract AbstractTokenStaking {
+abstract contract AbstractTokenStaking is AccessControl{
+
+    using Address for address;
+
     /**
      * @dev Staker Details
      * @param _address Address of the staker
@@ -26,6 +29,40 @@ abstract contract AbstractTokenStaking {
      * @dev Staking token address
      */
     address token;
+
+    /**
+     * @dev Access control specific data definitions
+     */
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "Caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "Caller has no access to the method");
+        _;
+    }
+
+     /**
+     @dev sets the manager for the staking  contract
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     @dev removes the manager for the staking contract for valid managers
+     @param _address manager contract address
+     Note: This can be called only by the owner
+     */
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
 
 
     /**
@@ -71,7 +108,9 @@ abstract contract AbstractTokenStaking {
      * @notice Sets staking token address
      * @param _token Address of the token
      */
-    function setToken(address _token) external virtual;
+    function setToken(address _token) public onlyManager(msg.sender){
+        token = _token;
+    }
 
     /**
      * @notice Get last staked date for the staker
