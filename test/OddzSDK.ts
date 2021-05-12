@@ -5,7 +5,7 @@ import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPr
 import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
-import MockOddzStakingArtifact from "../artifacts/contracts/Mocks/MockOddzStaking.sol/MockOddzStaking.json";
+import OddzStakingManagerArtifact from "../artifacts/contracts/Staking/OddzStakingManager.sol/OddzStakingManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
@@ -18,7 +18,7 @@ import {
   OddzOptionManager,
   MockOddzPriceOracle,
   MockOddzVolatility,
-  MockOddzStaking,
+  OddzStakingManager,
   MockERC20,
   OddzLiquidityPool,
   OddzPriceOracleManager,
@@ -103,8 +103,6 @@ describe("Oddz Option Sdk Unit tests", function () {
 
       await oddzIVOracleManager.setActiveIVAggregator(hash);
 
-      const oddzStaking = (await deployContract(this.signers.admin, MockOddzStakingArtifact)) as MockOddzStaking;
-
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
       this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "USD coin",
@@ -118,6 +116,10 @@ describe("Oddz Option Sdk Unit tests", function () {
         "ETH",
         totalSupply,
       ])) as MockERC20;
+
+      const oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
+        this.usdcToken.address,
+      ])) as OddzStakingManager;
 
       // USDC prod address 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
       this.oddzLiquidityPool = (await deployContract(this.signers.admin, OddzLiquidityPoolArtifact, [

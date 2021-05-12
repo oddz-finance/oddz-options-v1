@@ -1371,7 +1371,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("should send settlement fee aggragrate staking contract successfully", async function () {
+  it("should send settlement fee aggregate to staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1406,7 +1406,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
-  it("should send transaction fee aggragrate staking contract successfully", async function () {
+  it("should send transaction fee aggregate to staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1432,6 +1432,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("12.71409331")),
     );
+
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });

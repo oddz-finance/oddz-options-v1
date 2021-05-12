@@ -460,7 +460,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
-        token.safeTransfer(address(stakingBenficiary), txnFee);
+        token.approve(address(stakingBenficiary), txnFee);
         stakingBenficiary.deposit(txnFee, IOddzStaking.DepositType.Transaction);
     }
 
@@ -471,7 +471,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
-        token.safeTransfer(address(stakingBenficiary), settlementFee);
+        token.approve(address(stakingBenficiary), settlementFee);
         stakingBenficiary.deposit(settlementFee, IOddzStaking.DepositType.Settlement);
     }
 
