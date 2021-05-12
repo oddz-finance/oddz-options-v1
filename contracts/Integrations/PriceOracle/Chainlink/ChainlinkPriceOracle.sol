@@ -2,21 +2,32 @@
 pragma solidity 0.8.3;
 
 import "../../../Oracle/IOddzPriceOracle.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
-contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
+contract ChainlinkPriceOracle is AccessControl, IOddzPriceOracle {
     using Address for address;
     uint256 public delayInSeconds = 30 * 60;
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     mapping(bytes32 => mapping(bytes32 => address)) addressMap;
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
+        _;
+    }
 
     function getPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
         override
-        onlyOwner
+        onlyManager(msg.sender)
         returns (uint256 price, uint8 decimals)
     {
         address aggregator = addressMap[_underlying][_strike];
@@ -33,14 +44,14 @@ contract ChainlinkPriceOracle is Ownable, IOddzPriceOracle {
         bytes32 _underlying,
         bytes32 _strike,
         address _aggregator
-    ) public override onlyOwner {
+    ) public override onlyManager(msg.sender) {
         require(_aggregator.isContract(), "Invalid chainlink aggregator");
         addressMap[_underlying][_strike] = _aggregator;
 
         emit AddAssetPairAggregator(_underlying, _strike, address(this), _aggregator);
     }
 
-    function setDelay(uint256 _delay) public onlyOwner {
+    function setDelay(uint256 _delay) public onlyOwner(msg.sender) {
         delayInSeconds = _delay;
     }
 }
