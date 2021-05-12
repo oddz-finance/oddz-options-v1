@@ -5,12 +5,21 @@ import OddzStakingManagerArtifact from "../artifacts/contracts/Staking/OddzStaki
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
 import ODevTokenStakingArtifact from "../artifacts/contracts/Staking/ODevTokenStaking.sol/ODevTokenStaking.json";
 import OUsdTokenStakingArtifact from "../artifacts/contracts/Staking/OUsdTokenStaking.sol/OUsdTokenStaking.json";
+import MockTokenStakingArtifact from "../artifacts/contracts/Mocks/MockTokenStaking.sol/MockTokenStaking.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-import { OddzStakingManager, OddzTokenStaking, OUsdTokenStaking, ODevTokenStaking, MockERC20 } from "../typechain";
+import { 
+    OddzStakingManager, 
+    OddzTokenStaking, 
+    OUsdTokenStaking, 
+    ODevTokenStaking, 
+    MockERC20, 
+    MockTokenStaking 
+    } 
+    from "../typechain";
 import { shouldBehaveLikeOddzStakingManager } from "./behaviors/OddzStakingManager.behavior";
 import { BigNumber, utils } from "ethers";
 import { getExpiry } from "../test-utils";
@@ -79,9 +88,26 @@ describe("Oddz Staking Manager Unit tests", function () {
         [],
       )) as ODevTokenStaking;
 
+      
+
       await this.oddzTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oUsdTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oDevTokenStaking.transferOwnership(this.oddzStakingManager.address);
+
+     
+      this.oddzTokenStaking1 = (await deployContract(
+        this.signers.admin,
+        OddzTokenStakingArtifact,
+        [],
+      )) as OddzTokenStaking;
+
+      this.mockTokenStaking = (await deployContract(
+        this.signers.admin,
+        MockTokenStakingArtifact,
+        [this.oddzTokenStaking1.address],
+      )) as MockTokenStaking;
+
+      
 
       await this.oddzStakingManager.addToken(
         utils.formatBytes32String("ODDZ"),

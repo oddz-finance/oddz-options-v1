@@ -27,7 +27,7 @@ abstract contract AbstractTokenStaking is Ownable {
     /**
      * @dev Staking token address
      */
-    address token;
+    address public token;
 
     /**
      * @notice Stake tokens
@@ -41,13 +41,7 @@ abstract contract AbstractTokenStaking is Ownable {
         uint256 _date
     ) external virtual;
 
-    /**
-     * @notice mint tokens for the staker
-     * @param _staker Address of the staker
-     * @param _amount Amount to mint
-     */
-    function mint(address _staker, uint256 _amount) external virtual;
-
+   
     /**
      * @notice burn tokens of the staker
      * @param _staker Address of the staker

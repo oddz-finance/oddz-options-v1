@@ -4,6 +4,7 @@ import "./AbstractTokenStaking.sol";
 import "./IOddzStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract OddzTokenStaking is AbstractTokenStaking, ERC20("Oddz Staking Token", "sOddz") {
     using SafeERC20 for IERC20;
@@ -22,9 +23,6 @@ contract OddzTokenStaking is AbstractTokenStaking, ERC20("Oddz Staking Token", "
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function mint(address _staker, uint256 _amount) external override onlyOwner {
-        _mint(_staker, _amount);
-    }
 
     function burn(address _staker, uint256 _amount) external override onlyOwner {
         _burn(_staker, _amount);

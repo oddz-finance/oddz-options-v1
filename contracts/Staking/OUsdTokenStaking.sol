@@ -22,10 +22,6 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Toke
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function mint(address _staker, uint256 _amount) external override onlyOwner {
-        _mint(_staker, _amount);
-    }
-
     function burn(address _staker, uint256 _amount) external override onlyOwner {
         _burn(_staker, _amount);
     }

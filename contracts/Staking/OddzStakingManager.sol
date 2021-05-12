@@ -9,7 +9,6 @@ import "./ODevTokenStaking.sol";
 import "./OUsdTokenStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 
 contract OddzStakingManager is Ownable, IOddzStaking {
     using Address for address;
