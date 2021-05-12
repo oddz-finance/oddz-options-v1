@@ -1,10 +1,10 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract AbstractTokenStaking is AccessControl {
+abstract contract AbstractTokenStaking is Ownable {
     using Address for address;
 
     /**
@@ -29,39 +29,6 @@ abstract contract AbstractTokenStaking is AccessControl {
      */
     address token;
 
-    /**
-     * @dev Access control specific data definitions
-     */
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "Caller has no access to the method");
-        _;
-    }
-
-    modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "Caller has no access to the method");
-        _;
-    }
-
-    /**
-     @dev sets the manager for the staking  contract
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
-
-    /**
-     @dev removes the manager for the staking contract for valid managers
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function removeManager(address _address) public {
-        revokeRole(MANAGER_ROLE, _address);
-    }
 
     /**
      * @notice Stake tokens
@@ -106,7 +73,7 @@ abstract contract AbstractTokenStaking is AccessControl {
      * @notice Sets staking token address
      * @param _token Address of the token
      */
-    function setToken(address _token) public onlyManager(msg.sender) {
+    function setToken(address _token) public onlyOwner {
         token = _token;
     }
 

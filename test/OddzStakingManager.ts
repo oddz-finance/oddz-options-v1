@@ -79,9 +79,9 @@ describe("Oddz Staking Manager Unit tests", function () {
         [],
       )) as ODevTokenStaking;
 
-      await this.oddzTokenStaking.setManager(this.oddzStakingManager.address);
-      await this.oUsdTokenStaking.setManager(this.oddzStakingManager.address);
-      await this.oDevTokenStaking.setManager(this.oddzStakingManager.address);
+      await this.oddzTokenStaking.transferOwnership(this.oddzStakingManager.address);
+      await this.oUsdTokenStaking.transferOwnership(this.oddzStakingManager.address);
+      await this.oDevTokenStaking.transferOwnership(this.oddzStakingManager.address);
 
       await this.oddzStakingManager.addToken(
         utils.formatBytes32String("ODDZ"),
