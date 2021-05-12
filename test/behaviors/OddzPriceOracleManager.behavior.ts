@@ -47,7 +47,7 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
     ).to.be.revertedWith("No aggregator");
   });
 
-  it("Should throw out of synch message when price is not in synch", async function () {
+  it("Should throw out of synch message when price is not in sync", async function () {
     const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
 
     await oracleManager.addAggregator(
