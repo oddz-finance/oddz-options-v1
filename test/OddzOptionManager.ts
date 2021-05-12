@@ -205,8 +205,8 @@ describe("Oddz Option Manager Unit tests", function () {
         oddzPremiumBlackScholes.address,
       );
       await oddzOptionPremiumManager.setManager(this.oddzOptionManager.address);
-      await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
-      await this.oddzEthUsdCallBS30Pool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
+      await this.oddzEthUsdCallBS30Pool.transferOwnership(this.oddzLiquidityPoolManager.address);
 
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)

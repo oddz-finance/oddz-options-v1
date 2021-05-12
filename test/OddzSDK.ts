@@ -186,7 +186,7 @@ describe("Oddz Option Sdk Unit tests", function () {
         oddzPremiumBlackScholes.address,
       );
       await oddzOptionPremiumManager.setManager(this.oddzOptionManager.address);
-      await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [

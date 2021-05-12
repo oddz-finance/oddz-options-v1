@@ -4,9 +4,10 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPool.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Libs/ABDKMath64x64.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
+abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     using Address for address;
     /**
      * @dev Liquidity specific data definitions
@@ -44,30 +45,11 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
     mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
 
     /**
-     * @dev Access control specific data definitions
-     */
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "LP Error: caller has no access to the method");
-        _;
-    }
-
-    modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "LP Error: caller has no access to the method");
-        _;
-    }
-
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
-
-    /**
      * @notice Add liquidity for the day
      * @param _amount USD value
      * @param _account Address of the Liquidity Provider
      */
-    function addLiquidity(uint256 _amount, address _account) public override onlyManager(msg.sender) {
+    function addLiquidity(uint256 _amount, address _account) public override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
         uint256 date = getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.ADD);
@@ -88,7 +70,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         uint256 _amount,
         uint256 _oUSD,
         address _account
-    ) public override onlyManager(msg.sender) {
+    ) public override onlyOwner {
         LPBalance[] memory lpBalance = lpBalanceMap[_account];
         require(
             _amount <= lpBalance[lpBalance.length - 1].currentBalance - negativeLpBalance[_account],
@@ -108,7 +90,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
      */
-    function lockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
+    function lockLiquidity(uint256 _amount) public override onlyOwner {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         lockedAmount = lockedAmount + _amount;
         oUsdSupply += _amount;
@@ -118,7 +100,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
      * @notice called by Oddz option to unlock the funds
      * @param _amount Amount of funds that should be unlocked in an option
      */
-    function unlockLiquidity(uint256 _amount) public override onlyManager(msg.sender) {
+    function unlockLiquidity(uint256 _amount) public override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
         lockedAmount = lockedAmount - _amount;
     }
@@ -180,7 +162,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
      * @param _lid liquidity ID
      * @param _amount Premium amount
      */
-    function unlockPremium(uint256 _lid, uint256 _amount) public override onlyManager(msg.sender) {
+    function unlockPremium(uint256 _lid, uint256 _amount) public override onlyOwner {
         PremiumPool storage dayPremium = premiumDayPool[getPresentDayTimestamp()];
         dayPremium.collected = dayPremium.collected + _amount;
 
@@ -197,7 +179,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         uint256 _lid,
         uint256 _amount,
         uint256 _transfer
-    ) public override onlyManager(msg.sender) {
+    ) public override onlyOwner {
         uint256 date = getPresentDayTimestamp();
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium.collected = dayPremium.collected + _amount;
@@ -261,7 +243,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         address _account,
         uint256 _amount,
         uint256 _date
-    ) public override onlyManager(msg.sender) {
+    ) public override onlyOwner {
         lpPremiumDistributionMap[_account][_date] = _amount;
         if (premiumDayPool[_date].isNegative) {
             if (lpPremium[_account] > _amount) lpPremium[_account] -= _amount;
@@ -287,7 +269,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
      * @param _account Address of the Liquidity Provider
      * @param _amount Premium amount
      */
-    function forfeitPremium(address _account, uint256 _amount) public override onlyManager(msg.sender) {
+    function forfeitPremium(address _account, uint256 _amount) public override onlyOwner {
         lpPremium[_account] -= _amount;
         surplus += _amount;
 
@@ -299,7 +281,7 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
      * @param _account Address of the Liquidity Provider
      * @return premium Premium balance
      */
-    function collectPremium(address _account) public override onlyManager(msg.sender) returns (uint256 premium) {
+    function collectPremium(address _account) public override onlyOwner returns (uint256 premium) {
         premium = lpPremium[_account];
         lpPremium[_account] = 0;
 
@@ -389,25 +371,6 @@ abstract contract AbstractOddzPool is AccessControl, IOddzLiquidityPool {
         }
 
         latestLiquidityEvent = _date;
-    }
-
-    /**
-     @dev sets the manager for the liqudity pool contract
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
-
-    /**
-     @dev removes the manager for the liqudity pool contract for valid managers
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function removeManager(address _address) public {
-        revokeRole(MANAGER_ROLE, _address);
     }
 
     /**

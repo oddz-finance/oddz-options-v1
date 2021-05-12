@@ -602,6 +602,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       ),
     ).to.be.revertedWith("LP Error: No premium collected for the date");
   });
+
   it("should revert distribute premium for the second time for the same date", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 

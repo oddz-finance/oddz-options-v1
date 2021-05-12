@@ -117,7 +117,7 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
       await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
 
-      await this.oddzDefaultPool.setManager(this.oddzLiquidityPoolManager.address);
+      await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
       await this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
