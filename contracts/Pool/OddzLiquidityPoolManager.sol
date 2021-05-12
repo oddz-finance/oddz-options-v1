@@ -244,6 +244,10 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     function move(PoolTransfer memory _poolTransfer) public {
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
+            require(
+                _poolTransfer._sAmount[i] * 10 <= _poolTransfer._source[i].availableBalance() * reqBalance,
+                "LP Error: Not enough funds in the pool. Please lower the transfer amount."
+            );
             _poolTransfer._source[i].removeLiquidity(_poolTransfer._sAmount[i], _poolTransfer._sAmount[i], msg.sender);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
