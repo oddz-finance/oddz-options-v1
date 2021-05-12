@@ -41,7 +41,6 @@ abstract contract AbstractTokenStaking is Ownable {
         uint256 _date
     ) external virtual;
 
-   
     /**
      * @notice burn tokens of the staker
      * @param _staker Address of the staker

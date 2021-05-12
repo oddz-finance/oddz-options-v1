@@ -455,10 +455,9 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
- 
   it("Should revert burn for non owner", async function () {
     const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
-    await expect (mockTokenStaking.burn()).to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(mockTokenStaking.burn()).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   it("Should burn for owner", async function () {
@@ -466,19 +465,21 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
     await oddzToken.approve(this.oddzTokenStaking1.address, BigNumber.from(utils.parseEther("100")));
-   
+
     await oddzTokenStaking.transferOwnership(this.mockTokenStaking.address);
     await mockTokenStaking.setToken(this.oddzToken.address);
     await mockTokenStaking.stake();
     expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(1000);
-    await expect (mockTokenStaking.burn()).to.be.ok;
+    await expect(mockTokenStaking.burn()).to.be.ok;
 
     expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(0);
   });
 
   it("Should revert set token for non owner", async function () {
     const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
-    await expect (mockTokenStaking.setToken(this.oddzToken.address)).to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(mockTokenStaking.setToken(this.oddzToken.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
   });
 
   it("Should set token", async function () {

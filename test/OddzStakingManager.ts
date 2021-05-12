@@ -11,15 +11,14 @@ import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockER
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-import { 
-    OddzStakingManager, 
-    OddzTokenStaking, 
-    OUsdTokenStaking, 
-    ODevTokenStaking, 
-    MockERC20, 
-    MockTokenStaking 
-    } 
-    from "../typechain";
+import {
+  OddzStakingManager,
+  OddzTokenStaking,
+  OUsdTokenStaking,
+  ODevTokenStaking,
+  MockERC20,
+  MockTokenStaking,
+} from "../typechain";
 import { shouldBehaveLikeOddzStakingManager } from "./behaviors/OddzStakingManager.behavior";
 import { BigNumber, utils } from "ethers";
 import { getExpiry } from "../test-utils";
@@ -88,26 +87,19 @@ describe("Oddz Staking Manager Unit tests", function () {
         [],
       )) as ODevTokenStaking;
 
-      
-
       await this.oddzTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oUsdTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oDevTokenStaking.transferOwnership(this.oddzStakingManager.address);
 
-     
       this.oddzTokenStaking1 = (await deployContract(
         this.signers.admin,
         OddzTokenStakingArtifact,
         [],
       )) as OddzTokenStaking;
 
-      this.mockTokenStaking = (await deployContract(
-        this.signers.admin,
-        MockTokenStakingArtifact,
-        [this.oddzTokenStaking1.address],
-      )) as MockTokenStaking;
-
-      
+      this.mockTokenStaking = (await deployContract(this.signers.admin, MockTokenStakingArtifact, [
+        this.oddzTokenStaking1.address,
+      ])) as MockTokenStaking;
 
       await this.oddzStakingManager.addToken(
         utils.formatBytes32String("ODDZ"),

@@ -5,11 +5,12 @@ import "../Staking/OddzTokenStaking.sol";
 
 contract MockTokenStaking {
     OddzTokenStaking staking;
-    constructor(OddzTokenStaking _staking){
+
+    constructor(OddzTokenStaking _staking) {
         staking = _staking;
     }
 
-    function stake() public{
+    function stake() public {
         staking.stake(msg.sender, 1000, block.timestamp);
     }
 
