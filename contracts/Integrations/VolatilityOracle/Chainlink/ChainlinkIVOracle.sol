@@ -9,7 +9,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    uint256 public delayInSeconds = 90000 * 60;
+    uint256 public delayInSeconds = 30 * 60;
     mapping(uint8 => bool) public allowedPeriods;
     mapping(uint256 => uint8) public ivPeriodMap;
 
@@ -112,7 +112,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         address aggregator = addressMap[agHash];
         require(aggregator != address(0), "No aggregator");
 
-        (, int256 answer, uint256 updatedAt, , ) = AggregatorV3Interface(aggregator).latestRoundData();
+        (, int256 answer, , uint256 updatedAt, ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
         require(updatedAt > (uint256(block.timestamp) - delayInSeconds), "Chain link IV Out Of Sync");
