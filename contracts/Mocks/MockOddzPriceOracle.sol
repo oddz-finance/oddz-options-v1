@@ -35,7 +35,13 @@ contract MockOddzPriceOracle is AccessControl, IOddzPriceOracle {
         grantRole(MANAGER_ROLE, _address);
     }
 
-    function getPrice(bytes32 _underlying, bytes32 _strike) public view override onlyManager(msg.sender) returns (uint256, uint8) {
+    function getPrice(bytes32 _underlying, bytes32 _strike)
+        public
+        view
+        override
+        onlyManager(msg.sender)
+        returns (uint256, uint8)
+    {
         require(updatedAt > uint256(block.timestamp) - delayInSeconds, "Chain link Price Out Of Sync");
 
         return (price, decimals);
