@@ -40,8 +40,8 @@ interface IOddzLiquidityPool {
         );
 
     /**
-     * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
-     * @param _amount Liquidity struct
+     * @notice Add liquidity for the day
+     * @param _amount USD value
      * @param _account Address of the Liquidity Provider
      */
     function addLiquidity(uint256 _amount, address _account) external;

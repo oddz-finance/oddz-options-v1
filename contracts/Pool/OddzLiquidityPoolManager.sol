@@ -32,6 +32,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
     mapping(bytes32 => bool) public uniquePoolMapper;
 
+    struct PoolTransfer {
+        IOddzLiquidityPool[] _source;
+        IOddzLiquidityPool[] _destination;
+        uint256[] _sAmount;
+        uint256[] _dAmount;
+    }
+
     /**
      * @dev Premium specific data definitions
      */
@@ -267,6 +274,23 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         token.safeTransfer(exchange, transferAmount);
         // block.timestamp + deadline --> deadline from the current block
         dexManager.swap(_strike, _underlying, exchange, _account, transferAmount, block.timestamp + _deadline);
+    }
+
+    /**
+     * @notice Move liquidity between pools
+     * @param _poolTransfer source and destination pools with amount of transfer
+     */
+    function move(PoolTransfer memory _poolTransfer) public {
+        int256 totalTransfer = 0;
+        for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
+            _poolTransfer._source[i].removeLiquidity(_poolTransfer._sAmount[i], _poolTransfer._sAmount[i], msg.sender);
+            totalTransfer += int256(_poolTransfer._sAmount[i]);
+        }
+        for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
+            _poolTransfer._destination[i].addLiquidity(_poolTransfer._dAmount[i], msg.sender);
+            totalTransfer -= int256(_poolTransfer._dAmount[i]);
+        }
+        require(totalTransfer != 0, "LP Error: invalid transfer amount");
     }
 
     /**
