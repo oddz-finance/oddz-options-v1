@@ -125,7 +125,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     expect(decimals).to.equal(5);
   });
 
-  it("Should not return underlying price when throw out of synch message when price is not in sync", async function () {
+  it("Should throw out of synch message when IV is not in sync", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
     await oracleManager.addIVAggregator(
