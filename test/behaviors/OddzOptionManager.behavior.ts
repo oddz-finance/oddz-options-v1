@@ -707,9 +707,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("should revert distribute premium for zero address", async function () {
+  it("should fail silently for distribute premium for invalid address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-
     const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
@@ -730,21 +729,17 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
-
     const oddzLiquidityPool = await this.oddzLiquidityPool.connect(this.signers.admin);
-
     await provider.send("evm_snapshot", []);
     // execution day + 2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await expect(oddzOptionManager.unlock(0)).to.emit(oddzOptionManager, "Expire");
-
     await provider.send("evm_snapshot", []);
     // execution day + 5 <= (2 + 3)
     await provider.send("evm_increaseTime", [getExpiry(3)]);
-    await expect(
-      oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [constants.AddressZero]),
-    ).to.be.revertedWith("LP Error: Invalid liquidity provider");
-
+    const distributedVal = (await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).distributed;
+    await expect(oddzLiquidityPool.distributePremium(addDaysAndGetSeconds(2), [constants.AddressZero])).to.ok;
+    expect((await oddzLiquidityPool.premiumDayPool(addDaysAndGetSeconds(2))).distributed).to.equal(distributedVal);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
