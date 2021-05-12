@@ -29,7 +29,6 @@ abstract contract AbstractTokenStaking is Ownable {
      */
     address token;
 
-
     /**
      * @notice Stake tokens
      * @param _staker Address of the staker

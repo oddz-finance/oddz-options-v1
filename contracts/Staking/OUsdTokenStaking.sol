@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Token", "sOUsd") {
     using SafeERC20 for IERC20;
 
-   
-
     function stake(
         address _staker,
         uint256 _amount,
