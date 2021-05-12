@@ -1,10 +1,21 @@
 import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
-import { OptionType, getExpiry, addDaysAndGetSeconds, addSnapshotCount } from "../../test-utils";
+import { OptionType, getExpiry, addDaysAndGetSeconds, addSnapshotCount, PoolTransfer } from "../../test-utils";
 import { waffle } from "hardhat";
 const provider = waffle.provider;
 
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
+
+const getPoolTransferStruct = (source: any[], destination: any[], sAmount: BigNumber[], dAmount: BigNumber[]) => {
+  const poolTransfer: PoolTransfer = {
+    _source: source,
+    _destination: destination,
+    _sAmount: sAmount,
+    _dAmount: dAmount,
+  };
+
+  return poolTransfer;
+};
 
 export function shouldBehaveLikeOddzLiquidityPool(): void {
   it("should return available balance and total balance. Both of them should be set to 0", async function () {
@@ -467,7 +478,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     ).to.be.revertedWith("LP Error: pools length should be <= 10");
   });
 
-  it("should successfully get premium, remove liquidity after lockup for multiple pool", async function () {
+  it("should successfully get premium, remove liquidity after lockup for multiple pools", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(
       this.oddzDefaultPool.address,
@@ -545,5 +556,69 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should successfully move liquidity between pools", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+
+    await liquidityManager.addLiquidity(
+      this.oddzEthUsdCallBS14Pool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+
+    const poolTransfer = await getPoolTransferStruct(
+      [this.oddzDefaultPool.address, this.oddzEthUsdCallBS14Pool.address],
+      [this.oddzEthUsdCallBS1Pool.address, this.oddzEthUsdCallBS30Pool.address, this.oddzBtcUsdCallBS1Pool.address],
+      [BigNumber.from(utils.parseEther("8000000")), BigNumber.from(utils.parseEther("5000000"))],
+      [
+        BigNumber.from(utils.parseEther("5000000")),
+        BigNumber.from(utils.parseEther("6000000")),
+        BigNumber.from(utils.parseEther("2000000")),
+      ],
+    );
+
+    await liquidityManager.move(poolTransfer);
+
+    expect(await this.oddzEthUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("5000000")),
+    );
+    expect(await this.oddzEthUsdCallBS30Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("6000000")),
+    );
+    expect(await this.oddzBtcUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("2000000")),
+    );
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("2000000")),
+    );
+    expect(await this.oddzEthUsdCallBS14Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("5000000")),
+    );
+  });
+
+  it("should revert with not enough funds while move liquidity between pools", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+
+    const poolTransfer = await getPoolTransferStruct(
+      [this.oddzDefaultPool.address],
+      [this.oddzEthUsdCallBS1Pool.address],
+      [BigNumber.from(utils.parseEther(this.transferTokenAmout))],
+      [BigNumber.from(utils.parseEther(this.transferTokenAmout))],
+    );
+
+    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
+      "LP Error: Not enough funds in the pool. Please lower the transfer amount.",
+    );
   });
 }

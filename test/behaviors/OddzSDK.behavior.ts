@@ -371,7 +371,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     );
   });
 
-  it("should  revert for invalid address while add liquidity", async function () {
+  it("should revert for invalid address while add liquidity", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(
@@ -403,7 +403,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     ).to.revertedWith("invalid provider address");
   });
 
-  it("should emit AddLiquidity event ", async function () {
+  it("should emit AddLiquidity event", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
@@ -412,7 +412,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     );
   });
 
-  it("should get liquidity count of provider ", async function () {
+  it("should get liquidity count of provider", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const depositAmount = 1000;
     await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
@@ -423,7 +423,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     expect(await oddzSDK.liquidityCount(this.accounts.admin)).to.equal(1);
   });
 
-  it("should get option count of provider ", async function () {
+  it("should get option count of provider", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
 
     const pair = await getAssetPair(
