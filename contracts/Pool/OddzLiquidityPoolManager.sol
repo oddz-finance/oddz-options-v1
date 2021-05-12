@@ -85,19 +85,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         _;
     }
 
-    /**
-     @notice Add/update allowed max expiration
-     @param _maxExpiration maximum expiration time of option
-     */
-    function addAllowedMaxExpiration(uint256 _maxExpiration) public onlyOwner(msg.sender) {
-        allowedMaxExpiration[_maxExpiration] = true;
-    }
-
-    function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
-        require(address(_sdk).isContract(), "LP Error: invalid SDK contract address");
-        sdk = _sdk;
-    }
-
     constructor(IERC20 _token, DexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
@@ -138,35 +125,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mapPeriod(28, 30);
         mapPeriod(29, 30);
         mapPeriod(30, 30);
-    }
-
-    function mapPeriod(uint256 _source, uint256 _dest) public validMaxExpiration(_dest) onlyOwner(msg.sender) {
-        periodMapper[_source] = _dest;
-    }
-
-    function mapPool(
-        address _pair,
-        IOddzOption.OptionType _type,
-        bytes32 _model,
-        uint256 _period,
-        IOddzLiquidityPool[] memory _pools
-    ) public onlyOwner(msg.sender) {
-        require(_pools.length <= 10, "LP Error: pools length should be <= 10");
-        // delete all the existing pool mapping
-        delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
-        for (uint256 i = 0; i < _pools.length; i++) {
-            delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
-        }
-
-        // add unique pool mapping
-        bytes32 uPool;
-        for (uint256 i = 0; i < _pools.length; i++) {
-            uPool = keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]));
-            if (!uniquePoolMapper[uPool]) {
-                poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
-                uniquePoolMapper[uPool] = true;
-            }
-        }
     }
 
     function addLiquidity(
@@ -276,6 +234,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         dexManager.swap(_strike, _underlying, exchange, _account, transferAmount, block.timestamp + _deadline);
     }
 
+    function totalBalance() public view override returns (uint256 balance) {
+        // though balance is oUSD its 1 - 1 minted for premium in USD
+        return token.balanceOf(address(this)) - balanceOf(address(this));
+    }
+
     /**
      * @notice Move liquidity between pools
      * @param _poolTransfer source and destination pools with amount of transfer
@@ -308,6 +271,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice Distributes the Premium for the Liquidity Provider for the given date
      * @param _date Epoch time for 00:00:00 hours of the date
      * @param _lp active liquidity provider address
+     * @param _pool liquidity pool address
      */
     function distributePremiumPerLP(
         uint256 _date,
@@ -332,6 +296,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice Distributes the Premium for the Liquidity Providers for the given date
      * @param _date Epoch time for 00:00:00 hours of the date
      * @param _lps List of the active liquidity provider addresses
+     * @param _pool liquidity pool address
      */
     function distributePremium(
         uint256 _date,
@@ -352,7 +317,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         }
     }
 
-    function transferPremium(IOddzLiquidityPool _pool) external {
+    /**
+     * @notice withdraw porfits from the pool
+     * @param _pool liquidity pool address
+     */
+    function withdrawProfits(IOddzLiquidityPool _pool) external {
         uint256 date = getPresentDayTimestamp();
         require(
             _pool.activeLiquidity(msg.sender) > 0 &&
@@ -366,7 +335,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice sends the eligible premium for the provider address while add liquidity
      * @param _date liquidity date
      * @param _lp liquidity provider address
-     * @param _pool liquidity pool
+     * @param _pool liquidity pool address
+     * @return premium eligible premium i.e. transferred to liquidity provider
      */
     function transferEligiblePremium(
         uint256 _date,
@@ -383,7 +353,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice updates eligible premium for the provider address while remove liquidity
      * @param _amount amount of liquidity removed
      * @param _date liquidity date
-     * @param _pool liquidity pool
+     * @param _pool liquidity pool address
      */
     function forfeitPremiumIfApplicable(
         uint256 _amount,
@@ -426,39 +396,16 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         }
     }
 
-    function totalBalance() public view override returns (uint256 balance) {
-        // though balance is oUSD its 1 - 1 minted for premium in USD
-        return token.balanceOf(address(this)) - balanceOf(address(this));
-    }
-
     /**
-     @dev sets the manager for the liqudity pool contract
-     @param _address manager contract address
-     Note: This can be called only by the owner
+     * @notice return sorted eligible pools
+     * @param _pair Asset pair address
+     * @param _type Option type
+     * @param _model Option premium model
+     * @param _expiration option expiry in unix timestamp
+     * @param _amount Amount to be locked in pools
+     * @return pools sorted pools based on ascending order of available liquidity
+     * @return poolBalance sorted in ascending order of available liquidity
      */
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
-
-    /**
-     @dev removes the manager for the liqudity pool contract for valid managers
-     @param _address manager contract address
-     Note: This can be called only by the owner
-     */
-    function removeManager(address _address) public {
-        revokeRole(MANAGER_ROLE, _address);
-    }
-
-    /**
-     @dev sets required balance
-     @param _reqBalance required balance between 6 and 9
-     Note: This can be called only by the owner
-     */
-    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
-        reqBalance = _reqBalance;
-    }
-
     function getSortedEligiblePools(
         address _pair,
         IOddzOption.OptionType _type,
@@ -493,7 +440,14 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(balance > _amount, "LP Error: Amount is too large");
     }
 
-    function sort(uint256[] memory data, address[] memory pools)
+    /**
+     * @notice Insertion sort based on pool balance since atmost 6 eligible pools
+     * @param balance list of liquidity
+     * @param pools list of pools with reference to balance
+     * @return sorted balance list in ascending order
+     * @return sorted pool list in ascending order of balance list
+     */
+    function sort(uint256[] memory balance, address[] memory pools)
         private
         pure
         returns (uint256[] memory, address[] memory)
@@ -504,23 +458,113 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 unsignedJplus1;
         uint256 key;
         address val;
-        for (uint256 i = 1; i < data.length; i++) {
-            key = data[i];
+        for (uint256 i = 1; i < balance.length; i++) {
+            key = balance[i];
             val = pools[i];
             j = int256(i - 1);
             unsignedJ = uint256(j);
-            while ((j >= 0) && (data[unsignedJ] > key)) {
+            while ((j >= 0) && (balance[unsignedJ] > key)) {
                 unsignedJplus1 = unsignedJ + 1;
-                data[unsignedJplus1] = data[unsignedJ];
+                balance[unsignedJplus1] = balance[unsignedJ];
                 pools[unsignedJplus1] = pools[unsignedJ];
                 j--;
                 unsignedJ = uint256(j);
             }
             unsignedJplus1 = uint256(j + 1);
-            data[unsignedJplus1] = key;
+            balance[unsignedJplus1] = key;
             pools[unsignedJplus1] = val;
         }
-        return (data, pools);
+        return (balance, pools);
+    }
+
+    /**
+     * @notice Add/update allowed max expiration
+     * @param _maxExpiration maximum expiration time of option
+     */
+    function addAllowedMaxExpiration(uint256 _maxExpiration) public onlyOwner(msg.sender) {
+        allowedMaxExpiration[_maxExpiration] = true;
+    }
+
+    /**
+     * @notice sets the manager for the liqudity pool contract
+     * @param _address manager contract address
+     * Note: This can be called only by the owner
+     */
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     * @notice removes the manager for the liqudity pool contract for valid managers
+     * @param _address manager contract address
+     * Note: This can be called only by the owner
+     */
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
+    /**
+     * @notice sets required balance
+     * @param _reqBalance required balance between 6 and 9
+     * Note: This can be called only by the owner
+     */
+    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
+        reqBalance = _reqBalance;
+    }
+
+    /**
+     * @notice sets the SDK
+     * @param _sdk SDK contract address
+     * Note: This can be called only by the owner
+     */
+    function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
+        require(address(_sdk).isContract(), "LP Error: invalid SDK contract address");
+        sdk = _sdk;
+    }
+
+    /**
+     * @notice map period
+     * @param _source source period
+     * @param _dest destimation period
+     * Note: This can be called only by the owner
+     */
+    function mapPeriod(uint256 _source, uint256 _dest) public validMaxExpiration(_dest) onlyOwner(msg.sender) {
+        periodMapper[_source] = _dest;
+    }
+
+    /**
+     * @notice Map pools for an option parameters
+     * @param _pair Asset pair address
+     * @param _type Option type
+     * @param _model Option premium model
+     * @param _period option period exposure
+     * @param _pools eligible pools based on above params
+     * Note: This can be called only by the owner
+     */
+    function mapPool(
+        address _pair,
+        IOddzOption.OptionType _type,
+        bytes32 _model,
+        uint256 _period,
+        IOddzLiquidityPool[] memory _pools
+    ) public onlyOwner(msg.sender) {
+        require(_pools.length <= 10, "LP Error: pools length should be <= 10");
+        // delete all the existing pool mapping
+        delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
+        for (uint256 i = 0; i < _pools.length; i++) {
+            delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
+        }
+
+        // add unique pool mapping
+        bytes32 uPool;
+        for (uint256 i = 0; i < _pools.length; i++) {
+            uPool = keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]));
+            if (!uniquePoolMapper[uPool]) {
+                poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
+                uniquePoolMapper[uPool] = true;
+            }
+        }
     }
 
     /**
