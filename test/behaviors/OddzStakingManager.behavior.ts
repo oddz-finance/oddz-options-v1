@@ -92,13 +92,14 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(
       oddzStakingManager.stake(constants.AddressZero, BigNumber.from(utils.parseEther("10"))),
-    ).to.be.revertedWith("token is not active");
+    ).to.be.revertedWith("token not added");
   });
 
   it("Should revert staking for invalid token address", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await oddzStakingManager.deactivateToken(this.oddzToken.address);
     await expect(
-      oddzStakingManager.stake(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("10"))),
+      oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10"))),
     ).to.be.revertedWith("token is not active");
   });
 

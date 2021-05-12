@@ -27,10 +27,6 @@ contract OddzStakingManager is Ownable, IOddzStaking {
 
     modifier validToken(address _token) {
         require(tokens[_token]._address != address(0), "token not added");
-        _;
-    }
-
-    modifier activeToken(address _token) {
         require(tokens[_token]._active == true, "token is not active");
         _;
     }
@@ -72,7 +68,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(address _token) external onlyOwner activeToken(_token) {
+    function deactivateToken(address _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(_token, tokens[_token]._name);
     }
@@ -122,7 +118,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function stake(address _token, uint256 _amount) external override activeToken(_token) {
+    function stake(address _token, uint256 _amount) external override validToken(_token){
         require(_amount > 0, "invalid amount");
 
         uint256 date = getPresentDayTimestamp();
@@ -131,7 +127,15 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Stake(msg.sender, _token, _amount);
     }
 
-    function withdraw(address _token, uint256 _amount) external override validToken(_token){
+    function withdraw(
+                address _token, 
+                uint256 _amount
+                ) 
+                external 
+                override 
+                validToken(_token) 
+                validStaker(_token, msg.sender)
+                {
         require(
             _amount <= AbstractTokenStaking(tokens[_token]._stakingContract).balance(msg.sender),
             "Amount is too large"
@@ -150,7 +154,14 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Withdraw(msg.sender, _token, _amount);
     }
 
-    function distributeRewards(address _token, address[] memory _stakers) external override validToken(_token) activeToken(_token){
+    function distributeRewards(
+                        address _token, 
+                        address[] memory _stakers
+                        ) 
+                        external 
+                        override 
+                        validToken(_token) 
+                        {
         uint256 date = getPresentDayTimestamp();
 
         if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardFrequency) {
