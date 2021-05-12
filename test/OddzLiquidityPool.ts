@@ -48,7 +48,7 @@ import OddzBtcUsdCallBS1PoolArtifact from "../artifacts/contracts/Pool/OddzPools
 import OddzBtcUsdCallBS2PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS2Pool.json";
 import OddzBtcUsdCallBS7PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS7Pool.json";
 import OddzBtcUsdCallBS14PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS14Pool.json";
-import OddzBtcUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS30Pool.json";
+import OddzBtcUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS30Pool.json";
 import OddzBtcUsdPutBS1PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS1Pool.json";
 import OddzBtcUsdPutBS2PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS2Pool.json";
 import OddzBtcUsdPutBS7PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS7Pool.json";
