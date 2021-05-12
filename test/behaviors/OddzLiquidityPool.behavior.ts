@@ -178,6 +178,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await liquidityManager.setManager(this.mockOptionManager.address);
     await expect(mockOptionManager.send(this.accounts.admin, 10000000000)).to.emit(this.oddzDefaultPool, "Profit");
   });
+
   it("should be able to successfully send and emit loss event", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
@@ -620,5 +621,32 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
       "LP Error: Not enough funds in the pool. Please lower the transfer amount.",
     );
+  });
+
+  it("should distribute negative premium to LPs", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+
+    await liquidityManager.distributePremium(
+      addDaysAndGetSeconds(0),
+      [this.accounts.admin],
+      this.oddzDefaultPool.address,
+    );
+
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).negativeLpBalance(this.accounts.admin)).to.be.equal(
+      990000000000,
+    );
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 }
