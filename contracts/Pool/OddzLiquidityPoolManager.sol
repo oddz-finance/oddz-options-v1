@@ -279,6 +279,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         IOddzLiquidityPool _pool
     ) private {
         // Invalid liquidity provider
+        if (_pool.getEligiblePremium(_date) <= _pool.getDistributedPremium(_date)) return;
         if (_pool.activeLiquidity(_lp) <= 0) return;
         require(
             _pool.getPremiumDistribution(_lp, _date) <= 0,
@@ -287,6 +288,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 lpEligible =
             (_pool.getEligiblePremium(_date) * _pool.activeLiquidityByDate(_lp, _date)) /
                 _pool.getDaysActiveLiquidity(_date);
+        // if lpEligible goes to 0 round up to 1
+        if (lpEligible == 0) lpEligible = 1;
         _pool.allocatePremiumToProvider(_lp, lpEligible, _date);
 
         transferEligiblePremium(getPresentDayTimestamp(), _lp, _pool);
