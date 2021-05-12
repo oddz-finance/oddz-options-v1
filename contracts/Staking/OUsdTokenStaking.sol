@@ -48,7 +48,6 @@ contract OUsdTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz OU
     }
 
     function stake(
-        address _token,
         address _staker,
         uint256 _amount,
         uint256 _date
@@ -59,7 +58,7 @@ contract OUsdTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz OU
         } else {
             stakers[_staker]._lastStakedAt = _date;
         }
-        IERC20(_token).safeTransferFrom(_staker, address(this), _amount);
+        IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
     function mint(address _staker, uint256 _amount) external override onlyManager(msg.sender) {
@@ -70,6 +69,10 @@ contract OUsdTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz OU
         _burn(_staker, _amount);
     }
 
+    function setToken(address _token) external override onlyManager(msg.sender) {
+        token = _token;
+    }
+
     function balance(address _address) external view override returns (uint256 bal) {
         bal = balanceOf(_address);
     }
@@ -77,4 +80,5 @@ contract OUsdTokenStaking is AbstractTokenStaking, AccessControl, ERC20("Oddz OU
     function supply() external view override returns (uint256 supply) {
         supply = totalSupply();
     }
+
 }

@@ -56,7 +56,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert setting lockup duration for invalid token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(oddzStakingManager.setLockupDuration(constants.AddressZero, getExpiry(1))).to.be.revertedWith(
-      "invalid token address",
+      "token not added",
     );
   });
 
@@ -77,7 +77,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert setting reward frequency for invalid token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(oddzStakingManager.setRewardFrequency(constants.AddressZero, getExpiry(1))).to.be.revertedWith(
-      "invalid token address",
+      "token not added",
     );
   });
 
@@ -92,7 +92,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(
       oddzStakingManager.stake(constants.AddressZero, BigNumber.from(utils.parseEther("10"))),
-    ).to.be.revertedWith("invalid token address");
+    ).to.be.revertedWith("token is not active");
   });
 
   it("Should revert staking for invalid token address", async function () {
@@ -152,6 +152,18 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       "Deposit",
     );
     expect(await usdcToken.balanceOf(this.oddzStakingManager.address)).to.equal(BigNumber.from(utils.parseEther("10")));
+  });
+
+  it("Should revert claim rewards for invalid token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.claimRewards(constants.AddressZero))
+          .to.be.revertedWith("token not added");
+  });
+
+  it("Should revert claim rewards for invalid staker", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.claimRewards(this.oddzToken.address))
+          .to.be.revertedWith("invalid staker");
   });
 
   it("Should successfully distribute, claim rewards", async function () {
@@ -254,7 +266,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
     await expect(
       oddzStakingManager.withdraw(constants.AddressZero, BigNumber.from(utils.parseEther("100"))),
-    ).to.be.revertedWith("invalid token address");
+    ).to.be.revertedWith("token not added");
   });
 
   it("Should revert withdrawing stake more than the deposited", async function () {
@@ -424,7 +436,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert distribute rewards for invalid token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(oddzStakingManager.distributeRewards(constants.AddressZero, [this.accounts.admin])).to.be.revertedWith(
-      "invalid token address",
+      "token not added",
     );
   });
 

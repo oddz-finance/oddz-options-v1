@@ -23,14 +23,18 @@ abstract contract AbstractTokenStaking {
     mapping(address => StakerDetails) stakers;
 
     /**
+     * @dev Staking token address
+     */
+    address token;
+
+
+    /**
      * @notice Stake tokens
-     * @param _token Address of the staked token
      * @param _staker Address of the staker
      * @param _amount Amount to stake
      * @param _date  Date on which tokens are staked
      */
     function stake(
-        address _token,
         address _staker,
         uint256 _amount,
         uint256 _date
@@ -62,6 +66,12 @@ abstract contract AbstractTokenStaking {
      * @return supply token supply
      */
     function supply() external view virtual returns (uint256 supply);
+
+     /**
+     * @notice Sets staking token address
+     * @param _token Address of the token
+     */
+    function setToken(address _token) external virtual;
 
     /**
      * @notice Get last staked date for the staker
@@ -98,5 +108,17 @@ abstract contract AbstractTokenStaking {
     function removeRewards(address _staker) public returns (uint256 rewards) {
         rewards = stakers[_staker]._rewards;
         stakers[_staker]._rewards = 0;
+    }
+
+    /**
+     * @notice Return if the staker is valid
+     * @param _staker Address of the staker
+     * @return true/ false for valid staker
+     */
+    function isValidStaker(address _staker) public returns (bool){
+        if (stakers[_staker]._address != address(0)){
+            return true;
+        }
+        return false;
     }
 }

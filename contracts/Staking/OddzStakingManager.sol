@@ -26,7 +26,11 @@ contract OddzStakingManager is Ownable, IOddzStaking {
     uint256 public settlementFeeBalance;
 
     modifier validToken(address _token) {
-        require(_token.isContract(), "invalid token address");
+        require(tokens[_token]._address != address(0), "token not added");
+        _;
+    }
+
+    modifier activeToken(address _token) {
         require(tokens[_token]._active == true, "token is not active");
         _;
     }
@@ -36,6 +40,12 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         _;
     }
 
+    modifier validStaker(address _token, address _staker){
+        require(AbstractTokenStaking(tokens[_token]._stakingContract).isValidStaker(_staker), "invalid staker");
+        _;
+    }
+   
+   
     constructor(IERC20 _usdcToken) {
         usdcToken = _usdcToken;
     }
@@ -45,8 +55,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @param _token token address
      * @param _duration lockup duration
      */
-    function setLockupDuration(address _token, uint256 _duration) external onlyOwner {
-        require(_token.isContract(), "invalid token address");
+    function setLockupDuration(address _token, uint256 _duration) external onlyOwner validToken(_token) {
         tokens[_token]._lockupDuration = _duration;
     }
 
@@ -55,8 +64,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @param _token token address
      * @param _frequency reward frequency
      */
-    function setRewardFrequency(address _token, uint256 _frequency) external onlyOwner {
-        require(_token.isContract(), "invalid token address");
+    function setRewardFrequency(address _token, uint256 _frequency) external onlyOwner validToken(_token) {
         tokens[_token]._rewardFrequency = _frequency;
     }
 
@@ -64,7 +72,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(address _token) external onlyOwner validToken(_token) {
+    function deactivateToken(address _token) external onlyOwner activeToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(_token, tokens[_token]._name);
     }
@@ -100,6 +108,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             _settlementFeeReward,
             true
         );
+        AbstractTokenStaking(_stakingContract).setToken(_address);
         emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration);
     }
 
@@ -109,21 +118,20 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         } else if (_depositType == DepositType.Settlement) {
             settlementFeeBalance += _amount;
         }
-        usdcToken.transferFrom(msg.sender, address(this), _amount);
+        usdcToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function stake(address _token, uint256 _amount) external override validToken(_token) {
+    function stake(address _token, uint256 _amount) external override activeToken(_token) {
         require(_amount > 0, "invalid amount");
 
         uint256 date = getPresentDayTimestamp();
-        AbstractTokenStaking(tokens[_token]._stakingContract).stake(_token, msg.sender, _amount, date);
+        AbstractTokenStaking(tokens[_token]._stakingContract).stake(msg.sender, _amount, date);
 
         emit Stake(msg.sender, _token, _amount);
     }
 
-    function withdraw(address _token, uint256 _amount) external override {
-        require(_token.isContract(), "invalid token address");
+    function withdraw(address _token, uint256 _amount) external override validToken(_token){
         require(
             _amount <= AbstractTokenStaking(tokens[_token]._stakingContract).balance(msg.sender),
             "Amount is too large"
@@ -142,8 +150,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Withdraw(msg.sender, _token, _amount);
     }
 
-    function distributeRewards(address _token, address[] memory _stakers) external override {
-        require(_token.isContract(), "invalid token address");
+    function distributeRewards(address _token, address[] memory _stakers) external override validToken(_token) activeToken(_token){
         uint256 date = getPresentDayTimestamp();
 
         if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardFrequency) {
@@ -222,9 +229,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @notice Claim rewards by the staker
      * @param _token Address of the staked token
      */
-    function claimRewards(address _token) external {
-        require(_token.isContract(), "invalid token address");
-
+    function claimRewards(address _token) external validToken(_token) validStaker(_token, msg.sender){
         uint256 date = getPresentDayTimestamp();
         require(
             date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >
@@ -238,9 +243,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @notice Get profit info of the staker
      * @param _token Address of the staked token
      */
-    function getProfitInfo(address _token) external view returns (uint256 profit) {
-        require(_token.isContract(), "invalid token address");
-
+    function getProfitInfo(address _token) external view validToken(_token) returns (uint256 profit) {
         profit = AbstractTokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender);
     }
 
