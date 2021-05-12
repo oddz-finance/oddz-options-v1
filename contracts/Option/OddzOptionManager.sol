@@ -9,7 +9,7 @@ import "../Oracle/OddzIVOracleManager.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
-import "../Pool/OddzLiquidityPoolManager.sol";
+import "../Pool/IOddzLiquidityPoolManager.sol";
 import "./IERC20Extented.sol";
 import "../OddzSDK.sol";
 import "../Libs/ABDKMath64x64.sol";
@@ -275,15 +275,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
             );
 
         options.push(option);
-        pool.lockLiquidity(
-            optionId,
-            lockAmount,
-            premiumResult.optionPremium,
-            _details._pair,
-            _details._optionModel,
-            _details._expiration,
-            _details._optionType
-        );
+        IOddzLiquidityPoolManager.LiquidityParams memory liquidityParams =
+            IOddzLiquidityPoolManager.LiquidityParams(
+                lockAmount,
+                _details._expiration,
+                _details._pair,
+                _details._optionModel,
+                _details._optionType
+            );
+        pool.lockLiquidity(optionId, liquidityParams, premiumResult.optionPremium);
         txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
 
         token.safeTransferFrom(_buyer, address(pool), premiumResult.optionPremium);

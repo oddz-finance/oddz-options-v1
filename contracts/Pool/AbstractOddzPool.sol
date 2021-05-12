@@ -89,11 +89,12 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     /**
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
+     * @param _premium premium allocated to the pool
      */
-    function lockLiquidity(uint256 _amount) public override onlyOwner {
+    function lockLiquidity(uint256 _amount, uint256 _premium) public override onlyOwner {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         lockedAmount = lockedAmount + _amount;
-        oUsdSupply += _amount;
+        oUsdSupply += _premium;
     }
 
     /**
@@ -184,7 +185,6 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium.collected = dayPremium.collected + _amount;
         daysExercise[date] += _transfer;
-        updateLiquidity(date, _transfer, TransactionType.REMOVE);
 
         if (_amount >= _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);
@@ -370,7 +370,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
             poolBalance -= _amount;
         }
 
-        latestLiquidityEvent = _date;
+        if (_date > latestLiquidityEvent) latestLiquidityEvent = _date;
     }
 
     /**

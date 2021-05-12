@@ -1107,7 +1107,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
       .withArgs(
         this.accounts.admin,
-        BigNumber.from(utils.parseEther("99839.258793342718220024")),
+        BigNumber.from(utils.parseEther("99877.080257502200946913")),
         BigNumber.from(utils.parseEther("100000")),
       );
     const oddzDefaultPool = await this.oddzDefaultPool.connect(this.accounts.admin);

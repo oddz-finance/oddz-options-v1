@@ -170,31 +170,29 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     function lockLiquidity(
         uint256 _id,
-        uint256 _amount,
-        uint256 _premium,
-        address _pair,
-        bytes32 _model,
-        uint256 _expiration,
-        IOddzOption.OptionType _type
+        LiquidityParams memory _liquidityParams,
+        uint256 _premium
     ) public override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
-        (address[] memory pools, uint256[] memory poolBalances) =
-            getSortedEligiblePools(_pair, _type, _model, _expiration, _amount);
+        (address[] memory pools, uint256[] memory poolBalances) = getSortedEligiblePools(_liquidityParams);
         require(pools.length > 0, "LP Error: No pool balance");
 
         uint8 count = 0;
-        uint256 totalAmount = _amount;
+        uint256 totalAmount = _liquidityParams._amount;
         uint256 base = totalAmount / pools.length;
         uint256[] memory share = new uint256[](pools.length);
         while (count < pools.length) {
             if (base > poolBalances[count]) share[count] = poolBalances[count];
             else share[count] = base;
-            IOddzLiquidityPool(pools[count]).lockLiquidity(share[count]);
+            IOddzLiquidityPool(pools[count]).lockLiquidity(
+                share[count],
+                (_premium * share[count]) / _liquidityParams._amount
+            );
             totalAmount -= share[count];
             if (totalAmount > 0) base = totalAmount / (pools.length - (count + 1));
             count++;
         }
-        lockedLiquidity.push(LockedLiquidity(_amount, _premium, true, pools, share));
+        lockedLiquidity.push(LockedLiquidity(_liquidityParams._amount, _premium, true, pools, share));
         // Allocate premium to the self until premium unlock
         _mint(address(this), _premium);
     }
@@ -401,25 +399,26 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     /**
      * @notice return sorted eligible pools
-     * @param _pair Asset pair address
-     * @param _type Option type
-     * @param _model Option premium model
-     * @param _expiration option expiry in unix timestamp
-     * @param _amount Amount to be locked in pools
+     * @param _liquidityParams Lock liquidity params
      * @return pools sorted pools based on ascending order of available liquidity
      * @return poolBalance sorted in ascending order of available liquidity
      */
-    function getSortedEligiblePools(
-        address _pair,
-        IOddzOption.OptionType _type,
-        bytes32 _model,
-        uint256 _expiration,
-        uint256 _amount
-    ) public view returns (address[] memory pools, uint256[] memory poolBalance) {
+    function getSortedEligiblePools(LiquidityParams memory _liquidityParams)
+        public
+        view
+        returns (address[] memory pools, uint256[] memory poolBalance)
+    {
         // if _expiration is 86401 i.e. 1 day 1 second, then max 1 day expiration pool will not be eligible
         IOddzLiquidityPool[] memory allPools =
             poolMapper[
-                keccak256(abi.encode(_pair, _type, _model, periodMapper[getActiveDayTimestamp(_expiration) / 1 days]))
+                keccak256(
+                    abi.encode(
+                        _liquidityParams._pair,
+                        _liquidityParams._type,
+                        _liquidityParams._model,
+                        periodMapper[getActiveDayTimestamp(_liquidityParams._expiration) / 1 days]
+                    )
+                )
             ];
         uint256 count = 0;
         for (uint8 i = 0; i < allPools.length; i++) {
@@ -440,7 +439,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             }
         }
         (poolBalance, pools) = sort(poolBalance, pools);
-        require(balance > _amount, "LP Error: Amount is too large");
+        require(balance > _liquidityParams._amount, "LP Error: Amount is too large");
     }
 
     /**

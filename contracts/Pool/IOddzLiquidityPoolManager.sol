@@ -19,6 +19,14 @@ interface IOddzLiquidityPoolManager {
         uint256[] _share;
     }
 
+    struct LiquidityParams {
+        uint256 _amount;
+        uint256 _expiration;
+        address _pair;
+        bytes32 _model;
+        IOddzOption.OptionType _type;
+    }
+
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
      * @param _pool Liquidity pool
@@ -43,18 +51,14 @@ interface IOddzLiquidityPoolManager {
     /**
      * @notice called by Oddz call options to lock the funds
      * @param _id Id of the LockedLiquidity same as option Id
-     * @param _amount Amount of funds that should be locked in an option
+     * @param _liquidityParams liquidity related parameters
      * @param _premium Premium that should be locked in an option
      */
 
     function lockLiquidity(
         uint256 _id,
-        uint256 _amount,
-        uint256 _premium,
-        address _pair,
-        bytes32 _model,
-        uint256 _expiration,
-        IOddzOption.OptionType _type
+        LiquidityParams memory _liquidityParams,
+        uint256 _premium
     ) external;
 
     /**

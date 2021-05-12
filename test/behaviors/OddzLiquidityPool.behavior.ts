@@ -375,7 +375,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       .to.emit(this.oddzDefaultPool, "PremiumForfeited")
       .withArgs(this.accounts.admin, "5000000")
       .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, "9999999999999499999568", "10000000000000000000000");
+      .withArgs(this.accounts.admin, "9999999999999994999659", "10000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -420,7 +420,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
     await expect(liquidityManager.removeLiquidity(this.oddzDefaultPool.address, removeAmount))
       .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
-      .withArgs(this.accounts.admin, "9999999999999499999568317", "10000000000000000000000000");
+      .withArgs(this.accounts.admin, "9999999999999994999659580", "10000000000000000000000000");
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -465,5 +465,85 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
           this.oddzDefaultPool.address,
         ]),
     ).to.be.revertedWith("LP Error: pools length should be <= 10");
+  });
+
+  it("should successfully get premium, remove liquidity after lockup for multiple pool", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+    await liquidityManager.addLiquidity(
+      this.oddzEthUsdCallBS1Pool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+    await liquidityManager.addLiquidity(
+      this.oddzEthUsdCallBS14Pool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await this.mockOptionManager.connect(this.signers.admin1).lock(0);
+    await provider.send("evm_snapshot", []);
+    //execution day +2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.mockOptionManager.connect(this.signers.admin1).unlock();
+    await provider.send("evm_snapshot", []);
+    //execution day +(2 +15)
+    await provider.send("evm_increaseTime", [getExpiry(15)]);
+
+    await expect(
+      liquidityManager.distributePremium(addDaysAndGetSeconds(2), [this.accounts.admin], this.oddzDefaultPool.address),
+    )
+      .to.emit(this.oddzDefaultPool, "PremiumCollected")
+      .withArgs(this.accounts.admin, "3333333333");
+
+    await expect(
+      liquidityManager.distributePremium(
+        addDaysAndGetSeconds(2),
+        [this.accounts.admin],
+        this.oddzEthUsdCallBS1Pool.address,
+      ),
+    )
+      .to.emit(this.oddzEthUsdCallBS1Pool, "PremiumCollected")
+      .withArgs(this.accounts.admin, "3333333333");
+
+    await expect(
+      liquidityManager.distributePremium(
+        addDaysAndGetSeconds(2),
+        [this.accounts.admin],
+        this.oddzEthUsdCallBS14Pool.address,
+      ),
+    )
+      .to.emit(this.oddzEthUsdCallBS14Pool, "PremiumCollected")
+      .withArgs(this.accounts.admin, "3333333333");
+
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).lpPremium(this.accounts.admin)).to.equal("0");
+    expect(await this.oddzEthUsdCallBS1Pool.connect(this.signers.admin).lpPremium(this.accounts.admin)).to.equal("0");
+    expect(await this.oddzEthUsdCallBS14Pool.connect(this.signers.admin).lpPremium(this.accounts.admin)).to.equal("0");
+    expect(await liquidityManager.balanceOf(this.accounts.admin)).to.equal(
+      BigNumber.from(utils.parseEther("30000000").add(BigNumber.from("9999999999"))),
+    );
+
+    await liquidityManager.setReqBalance(10);
+
+    const removeAmount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
+    await expect(liquidityManager.removeLiquidity(this.oddzDefaultPool.address, removeAmount))
+      .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, "9999999999999996666620420", "10000000000000000000000000");
+
+    await expect(liquidityManager.removeLiquidity(this.oddzEthUsdCallBS1Pool.address, removeAmount))
+      .to.emit(this.oddzEthUsdCallBS1Pool, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, "9999999999999996666620420", "10000000000000000000000000");
+
+    await expect(liquidityManager.removeLiquidity(this.oddzEthUsdCallBS14Pool.address, removeAmount))
+      .to.emit(this.oddzEthUsdCallBS14Pool, "RemoveLiquidity")
+      .withArgs(this.accounts.admin, "9999999999999996666620420", "10000000000000000000000000");
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 }

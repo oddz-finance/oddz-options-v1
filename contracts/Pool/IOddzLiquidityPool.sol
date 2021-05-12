@@ -58,8 +58,9 @@ interface IOddzLiquidityPool {
     /**
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
+     * @param _premium premium allocated to the pool
      */
-    function lockLiquidity(uint256 _amount) external;
+    function lockLiquidity(uint256 _amount, uint256 _premium) external;
 
     /**
      * @notice called by Oddz option to unlock the funds
