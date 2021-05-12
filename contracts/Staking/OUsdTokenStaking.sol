@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Token", "sOUsd") {
     using SafeERC20 for IERC20;
 
-
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -42,5 +41,4 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Toke
     function supply() external view override returns (uint256 supply) {
         supply = totalSupply();
     }
-
 }

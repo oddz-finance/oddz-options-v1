@@ -36,12 +36,11 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         _;
     }
 
-    modifier validStaker(address _token, address _staker){
+    modifier validStaker(address _token, address _staker) {
         require(AbstractTokenStaking(tokens[_token]._stakingContract).isValidStaker(_staker), "invalid staker");
         _;
     }
-   
-   
+
     constructor(IERC20 _usdcToken) {
         usdcToken = _usdcToken;
     }
@@ -118,7 +117,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function stake(address _token, uint256 _amount) external override validToken(_token){
+    function stake(address _token, uint256 _amount) external override validToken(_token) {
         require(_amount > 0, "invalid amount");
 
         uint256 date = getPresentDayTimestamp();
@@ -127,15 +126,12 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Stake(msg.sender, _token, _amount);
     }
 
-    function withdraw(
-                address _token, 
-                uint256 _amount
-                ) 
-                external 
-                override 
-                validToken(_token) 
-                validStaker(_token, msg.sender)
-                {
+    function withdraw(address _token, uint256 _amount)
+        external
+        override
+        validToken(_token)
+        validStaker(_token, msg.sender)
+    {
         require(
             _amount <= AbstractTokenStaking(tokens[_token]._stakingContract).balance(msg.sender),
             "Amount is too large"
@@ -154,14 +150,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         emit Withdraw(msg.sender, _token, _amount);
     }
 
-    function distributeRewards(
-                        address _token, 
-                        address[] memory _stakers
-                        ) 
-                        external 
-                        override 
-                        validToken(_token) 
-                        {
+    function distributeRewards(address _token, address[] memory _stakers) external override validToken(_token) {
         uint256 date = getPresentDayTimestamp();
 
         if (date - tokens[_token]._lastDistributed < tokens[_token]._rewardFrequency) {
@@ -240,7 +229,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @notice Claim rewards by the staker
      * @param _token Address of the staked token
      */
-    function claimRewards(address _token) external validToken(_token) validStaker(_token, msg.sender){
+    function claimRewards(address _token) external validToken(_token) validStaker(_token, msg.sender) {
         uint256 date = getPresentDayTimestamp();
         require(
             date - AbstractTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >

@@ -4,8 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract AbstractTokenStaking is AccessControl{
-
+abstract contract AbstractTokenStaking is AccessControl {
     using Address for address;
 
     /**
@@ -45,7 +44,7 @@ abstract contract AbstractTokenStaking is AccessControl{
         _;
     }
 
-     /**
+    /**
      @dev sets the manager for the staking  contract
      @param _address manager contract address
      Note: This can be called only by the owner
@@ -63,7 +62,6 @@ abstract contract AbstractTokenStaking is AccessControl{
     function removeManager(address _address) public {
         revokeRole(MANAGER_ROLE, _address);
     }
-
 
     /**
      * @notice Stake tokens
@@ -104,11 +102,11 @@ abstract contract AbstractTokenStaking is AccessControl{
      */
     function supply() external view virtual returns (uint256 supply);
 
-     /**
+    /**
      * @notice Sets staking token address
      * @param _token Address of the token
      */
-    function setToken(address _token) public onlyManager(msg.sender){
+    function setToken(address _token) public onlyManager(msg.sender) {
         token = _token;
     }
 
@@ -154,8 +152,8 @@ abstract contract AbstractTokenStaking is AccessControl{
      * @param _staker Address of the staker
      * @return true/ false for valid staker
      */
-    function isValidStaker(address _staker) public returns (bool){
-        if (stakers[_staker]._address != address(0)){
+    function isValidStaker(address _staker) public returns (bool) {
+        if (stakers[_staker]._address != address(0)) {
             return true;
         }
         return false;

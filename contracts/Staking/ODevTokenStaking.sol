@@ -8,11 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract ODevTokenStaking is AbstractTokenStaking, ERC20("Oddz Dev Staking Token", "sODev") {
     using SafeERC20 for IERC20;
 
-
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
 
     function stake(
         address _staker,
@@ -35,7 +33,7 @@ contract ODevTokenStaking is AbstractTokenStaking, ERC20("Oddz Dev Staking Token
     function burn(address _staker, uint256 _amount) external override onlyManager(msg.sender) {
         _burn(_staker, _amount);
     }
-    
+
     function balance(address _address) external view override returns (uint256 bal) {
         bal = balanceOf(_address);
     }
@@ -43,6 +41,4 @@ contract ODevTokenStaking is AbstractTokenStaking, ERC20("Oddz Dev Staking Token
     function supply() external view override returns (uint256 supply) {
         supply = totalSupply();
     }
-
-    
 }
