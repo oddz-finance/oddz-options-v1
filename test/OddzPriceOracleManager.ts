@@ -37,7 +37,7 @@ describe("Oddz Price Oracle Manager Unit tests", function () {
         [],
       )) as OddzPriceOracleManager;
 
-      await this.oddzPriceOracle.transferOwnership(this.oddzPriceOracleManager.address);
+      await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
     });
 
     shouldBehaveLikeOddzPriceOracleManager();

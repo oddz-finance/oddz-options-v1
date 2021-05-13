@@ -47,3 +47,10 @@ export interface Option {
   _strike: BigNumber;
   _optionType: number;
 }
+
+export interface PoolTransfer {
+  _source: any[];
+  _destination: any[];
+  _sAmount: BigNumber[];
+  _dAmount: BigNumber[];
+}

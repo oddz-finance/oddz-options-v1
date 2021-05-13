@@ -6,12 +6,18 @@ import "../Oracle/IOddzVolatilityOracle.sol";
 contract MockOddzVolatility is IOddzVolatilityOracle {
     uint256 iv = 180000;
     uint8 decimals = 5;
+    uint256 public updatedAt = uint256(block.timestamp);
+    uint256 public delayInSeconds = 30 * 60;
 
     function getIv(
-        bytes32 _undelying,
+        bytes32 _underlying,
         bytes32 _strike,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _currentPrice,
+        uint256 _strikePrice
     ) public view override returns (uint256, uint8) {
+        require(updatedAt > uint256(block.timestamp) - delayInSeconds, "Chain link IV Out Of Sync");
+
         return (iv, decimals);
     }
 
@@ -26,4 +32,8 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
         address _aggregator,
         uint8 _aggregatorPeriod
     ) public override {}
+
+    function setUpdatedAt(uint256 _delay) external {
+        updatedAt = uint256(block.timestamp) - _delay;
+    }
 }
