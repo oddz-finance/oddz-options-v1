@@ -246,8 +246,16 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     ) public override onlyOwner {
         lpPremiumDistributionMap[_account][_date] = _amount;
         if (premiumDayPool[_date].isNegative) {
-            if (lpPremium[_account] > _amount) lpPremium[_account] -= _amount;
-            else negativeLpBalance[_account] += _amount;
+            if (lpPremium[_account] > 0) {
+                if (lpPremium[_account] > _amount) {
+                    lpPremium[_account] -= _amount;
+                    _amount = 0;
+                } else {
+                    _amount -= lpPremium[_account];
+                    lpPremium[_account] = 0;
+                }
+            }
+            negativeLpBalance[_account] += _amount;
         } else {
             if (negativeLpBalance[_account] > 0) {
                 if (negativeLpBalance[_account] > _amount) {
