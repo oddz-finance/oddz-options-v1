@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
-
 import "../../../Oracle/IOddzVolatilityOracle.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -10,6 +9,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    uint256 public delayInSeconds = 30 * 60;
     mapping(uint8 => bool) public allowedPeriods;
     mapping(uint256 => uint8) public ivPeriodMap;
 
@@ -117,11 +117,10 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         bytes32 agHash = keccak256(abi.encode(_underlying, _strike, ivPeriodMap[_expirationDay]));
         address aggregator = addressMap[agHash];
         require(aggregator != address(0), "No aggregator");
-
-        (, int256 answer, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
+        (, int256 answer, , uint256 updatedAt, ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         iv = uint256(answer);
-
+        require(updatedAt > (uint256(block.timestamp) - delayInSeconds), "Chain link IV Out Of Sync");
         decimals = AggregatorV3Interface(aggregator).decimals();
         uint256 _iv = _getIv(_underlying, _strike, _expirationDay, _currentPrice, _strikePrice, iv, decimals);
         // _iv can be 0 when there are no entries to mapping
@@ -142,6 +141,10 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         addressMap[agHash] = _aggregator;
 
         emit AddAssetPairIVAggregator(_underlying, _strike, address(this), _aggregator, _aggregatorPeriod);
+    }
+
+    function setDelay(uint256 _delay) public onlyOwner(msg.sender) {
+        delayInSeconds = _delay;
     }
 
     /**
