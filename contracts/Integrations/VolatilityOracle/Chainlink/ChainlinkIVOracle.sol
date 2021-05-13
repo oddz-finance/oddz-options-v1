@@ -191,11 +191,10 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     ) private view returns (uint256) {
         if (_currentPrice == _strikePrice) return _chainlinkVol;
         uint8 volPercentage;
-        if (_strikePrice > _currentPrice) {
+        if (_strikePrice > _currentPrice)
             volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
-        } else if (_strikePrice < _currentPrice) {
+        else if (_strikePrice < _currentPrice)
             volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
-        }
         return
             (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] * (10**_ivDecimal)) /
             (10**volatilityPrecision);
