@@ -111,7 +111,7 @@ abstract contract AbstractTokenStaking is Ownable {
      * @param _staker Address of the staker
      * @return true/ false for valid staker
      */
-    function isValidStaker(address _staker) public returns (bool) {
+    function isValidStaker(address _staker) public view returns (bool) {
         if (stakers[_staker]._address != address(0)) {
             return true;
         }

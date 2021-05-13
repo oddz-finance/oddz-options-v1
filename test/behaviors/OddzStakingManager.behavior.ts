@@ -260,6 +260,81 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     ).to.be.revertedWith("cannot withdraw within lockup period");
   });
 
+  it("Should revert withdrawing oddz stake after lockup duration and stake again", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+    await oddzToken.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oddzToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oddzToken.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oddzToken.address, BigNumber.from(utils.parseEther("100")));
+    await expect(
+      oddzStakingManager.withdraw(this.oddzToken.address, BigNumber.from(utils.parseEther("100"))),
+    ).to.be.revertedWith("cannot withdraw within lockup period");
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("Should revert withdrawing oUsd stake after lockup duration and stake again", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+    const oUsdToken = await this.oUsdToken.connect(this.signers.admin);
+    await oUsdToken.approve(this.oUsdTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oUsdToken.approve(this.oUsdTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oUsdToken.address, BigNumber.from(utils.parseEther("100")));
+    await expect(
+      oddzStakingManager.withdraw(this.oUsdToken.address, BigNumber.from(utils.parseEther("100"))),
+    ).to.be.revertedWith("cannot withdraw within lockup period");
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("Should revert withdrawing oDev stake after lockup duration and stake again", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    await usdcToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
+      .to.emit(oddzStakingManager, "Deposit")
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+    const oDevToken = await this.oDevToken.connect(this.signers.admin);
+    await oDevToken.approve(this.oDevTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("100")));
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await oDevToken.approve(this.oDevTokenStaking.address, BigNumber.from(utils.parseEther("100")));
+    await expect(oddzStakingManager.stake(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))))
+      .to.emit(oddzStakingManager, "Stake")
+      .withArgs(this.accounts.admin, this.oDevToken.address, BigNumber.from(utils.parseEther("100")));
+    await expect(
+      oddzStakingManager.withdraw(this.oDevToken.address, BigNumber.from(utils.parseEther("100"))),
+    ).to.be.revertedWith("cannot withdraw within lockup period");
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
   it("Should revert withdrawing stake for invalid token address", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
 
