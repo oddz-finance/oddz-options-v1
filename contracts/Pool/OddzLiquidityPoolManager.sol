@@ -8,8 +8,10 @@ import "../Swap/DexManager.sol";
 import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, ERC20("Oddz USD LP token", "oUSD") {
+    using Math for uint256;
     using Address for address;
     using SafeERC20 for IERC20;
 
@@ -281,7 +283,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         IOddzLiquidityPool _pool
     ) private {
         // Invalid liquidity provider
-        if (_pool.getEligiblePremium(_date) <= _pool.getDistributedPremium(_date)) return;
+        uint256 _pending = _pool.getEligiblePremium(_date) - _pool.getDistributedPremium(_date);
+        if (_pending == 0) return;
         if (_pool.activeLiquidity(_lp) <= 0) return;
         require(
             _pool.getPremiumDistribution(_lp, _date) <= 0,
@@ -292,7 +295,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 _pool.getDaysActiveLiquidity(_date);
         // if lpEligible goes to 0 round up to 1
         if (lpEligible == 0) lpEligible = 1;
-        _pool.allocatePremiumToProvider(_lp, lpEligible, _date);
+        _pool.allocatePremiumToProvider(_lp, _pending.min(lpEligible), _date);
 
         transferEligiblePremium(getPresentDayTimestamp(), _lp, _pool);
     }
