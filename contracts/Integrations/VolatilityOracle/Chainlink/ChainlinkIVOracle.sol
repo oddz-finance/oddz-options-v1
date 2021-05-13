@@ -176,8 +176,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint8 _volPercentage,
         uint256 _volatility // 96.68 => 9668
     ) public onlyOwner(msg.sender) {
-        bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
-        volatility[volHash][_volPercentage] = _volatility;
+        volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
     }
 
     function _getIv(
