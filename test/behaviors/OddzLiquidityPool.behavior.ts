@@ -159,12 +159,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock(0);
-    await expect(mockOptionManager.unlock()).to.be.ok;
+    await expect(mockOptionManager.unlock(0)).to.be.ok;
   });
 
   it("should throw caller has no access to the method while unlock pool", async function () {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await expect(mockOptionManager.unlock()).to.be.revertedWith("LP Error: caller has no access to the method");
+    await expect(mockOptionManager.unlock(0)).to.be.revertedWith("LP Error: caller has no access to the method");
   });
 
   it("should be able to successfully send token to user", async function () {
@@ -176,7 +176,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.accounts.admin,
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000)).to.emit(this.oddzDefaultPool, "Profit");
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000, 0)).to.emit(this.oddzDefaultPool, "Profit");
   });
 
   it("should be able to successfully send and emit loss event", async function () {
@@ -188,12 +188,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.accounts.admin,
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000)).to.emit(this.oddzDefaultPool, "Loss");
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
   });
 
   it("should throw caller has no access to the method while send token to user", async function () {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000)).to.be.revertedWith(
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000, 0)).to.be.revertedWith(
       "LP Error: caller has no access to the method",
     );
   });
@@ -207,12 +207,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.accounts.admin,
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000)).to.emit(this.oddzDefaultPool, "Profit");
+    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000, 0)).to.emit(this.oddzDefaultPool, "Profit");
   });
 
   it("should throw caller has no access to the method while send UA token to user", async function () {
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
-    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000)).to.be.revertedWith(
+    await expect(mockOptionManager.sendUA(this.accounts.admin, 10000000000, 0)).to.be.revertedWith(
       "LP Error: caller has no access to the method",
     );
   });
@@ -234,8 +234,8 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
     await mockOptionManager.lock(0);
-    await expect(mockOptionManager.unlock()).to.be.ok;
-    await expect(mockOptionManager.unlock()).to.be.revertedWith("revert");
+    await expect(mockOptionManager.unlock(0)).to.be.ok;
+    await expect(mockOptionManager.unlock(0)).to.be.revertedWith("revert");
   });
 
   it("should use msg.sender instead of account sent for add liquidity", async function () {
@@ -330,7 +330,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.accounts.admin,
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(constants.AddressZero, 10000000000)).to.be.revertedWith(
+    await expect(mockOptionManager.send(constants.AddressZero, 10000000000, 0)).to.be.revertedWith(
       "LP Error: Invalid address",
     );
   });
@@ -363,7 +363,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_snapshot", []);
     //execution day +2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
-    await this.mockOptionManager.unlock();
+    await this.mockOptionManager.unlock(0);
     await provider.send("evm_snapshot", []);
     //execution day +(2 +1)
     await provider.send("evm_increaseTime", [getExpiry(1)]);
@@ -405,7 +405,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_snapshot", []);
     //execution day +2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
-    await this.mockOptionManager.connect(this.signers.admin1).unlock();
+    await this.mockOptionManager.connect(this.signers.admin1).unlock(0);
     await provider.send("evm_snapshot", []);
     //execution day +(2 +15)
     await provider.send("evm_increaseTime", [getExpiry(15)]);
@@ -501,7 +501,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_snapshot", []);
     //execution day +2
     await provider.send("evm_increaseTime", [getExpiry(2)]);
-    await this.mockOptionManager.connect(this.signers.admin1).unlock();
+    await this.mockOptionManager.connect(this.signers.admin1).unlock(0);
     await provider.send("evm_snapshot", []);
     //execution day +(2 +15)
     await provider.send("evm_increaseTime", [getExpiry(15)]);
@@ -632,7 +632,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.accounts.admin,
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
-    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000)).to.emit(this.oddzDefaultPool, "Loss");
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(1)]);

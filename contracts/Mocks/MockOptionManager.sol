@@ -21,17 +21,25 @@ contract MockOptionManager {
         pool.lockLiquidity(_id, liquidityParams, 10000000000);
     }
 
-    function unlock() public {
-        pool.unlockLiquidity(0);
+    function unlock(uint256 _id) public {
+        pool.unlockLiquidity(_id);
     }
 
-    function send(address payable _account, uint256 _amount) public {
-        lock(0);
-        pool.send(0, _account, _amount);
+    function send(
+        address payable _account,
+        uint256 _amount,
+        uint256 _id
+    ) public {
+        lock(_id);
+        pool.send(_id, _account, _amount);
     }
 
-    function sendUA(address payable _account, uint256 _amount) public {
-        lock(0);
-        pool.sendUA(0, _account, _amount, "ETH", "USD", 86400);
+    function sendUA(
+        address payable _account,
+        uint256 _amount,
+        uint256 _id
+    ) public {
+        lock(_id);
+        pool.sendUA(_id, _account, _amount, "ETH", "USD", 86400);
     }
 }
