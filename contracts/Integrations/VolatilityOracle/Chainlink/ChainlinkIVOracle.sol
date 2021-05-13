@@ -4,6 +4,7 @@ import "../../../Oracle/IOddzVolatilityOracle.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+
 contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     using Address for address;
 
@@ -145,6 +146,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     function setDelay(uint256 _delay) public onlyOwner(msg.sender) {
         delayInSeconds = _delay;
     }
+
     /**
      * @notice Function to set iv precision decimals
      * @param _precision volatility precision

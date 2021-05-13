@@ -157,7 +157,9 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     await this.oddzIVOracleMock.setUpdatedAt(2000);
-    await expect(mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000)).to.be.revertedWith("Chain link IV Out Of Sync");
+    await expect(mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000)).to.be.revertedWith(
+      "Chain link IV Out Of Sync",
+    );
   });
 
   it("Should throw caller has no access to the method while calling calculate IV", async function () {
