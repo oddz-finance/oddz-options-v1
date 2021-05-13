@@ -18,7 +18,7 @@ contract EthIVSevenDays is AggregatorV3Interface {
 
     function getRoundData(uint80 _roundId)
         public
-        pure
+        view
         override
         returns (
             uint80 roundId,
@@ -31,13 +31,13 @@ contract EthIVSevenDays is AggregatorV3Interface {
         roundId = 18446744073709559081;
         answer = 10154000000;
         startedAt = 1615842835;
-        updatedAt = 1615842835;
+        updatedAt = block.timestamp;
         answeredInRound = 18446744073709559081;
     }
 
     function latestRoundData()
         public
-        pure
+        view
         override
         returns (
             uint80 roundId,
@@ -50,7 +50,7 @@ contract EthIVSevenDays is AggregatorV3Interface {
         roundId = 18446744073709559081;
         answer = 10154000000;
         startedAt = 1615842835;
-        updatedAt = 1615842835;
+        updatedAt = block.timestamp;
         answeredInRound = 18446744073709559081;
     }
 }

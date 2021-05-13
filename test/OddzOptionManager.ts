@@ -94,7 +94,7 @@ describe("Oddz Option Manager Unit tests", function () {
         OddzPriceOracleManagerArtifact,
         [],
       )) as OddzPriceOracleManager;
-      await this.oddzPriceOracle.transferOwnership(this.oddzPriceOracleManager.address);
+      await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
 
       this.oddzVolatility = (await deployContract(
         this.signers.admin,

@@ -144,7 +144,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         // transfer user eligible premium
         transferEligiblePremium(date, sender_, _pool);
 
@@ -160,7 +160,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             "LP Error: Not enough funds in the pool. Please lower the amount."
         );
 
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         // burn = _amount + fetch eligible premium if any
         burn = _amount + transferEligiblePremium(date, msg.sender, _pool);
         require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
@@ -309,7 +309,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         if (lpEligible == 0) lpEligible = 1;
         _pool.allocatePremiumToProvider(_lp, _pending.min(lpEligible), _date);
 
-        transferEligiblePremium(getPresentDayTimestamp(), _lp, _pool);
+        transferEligiblePremium(DateTimeLibrary.getPresentDayTimestamp(), _lp, _pool);
     }
 
     /**
@@ -323,7 +323,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         address[] memory _lps,
         IOddzLiquidityPool _pool
     ) public {
-        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
+        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
         if (!_pool.isPremiumDistributionEnabled(_date)) {
             _pool.enablePremiumDistribution(_date);
         }
@@ -342,7 +342,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _pool liquidity pool address
      */
     function withdrawProfits(IOddzLiquidityPool _pool) external {
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         require(
             _pool.activeLiquidity(msg.sender) > 0 &&
                 (date - _pool.latestLiquidityDate(msg.sender)) > premiumLockupDuration,
@@ -588,14 +588,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 uniquePoolMapper[uPool] = true;
             }
         }
-    }
-
-    /**
-     * @notice get day based on the timestamp
-     */
-    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 
     /**

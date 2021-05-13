@@ -51,7 +51,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      */
     function addLiquidity(uint256 _amount, address _account) public override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.ADD);
         updateLpBalance(TransactionType.ADD, date, _amount, _account);
         latestLiquidityDateMap[_account] = date;
@@ -78,7 +78,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         );
         require(_amount > 0, "LP Error: Amount is too small");
 
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         updateLiquidity(date, _amount, TransactionType.REMOVE);
         updateLpBalance(TransactionType.REMOVE, date, _amount, _account);
         oUsdSupply -= _oUSD;
@@ -121,7 +121,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @return balance account balance
      */
     function activeLiquidity(address _account) public view override returns (uint256) {
-        return activeLiquidityByDate(_account, getPresentDayTimestamp());
+        return activeLiquidityByDate(_account, DateTimeLibrary.getPresentDayTimestamp());
     }
 
     /**
@@ -164,7 +164,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @param _amount Premium amount
      */
     function unlockPremium(uint256 _lid, uint256 _amount) public override onlyOwner {
-        PremiumPool storage dayPremium = premiumDayPool[getPresentDayTimestamp()];
+        PremiumPool storage dayPremium = premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()];
         dayPremium.collected = dayPremium.collected + _amount;
 
         emit Profit(_lid, _amount);
@@ -181,7 +181,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         uint256 _amount,
         uint256 _transfer
     ) public override onlyOwner {
-        uint256 date = getPresentDayTimestamp();
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium.collected = dayPremium.collected + _amount;
         daysExercise[date] += _transfer;
@@ -195,7 +195,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @param _date Premium eligibility date
      */
     function enablePremiumDistribution(uint256 _date) public override {
-        require(_date < getPresentDayTimestamp(), "LP Error: Invalid Date");
+        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
         PremiumPool storage premium = premiumDayPool[_date];
         require(!premium.enabled, "LP Error: Premium eligibilty already updated for the date");
         premium.enabled = true;
@@ -379,13 +379,5 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         }
 
         if (_date > latestLiquidityEvent) latestLiquidityEvent = _date;
-    }
-
-    /**
-     * @dev get day based on the timestamp
-     */
-    function getPresentDayTimestamp() internal view returns (uint256 activationDate) {
-        (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(block.timestamp);
-        activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
 }

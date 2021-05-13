@@ -29,13 +29,17 @@ interface IOddzVolatilityOracle {
      * @param _underlying underlying asset
      * @param _strike strike asset
      * @param _expiration expiration time in unix timestamp
+     * @param _currentPrice current price of underlying asset
+     * @param _strikePrice strike price of the option
      * @return iv implied volatility for the underlying asset
      * @return decimals implied volatility decimals
      */
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _currentPrice,
+        uint256 _strikePrice
     ) external view returns (uint256 iv, uint8 decimals);
 
     /**
