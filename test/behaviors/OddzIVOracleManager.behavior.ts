@@ -88,7 +88,9 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
 
   it("Should not return underlying price and throw No aggregator message when no aggregator is set", async function () {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
-    await expect(mockIVManager.calculateIv(getExpiry(1))).to.be.revertedWith("No aggregator");
+    await expect(mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000)).to.be.revertedWith(
+      "No aggregator",
+    );
   });
 
   it("Should return underlying price when an aggregator is set", async function () {
@@ -120,7 +122,7 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
 
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
-    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1));
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
     expect(iv).to.equal(180000);
     expect(decimals).to.equal(5);
   });
@@ -129,7 +131,13 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
 
     await expect(
-      oracleManager.calculateIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)),
+      oracleManager.calculateIv(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        getExpiry(1),
+        160000000000,
+        176000000000,
+      ),
     ).to.be.revertedWith("caller has no access to the method");
   });
 
