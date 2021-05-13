@@ -144,15 +144,30 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         emit AddAssetPairIVAggregator(_underlying, _strike, address(this), _aggregator, _aggregatorPeriod);
     }
 
+    /**
+     * @notice Function to set iv precision decimals
+     * @param _precision volatility precision
+     */
     function setVolatilityPrecision(uint8 _precision) public onlyOwner(msg.sender) {
         volatilityPrecision = _precision;
     }
 
+    /**
+     * @notice Function to get valid percentage difference in strike and current price
+     * @param _perc Calculated percentage difference
+     * @param _isNeg if the percentage is negative
+     * @return _volPercentage valid percentage difference (90, 40, 20, 10)
+     */
     function _getVolPercentage(uint256 _perc, bool _isNeg) private pure returns (uint8 _volPercentage) {
         if (_isNeg) _volPercentage = _getNegPercentage(_perc);
         else _volPercentage = _getPosPercentage(_perc);
     }
 
+    /**
+     * @notice Function to get valid negative percentage difference in strike and current price
+     * @param _perc Calculated negative percentage difference
+     * @return _volPercentage valid negative percentage difference (90, 40, 20, 10)
+     */
     function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) _volPercentage = 5;
         else if (_perc > 5 && _perc <= 10) _volPercentage = 10;
@@ -161,6 +176,11 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         else if (_perc > 40) _volPercentage = 90;
     }
 
+    /**
+     * @notice Function to get valid posituve percentage difference in strike and current price
+     * @param _perc Calculated positive percentage difference
+     * @return _volPercentage valid positive percentage difference (90, 40, 20, 10)
+     */
     function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
         if (_perc > 0 && _perc <= 5) _volPercentage = 105;
         else if (_perc > 5 && _perc <= 10) _volPercentage = 110;
@@ -169,6 +189,14 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         else if (_perc > 40) _volPercentage = 190;
     }
 
+    /**
+     * @notice Function to add volatility for an option based on volatility percentage
+     * @param _underlying Underlying asset name
+     * @param _strike Strike aseet name
+     * @param _expiration expiration of option
+     * @param _volPercentage Volatility percentage difference (90, 40, 20, 10)
+     * @param _volatility Volatility value
+     */
     function addVolatilityMapping(
         bytes32 _underlying,
         bytes32 _strike,
