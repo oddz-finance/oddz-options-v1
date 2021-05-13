@@ -365,6 +365,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     ) private returns (uint256 premium) {
         if (_date - _pool.latestLiquidityDate(_lp) <= premiumLockupDuration) return 0;
         premium = _pool.collectPremium(_lp);
+        // do nothing and return 0
+        if (premium <= 0) return 0;
 
         _transfer(address(this), _lp, premium);
     }
