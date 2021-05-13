@@ -13,7 +13,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     mapping(uint8 => bool) public allowedPeriods;
     mapping(uint256 => uint8) public ivPeriodMap;
 
-    mapping(bytes32 => address) addressMap;
+    mapping(bytes32 => address) public addressMap;
 
     //bytes(underlying,strike,expiry) => volPerc => val
     mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
@@ -124,11 +124,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
 
         decimals = AggregatorV3Interface(aggregator).decimals();
         uint256 _iv = _getIv(_underlying, _strike, _expirationDay, _currentPrice, _strikePrice, iv, decimals);
-
         // _iv can be 0 when there are no entries to mapping
-        if (_iv > 0) {
-            iv = _iv;
-        }
+        if (_iv > 0) iv = _iv;
 
         // converting iv from percentage to value
         iv = iv / 100;
@@ -151,40 +148,25 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         volatilityPrecision = _precision;
     }
 
-    function _getVolPercentage(uint256 _perc, bool _isNeg) private view returns (uint8 _volPercentage) {
-        if (_isNeg) {
-            _volPercentage = _getNegPercentage(_perc);
-        } else {
-            _volPercentage = _getPosPercentage(_perc);
-        }
+    function _getVolPercentage(uint256 _perc, bool _isNeg) private pure returns (uint8 _volPercentage) {
+        if (_isNeg) _volPercentage = _getNegPercentage(_perc);
+        else _volPercentage = _getPosPercentage(_perc);
     }
 
-    function _getNegPercentage(uint256 _perc) private view returns (uint8 _volPercentage) {
-        if (_perc > 0 && _perc <= 5) {
-            _volPercentage = 5;
-        } else if (_perc > 5 && _perc <= 10) {
-            _volPercentage = 10;
-        } else if (_perc > 10 && _perc <= 20) {
-            _volPercentage = 20;
-        } else if (_perc > 20 && _perc <= 40) {
-            _volPercentage = 40;
-        } else if (_perc > 40) {
-            _volPercentage = 90;
-        }
+    function _getNegPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
+        if (_perc > 0 && _perc <= 5) _volPercentage = 5;
+        else if (_perc > 5 && _perc <= 10) _volPercentage = 10;
+        else if (_perc > 10 && _perc <= 20) _volPercentage = 20;
+        else if (_perc > 20 && _perc <= 40) _volPercentage = 40;
+        else if (_perc > 40) _volPercentage = 90;
     }
 
-    function _getPosPercentage(uint256 _perc) private view returns (uint8 _volPercentage) {
-        if (_perc > 0 && _perc <= 5) {
-            _volPercentage = 105;
-        } else if (_perc > 5 && _perc <= 10) {
-            _volPercentage = 110;
-        } else if (_perc > 10 && _perc <= 20) {
-            _volPercentage = 120;
-        } else if (_perc > 20 && _perc <= 40) {
-            _volPercentage = 140;
-        } else if (_perc > 40) {
-            _volPercentage = 190;
-        }
+    function _getPosPercentage(uint256 _perc) private pure returns (uint8 _volPercentage) {
+        if (_perc > 0 && _perc <= 5) _volPercentage = 105;
+        else if (_perc > 5 && _perc <= 10) _volPercentage = 110;
+        else if (_perc > 10 && _perc <= 20) _volPercentage = 120;
+        else if (_perc > 20 && _perc <= 40) _volPercentage = 140;
+        else if (_perc > 40) _volPercentage = 190;
     }
 
     function addVolatilityMapping(
@@ -207,17 +189,15 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 _chainlinkVol,
         uint256 _ivDecimal
     ) private view returns (uint256) {
-        uint256 perc;
-        bytes32 volHash = keccak256(abi.encode(_underlying, _strike, _expiration));
+        if (_currentPrice == _strikePrice) return _chainlinkVol;
+        uint8 volPercentage;
         if (_strikePrice > _currentPrice) {
-            perc = ((_strikePrice - _currentPrice) * 100) / _currentPrice;
-            uint8 volPercentage = _getVolPercentage(perc, false);
-            return (volatility[volHash][volPercentage] * (10**_ivDecimal)) / (10**volatilityPrecision);
+            volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
         } else if (_strikePrice < _currentPrice) {
-            perc = ((_currentPrice - _strikePrice) * 100) / _strikePrice;
-            uint8 volPercentage = _getVolPercentage(perc, true);
-            return (volatility[volHash][volPercentage] * (10**_ivDecimal)) / (10**volatilityPrecision);
+            volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
         }
-        return _chainlinkVol;
+        return
+            (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] * (10**_ivDecimal)) /
+            (10**volatilityPrecision);
     }
 }
