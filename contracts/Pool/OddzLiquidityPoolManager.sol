@@ -28,18 +28,25 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     LockedLiquidity[] public lockedLiquidity;
     IERC20 public token;
 
-    // Liquidity lock and distribution data definitions
+    /**
+     * @dev Liquidity lock and distribution data definitions
+     */
     mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
     mapping(bytes32 => bool) public uniquePoolMapper;
 
+    /**
+     * @dev Pool transfer
+     */
     struct PoolTransfer {
         IOddzLiquidityPool[] _source;
         IOddzLiquidityPool[] _destination;
         uint256[] _sAmount;
         uint256[] _dAmount;
     }
+    // user address -> date of transfer
+    mapping(address => uint256) lastPoolTransfer;
 
     /**
      * @dev Premium specific data definitions
@@ -244,6 +251,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _poolTransfer source and destination pools with amount of transfer
      */
     function move(PoolTransfer memory _poolTransfer) public {
+        require(
+            lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + 1 weeks) < block.timestamp,
+            "LP Error: Pool transfer available only once in 7 days"
+        );
+        lastPoolTransfer[msg.sender] = block.timestamp;
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
             require(

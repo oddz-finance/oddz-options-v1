@@ -603,6 +603,41 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
   });
 
+  it("should successfully move liquidity between pools", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      this.accounts.admin,
+    );
+
+    const poolTransfer = await getPoolTransferStruct(
+      [this.oddzDefaultPool.address],
+      [this.oddzEthUsdCallBS1Pool.address],
+      [BigNumber.from(utils.parseEther("1000000"))],
+      [BigNumber.from(utils.parseEther("1000000"))],
+    );
+
+    await liquidityManager.move(poolTransfer);
+
+    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
+      "LP Error: Pool transfer available only once in 7 days",
+    );
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(7)]);
+    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
+      "LP Error: Pool transfer available only once in 7 days",
+    );
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    expect(await liquidityManager.move(poolTransfer)).to.be.ok;
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
   it("should revert with not enough funds while move liquidity between pools", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(
