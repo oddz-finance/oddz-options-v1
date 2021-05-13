@@ -2,18 +2,18 @@
 pragma solidity 0.8.3;
 
 import "./Option/IOddzOption.sol";
-import "./Pool/IOddzLiquidityPool.sol";
+import "./Pool/IOddzLiquidityPoolManager.sol";
 import "./Integrations/Gasless/BaseRelayRecipient.sol";
 
 contract OddzSDK is BaseRelayRecipient {
     IOddzOption public optionManager;
-    IOddzLiquidityPool public pool;
+    IOddzLiquidityPoolManager public pool;
     mapping(address => uint256) public optionCount;
     mapping(address => uint256) public liquidityCount;
 
     constructor(
         IOddzOption _optionManager,
-        IOddzLiquidityPool _pool,
+        IOddzLiquidityPoolManager _pool,
         address _trustedForwarder
     ) {
         optionManager = _optionManager;
@@ -55,7 +55,7 @@ contract OddzSDK is BaseRelayRecipient {
     ) external returns (uint256 optionId) {
         require(_provider != address(0), "invalid provider address");
         IOddzOption.OptionDetails memory option =
-            IOddzOption.OptionDetails(_pair, _optionModel, _expiration, _amount, _strike, _optionType);
+            IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
         optionId = optionManager.buy(option, _premiumWithSlippage, msgSender());
         optionCount[_provider] += 1;
     }
@@ -78,7 +78,7 @@ contract OddzSDK is BaseRelayRecipient {
         )
     {
         IOddzOption.OptionDetails memory option =
-            IOddzOption.OptionDetails(_pair, _optionModel, _expiration, _amount, _strike, _optionType);
+            IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
         IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option);
         optionPremium = premiumResult.optionPremium;
         txnFee = premiumResult.txnFee;
@@ -86,10 +86,14 @@ contract OddzSDK is BaseRelayRecipient {
         ivDecimal = premiumResult.ivDecimal;
     }
 
-    function addLiquidity(uint256 _amount, address _provider) external returns (uint256 mint) {
+    function addLiquidity(
+        uint256 _amount,
+        IOddzLiquidityPool _pool,
+        address _provider
+    ) external returns (uint256 mint) {
         require(_provider != address(0), "invalid provider address");
 
-        mint = pool.addLiquidity(_amount, msg.sender);
+        mint = pool.addLiquidity(_pool, _amount, msg.sender);
         liquidityCount[_provider] += 1;
     }
 }

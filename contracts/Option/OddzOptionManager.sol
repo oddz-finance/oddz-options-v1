@@ -9,7 +9,7 @@ import "../Oracle/OddzIVOracleManager.sol";
 import "../Staking/IOddzStaking.sol";
 import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
-import "../Pool/OddzLiquidityPool.sol";
+import "../Pool/IOddzLiquidityPoolManager.sol";
 import "./IERC20Extented.sol";
 import "../OddzSDK.sol";
 import "../Libs/ABDKMath64x64.sol";
@@ -20,7 +20,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     using Address for address;
 
     OddzAssetManager public assetManager;
-    IOddzLiquidityPool public pool;
+    IOddzLiquidityPoolManager public pool;
     OddzPriceOracleManager public oracle;
     OddzIVOracleManager public volatility;
     OddzOptionPremiumManager public premiumManager;
@@ -51,7 +51,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         OddzPriceOracleManager _oracle,
         OddzIVOracleManager _iv,
         IOddzStaking _staking,
-        IOddzLiquidityPool _pool,
+        IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
         OddzOptionPremiumManager _premiumManager
@@ -275,7 +275,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
             );
 
         options.push(option);
-        pool.lockLiquidity(optionId, lockAmount, premiumResult.optionPremium);
+        IOddzLiquidityPoolManager.LiquidityParams memory liquidityParams =
+            IOddzLiquidityPoolManager.LiquidityParams(
+                lockAmount,
+                _details._expiration,
+                _details._pair,
+                _details._optionModel,
+                _details._optionType
+            );
+        pool.lockLiquidity(optionId, liquidityParams, premiumResult.optionPremium);
         txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
 
         token.safeTransferFrom(_buyer, address(pool), premiumResult.optionPremium);
