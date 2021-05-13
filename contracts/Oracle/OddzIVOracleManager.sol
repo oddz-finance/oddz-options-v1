@@ -109,11 +109,13 @@ contract OddzIVOracleManager is AccessControl {
     function calculateIv(
         bytes32 _underlying,
         bytes32 _strike,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _currentPrice,
+        uint256 _strikePrice
     ) public view onlyManager(msg.sender) returns (uint256 iv, uint8 decimals) {
         IOddzVolatilityOracle aggregator = activeIVAggregator[_underlying][_strike];
         require(address(aggregator) != address(0), "No aggregator");
 
-        (iv, decimals) = aggregator.getIv(_underlying, _strike, _expiration);
+        (iv, decimals) = aggregator.getIv(_underlying, _strike, _expiration, _currentPrice, _strikePrice);
     }
 }
