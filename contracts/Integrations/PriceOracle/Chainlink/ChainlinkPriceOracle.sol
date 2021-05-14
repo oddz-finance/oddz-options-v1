@@ -32,6 +32,10 @@ contract ChainlinkPriceOracle is AccessControl, IOddzPriceOracle {
         revokeRole(MANAGER_ROLE, _address);
     }
 
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
     function getPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
