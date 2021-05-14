@@ -23,6 +23,15 @@ contract ChainlinkPriceOracle is AccessControl, IOddzPriceOracle {
         _;
     }
 
+    function setManager(address _address) public {
+        require(_address != address(0) && _address.isContract(), "Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    function removeManager(address _address) public {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
     function getPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
