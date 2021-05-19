@@ -262,7 +262,12 @@ export function shouldBehaveLikeOddzSDK(): void {
       OptionType.Call,
       this.accounts.admin,
     );
-    expect(await oddzSDK.optionCount(this.accounts.admin)).to.equal(2);
+    expect(await oddzSDK.premiumCollected(this.accounts.admin, new Date().getMonth() + 1)).to.equal(
+      BigNumber.from(utils.parseEther("133.0633725")),
+    );
+    expect(await oddzSDK.totalPremiumCollected(new Date().getMonth() + 1)).to.equal(
+      BigNumber.from(utils.parseEther("133.0633725")),
+    );
   });
 
   it("should revert buy for less than purchase limit", async function () {
@@ -371,14 +376,6 @@ export function shouldBehaveLikeOddzSDK(): void {
     );
   });
 
-  it("should revert for invalid address while add liquidity", async function () {
-    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
-    const depositAmount = 1000;
-    await expect(
-      oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, constants.AddressZero),
-    ).to.be.revertedWith("invalid provider address");
-  });
-
   it("should revert for invalid address while buying option", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
     const pairId = await getAssetPair(
@@ -403,27 +400,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     ).to.revertedWith("invalid provider address");
   });
 
-  it("should emit AddLiquidity event", async function () {
-    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
-    const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
-      this.oddzDefaultPool,
-      "AddLiquidity",
-    );
-  });
-
-  it("should get liquidity count of provider", async function () {
-    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
-    const depositAmount = 1000;
-    await expect(oddzSDK.addLiquidity(depositAmount, this.oddzDefaultPool.address, this.accounts.admin)).to.emit(
-      this.oddzDefaultPool,
-      "AddLiquidity",
-    );
-
-    expect(await oddzSDK.liquidityCount(this.accounts.admin)).to.equal(1);
-  });
-
-  it("should get option count of provider", async function () {
+  it("should get option premium of provider", async function () {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -457,6 +434,8 @@ export function shouldBehaveLikeOddzSDK(): void {
       OptionType.Call,
       this.accounts.admin,
     );
-    expect(await oddzSDK.optionCount(this.accounts.admin)).to.equal(1);
+    expect(await oddzSDK.premiumCollected(this.accounts.admin, new Date().getMonth() + 1)).to.equal(
+      BigNumber.from(utils.parseEther("27.85800402")),
+    );
   });
 }
