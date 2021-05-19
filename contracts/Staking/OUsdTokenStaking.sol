@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
 import "./AbstractTokenStaking.sol";
-import "./IOddzStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -14,11 +14,9 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Toke
         uint256 _date
     ) external override {
         _mint(_staker, _amount);
-        if (stakers[_staker]._address == address(0)) {
-            stakers[_staker] = StakerDetails(_staker, _date, 0);
-        } else {
-            stakers[_staker]._lastStakedAt = _date;
-        }
+        if (stakers[_staker]._lastStakedAt == 0) stakers[_staker] = StakerDetails(_date, 0);
+        else stakers[_staker]._lastStakedAt = _date;
+
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
@@ -30,7 +28,7 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz OUsd Staking Toke
         bal = balanceOf(_address);
     }
 
-    function supply() external view override returns (uint256 supply) {
-        supply = totalSupply();
+    function supply() external view override returns (uint256 tsupply) {
+        tsupply = totalSupply();
     }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -9,12 +10,10 @@ abstract contract AbstractTokenStaking is Ownable {
 
     /**
      * @dev Staker Details
-     * @param _address Address of the staker
      * @param _lastStakedAt Last staked date for the user
      * @param _rewards rewards for the user
      */
     struct StakerDetails {
-        address _address;
         uint256 _lastStakedAt;
         uint256 _rewards;
     }
@@ -22,7 +21,7 @@ abstract contract AbstractTokenStaking is Ownable {
     /**
      * @dev Staker details
      */
-    mapping(address => StakerDetails) stakers;
+    mapping(address => StakerDetails) public stakers;
 
     /**
      * @dev Staking token address
@@ -57,9 +56,9 @@ abstract contract AbstractTokenStaking is Ownable {
 
     /**
      * @notice Supply of the tokens
-     * @return supply token supply
+     * @return tsupply token supply
      */
-    function supply() external view virtual returns (uint256 supply);
+    function supply() external view virtual returns (uint256 tsupply);
 
     /**
      * @notice Sets staking token address
@@ -112,9 +111,7 @@ abstract contract AbstractTokenStaking is Ownable {
      * @return true/ false for valid staker
      */
     function isValidStaker(address _staker) public view returns (bool) {
-        if (stakers[_staker]._address != address(0)) {
-            return true;
-        }
+        if (stakers[_staker]._lastStakedAt != 0) return true;
         return false;
     }
 }

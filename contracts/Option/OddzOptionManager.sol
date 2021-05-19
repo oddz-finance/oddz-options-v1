@@ -6,7 +6,7 @@ import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
 import "../Oracle/OddzPriceOracleManager.sol";
 import "../Oracle/OddzIVOracleManager.sol";
-import "../Staking/IOddzStaking.sol";
+import "../IOddzAdministrator.sol";
 import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
@@ -24,9 +24,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
     OddzPriceOracleManager public oracle;
     OddzIVOracleManager public volatility;
     OddzOptionPremiumManager public premiumManager;
-    IOddzStaking public stakingBenficiary;
+    IOddzAdministrator public administrator;
     IERC20Extented public token;
-    Option[] public options;
+    Option[] public override options;
 
     /**
      * @dev Transaction Fee definitions
@@ -45,12 +45,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     uint32 public maxDeadline;
 
+    /**
+     * @dev SDK contract address
+     */
     OddzSDK public sdk;
 
     constructor(
         OddzPriceOracleManager _oracle,
         OddzIVOracleManager _iv,
-        IOddzStaking _staking,
+        IOddzAdministrator _administrator,
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
@@ -59,10 +62,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
         pool = _pool;
         oracle = _oracle;
         volatility = _iv;
-        stakingBenficiary = _staking;
+        administrator = _administrator;
         token = _token;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
+
+        // Approve token transfer to staking contract
+        token.approve(address(administrator), type(uint256).max);
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
@@ -474,8 +480,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
-        token.approve(address(stakingBenficiary), txnFee);
-        stakingBenficiary.deposit(txnFee, IOddzStaking.DepositType.Transaction);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
     }
 
     /**
@@ -485,8 +490,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
-        token.approve(address(stakingBenficiary), settlementFee);
-        stakingBenficiary.deposit(settlementFee, IOddzStaking.DepositType.Settlement);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
     }
 
     /**

@@ -85,4 +85,22 @@ interface IOddzOption {
      * @param _deadline Deadline until which txn does not revert
      */
     function exerciseUA(uint256 _optionId, uint32 _deadline) external;
+
+    /**
+     * @notice Returns option details
+     * @param _optionId Option ID
+     */
+    function options(uint256 _optionId)
+        external
+        returns (
+            State state,
+            address holder,
+            uint256 strike,
+            uint256 amount,
+            uint256 lockedAmount,
+            uint256 premium,
+            uint256 expiration,
+            address pair,
+            OptionType optionType
+        );
 }
