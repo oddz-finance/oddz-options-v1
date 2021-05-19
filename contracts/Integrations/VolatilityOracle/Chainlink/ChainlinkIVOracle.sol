@@ -20,17 +20,17 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     uint256 public volatilityPrecision = 2;
 
     modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "Chainlink IV: caller has no access to the method");
         _;
     }
 
     modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
+        require(hasRole(MANAGER_ROLE, _address), "Chainlink IV: caller has no access to the method");
         _;
     }
 
     modifier allowedPeriod(uint8 _aggregatorPeriod) {
-        require(allowedPeriods[_aggregatorPeriod] == true, "Invalid aggregator period");
+        require(allowedPeriods[_aggregatorPeriod] == true, "Chainlink IV: Invalid aggregator period");
         _;
     }
 
@@ -96,7 +96,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     }
 
     function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "Invalid manager address");
+        require(_address != address(0) && _address.isContract(), "Chainlink IV: Invalid manager");
         grantRole(MANAGER_ROLE, _address);
     }
 
@@ -118,11 +118,12 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
 
         bytes32 agHash = keccak256(abi.encode(_underlying, _strike, ivPeriodMap[_expirationDay]));
         address aggregator = addressMap[agHash];
-        require(aggregator != address(0), "No aggregator");
+        require(aggregator != address(0), "Chainlink IV: No aggregator");
+
         (, int256 answer, , uint256 updatedAt, ) = AggregatorV3Interface(aggregator).latestRoundData();
 
+        require(updatedAt > (block.timestamp - delayInSeconds), "Chainlink IV: Out Of Sync");
         iv = uint256(answer);
-        require(updatedAt > (uint256(block.timestamp) - delayInSeconds), "Chain link IV Out Of Sync");
         decimals = AggregatorV3Interface(aggregator).decimals();
         uint256 _iv = _getIv(_underlying, _strike, _expirationDay, _currentPrice, _strikePrice, iv, decimals);
         // _iv can be 0 when there are no entries to mapping
@@ -138,7 +139,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         address _aggregator,
         uint8 _aggregatorPeriod
     ) public override onlyManager(msg.sender) allowedPeriod(_aggregatorPeriod) {
-        require(_aggregator.isContract(), "Invalid chainlink aggregator");
+        require(_aggregator.isContract(), "Chainlink IV: Invalid aggregator");
         bytes32 agHash = keccak256(abi.encode(_underlying, _strike, _aggregatorPeriod));
         addressMap[agHash] = _aggregator;
 
