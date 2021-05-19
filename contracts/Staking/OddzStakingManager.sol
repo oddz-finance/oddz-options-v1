@@ -116,6 +116,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             true
         );
         AbstractTokenStaking(_stakingContract).setToken(_address);
+
         emit TokenAdded(_address, _name, _stakingContract, _rewardFrequency, _lockupDuration);
     }
 
@@ -145,8 +146,6 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         );
         _transferRewards(msg.sender, _token, date);
         AbstractTokenStaking(tokens[_token]._stakingContract).burn(msg.sender, _amount);
-        // Transfer source staking tokens
-        IERC20(tokens[_token]._address).safeTransfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _token, _amount);
     }

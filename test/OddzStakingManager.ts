@@ -3,7 +3,6 @@ import { ethers, waffle } from "hardhat";
 
 import OddzStakingManagerArtifact from "../artifacts/contracts/Staking/OddzStakingManager.sol/OddzStakingManager.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
-import ODevTokenStakingArtifact from "../artifacts/contracts/Staking/ODevTokenStaking.sol/ODevTokenStaking.json";
 import OUsdTokenStakingArtifact from "../artifacts/contracts/Staking/OUsdTokenStaking.sol/OUsdTokenStaking.json";
 import MockTokenStakingArtifact from "../artifacts/contracts/Mocks/MockTokenStaking.sol/MockTokenStaking.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
@@ -11,14 +10,7 @@ import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockER
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-import {
-  OddzStakingManager,
-  OddzTokenStaking,
-  OUsdTokenStaking,
-  ODevTokenStaking,
-  MockERC20,
-  MockTokenStaking,
-} from "../typechain";
+import { OddzStakingManager, OddzTokenStaking, OUsdTokenStaking, MockERC20, MockTokenStaking } from "../typechain";
 import { shouldBehaveLikeOddzStakingManager } from "./behaviors/OddzStakingManager.behavior";
 import { BigNumber, utils } from "ethers";
 import { getExpiry } from "../test-utils";
@@ -41,12 +33,6 @@ describe("Oddz Staking Manager Unit tests", function () {
   describe("Oddz Staking Manager", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
-      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-        "USD coin",
-        "USDC",
-        totalSupply,
-      ])) as MockERC20;
-
       this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "oddz coin",
         "ODDZ",
@@ -59,14 +45,8 @@ describe("Oddz Staking Manager Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
 
-      this.oDevToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-        "oDev coin",
-        "oDev",
-        totalSupply,
-      ])) as MockERC20;
-
       this.oddzStakingManager = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
-        this.usdcToken.address,
+        this.oddzToken.address,
       ])) as OddzStakingManager;
 
       this.oddzTokenStaking = (await deployContract(
@@ -81,15 +61,8 @@ describe("Oddz Staking Manager Unit tests", function () {
         [],
       )) as OUsdTokenStaking;
 
-      this.oDevTokenStaking = (await deployContract(
-        this.signers.admin,
-        ODevTokenStakingArtifact,
-        [],
-      )) as ODevTokenStaking;
-
       await this.oddzTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oUsdTokenStaking.transferOwnership(this.oddzStakingManager.address);
-      await this.oDevTokenStaking.transferOwnership(this.oddzStakingManager.address);
 
       this.oddzTokenStaking1 = (await deployContract(
         this.signers.admin,
@@ -118,15 +91,6 @@ describe("Oddz Staking Manager Unit tests", function () {
         getExpiry(1),
         30,
         30,
-      );
-      await this.oddzStakingManager.addToken(
-        utils.formatBytes32String("oDev"),
-        this.oDevToken.address,
-        this.oDevTokenStaking.address,
-        getExpiry(1),
-        getExpiry(1),
-        20,
-        0,
       );
     });
 
