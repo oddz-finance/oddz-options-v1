@@ -15,8 +15,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
 
     mapping(bytes32 => address) public addressMap;
 
-    //bytes(underlying,strike,expiry) => volPerc => val
-    mapping(bytes32 => mapping(uint256 => uint256)) public volatility;
+    //bytes(underlying, strike, expiry) => volPerc => val
+    mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
     uint256 public volatilityPrecision = 2;
 
     modifier onlyOwner(address _address) {
