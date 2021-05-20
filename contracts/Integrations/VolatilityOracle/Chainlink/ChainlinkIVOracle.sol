@@ -10,13 +10,13 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     uint256 public delayInSeconds = 30 * 60;
-    mapping(uint8 => bool) public allowedPeriods;
-    mapping(uint256 => uint8) public ivPeriodMap;
+    mapping(uint256 => bool) public allowedPeriods;
+    mapping(uint256 => uint256) public ivPeriodMap;
 
     mapping(bytes32 => address) public addressMap;
 
     //bytes(underlying,strike,expiry) => volPerc => val
-    mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
+    mapping(bytes32 => mapping(uint256 => uint256)) public volatility;
     uint256 public volatilityPrecision = 2;
 
     modifier onlyOwner(address _address) {
@@ -29,7 +29,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         _;
     }
 
-    modifier allowedPeriod(uint8 _aggregatorPeriod) {
+    modifier allowedPeriod(uint256 _aggregatorPeriod) {
         require(allowedPeriods[_aggregatorPeriod] == true, "Chainlink IV: Invalid aggregator period");
         _;
     }
@@ -125,7 +125,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         require(updatedAt > (block.timestamp - delayInSeconds), "Chainlink IV: Out Of Sync");
         iv = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
-        uint256 _iv = _getIv(_underlying, _strike, _expirationDay, _currentPrice, _strikePrice, iv, decimals);
+        uint256 _iv =
+            _getIv(_underlying, _strike, ivPeriodMap[_expirationDay], _currentPrice, _strikePrice, iv, decimals);
         // _iv can be 0 when there are no entries to mapping
         if (_iv > 0) iv = _iv;
 
@@ -209,7 +210,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 _expiration,
         uint8 _volPercentage,
         uint256 _volatility // 96.68 => 9668
-    ) public onlyOwner(msg.sender) {
+    ) public onlyOwner(msg.sender) allowedPeriod(_expiration) {
         volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
     }
 

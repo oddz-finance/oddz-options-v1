@@ -289,7 +289,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       chainlinkIVOracle.addVolatilityMapping(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        getExpiry(1),
+        1,
         10,
         9668, //96.68
       ),
@@ -301,7 +301,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     await chainlinkIVOracle.addVolatilityMapping(
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
-      getExpiry(1),
+      1,
       10,
       9668,
     );
@@ -309,7 +309,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     const hash = utils.keccak256(
       utils.defaultAbiCoder.encode(
         ["bytes32", "bytes32", "uint256"],
-        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), getExpiry(1)],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 1],
       ),
     );
     expect(await chainlinkIVOracle.volatility(hash, 10)).to.equal(9668);
