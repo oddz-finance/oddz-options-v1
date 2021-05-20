@@ -119,9 +119,13 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
             staking.deposit((_oddzAmount * txnDistribution.staker) / 100, IOddzStaking.DepositType.Transaction);
         if (txnDistribution.developer > 0) sdk.allocateOddzReward((_oddzAmount * txnDistribution.developer) / 100);
         if (txnDistribution.gasless > 0)
-            usdcToken.transfer(gaslessFacilitator, (_usdcAmount * txnDistribution.gasless) / 100);
+            usdcToken.safeTransferFrom(msg.sender, gaslessFacilitator, (_usdcAmount * txnDistribution.gasless) / 100);
         if (txnDistribution.maintainer > 0)
-            usdcToken.transfer(maintenanceFacilitator, (_usdcAmount * txnDistribution.maintainer) / 100);
+            usdcToken.safeTransferFrom(
+                msg.sender,
+                maintenanceFacilitator,
+                (_usdcAmount * txnDistribution.maintainer) / 100
+            );
     }
 
     function distrbuteSettlement(uint256 _usdcAmount, uint256 _oddzAmount) private {
@@ -130,8 +134,16 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         if (settlementDistribution.developer > 0)
             sdk.allocateOddzReward((_oddzAmount * settlementDistribution.developer) / 100);
         if (settlementDistribution.gasless > 0)
-            usdcToken.transfer(gaslessFacilitator, (_usdcAmount * settlementDistribution.gasless) / 100);
+            usdcToken.safeTransferFrom(
+                msg.sender,
+                gaslessFacilitator,
+                (_usdcAmount * settlementDistribution.gasless) / 100
+            );
         if (settlementDistribution.maintainer > 0)
-            usdcToken.transfer(maintenanceFacilitator, (_usdcAmount * settlementDistribution.maintainer) / 100);
+            usdcToken.safeTransferFrom(
+                msg.sender,
+                maintenanceFacilitator,
+                (_usdcAmount * settlementDistribution.maintainer) / 100
+            );
     }
 }
