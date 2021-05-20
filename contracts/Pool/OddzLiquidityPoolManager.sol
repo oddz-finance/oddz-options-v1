@@ -5,7 +5,6 @@ import "./IOddzLiquidityPoolManager.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Libs/ABDKMath64x64.sol";
 import "../Swap/DexManager.sol";
-import "../OddzSDK.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -57,11 +56,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev DEX manager
      */
     DexManager public dexManager;
-
-    /**
-     * @dev Oddz SDK
-     */
-    OddzSDK public sdk;
 
     /**
      * @dev Access control specific data definitions
@@ -136,22 +130,17 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mapPeriod(30, 30);
     }
 
-    function addLiquidity(
-        IOddzLiquidityPool _pool,
-        uint256 _amount,
-        address _account
-    ) external override returns (uint256 mint) {
-        address sender_ = msg.sender == address(sdk) ? _account : msg.sender;
+    function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 mint) {
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         // transfer user eligible premium
-        transferEligiblePremium(date, sender_, _pool);
+        transferEligiblePremium(date, msg.sender, _pool);
 
-        _pool.addLiquidity(_amount, sender_);
+        _pool.addLiquidity(_amount, msg.sender);
 
-        _mint(sender_, mint);
-        token.safeTransferFrom(sender_, address(this), _amount);
+        _mint(msg.sender, mint);
+        token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 burn) {
@@ -534,16 +523,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
         reqBalance = _reqBalance;
-    }
-
-    /**
-     * @notice sets the SDK
-     * @param _sdk SDK contract address
-     * Note: This can be called only by the owner
-     */
-    function setSdk(OddzSDK _sdk) external onlyOwner(msg.sender) {
-        require(address(_sdk).isContract(), "LP Error: invalid SDK contract address");
-        sdk = _sdk;
     }
 
     /**

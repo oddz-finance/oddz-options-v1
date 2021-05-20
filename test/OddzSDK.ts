@@ -155,7 +155,6 @@ describe("Oddz Option Sdk Unit tests", function () {
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setSdk(this.oddzSDK.address);
-      await this.oddzLiquidityPoolManager.setSdk(this.oddzSDK.address);
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
