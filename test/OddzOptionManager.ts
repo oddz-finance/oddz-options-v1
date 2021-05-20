@@ -174,6 +174,7 @@ describe("Oddz Option Manager Unit tests", function () {
       await this.oddzOptionManager.setMaxDeadline(100);
       await this.oddzLiquidityPoolManager.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
+      await this.oddzPriceOracleManager.setManager(this.oddzOptionManager.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);

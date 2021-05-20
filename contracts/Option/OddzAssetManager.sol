@@ -2,8 +2,39 @@
 pragma solidity 0.8.3;
 
 import "./IOddzAsset.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OddzAssetManager is Ownable, IOddzAsset {
+    // Asset
+    event NewAsset(bytes32 indexed _name, address indexed _address);
+    event AssetActivate(bytes32 indexed _name, address indexed _address);
+    event AssetDeactivate(bytes32 indexed _name, address indexed _address);
+
+    // Asset pair
+    event NewAssetPair(
+        address indexed _address,
+        bytes32 indexed _primary,
+        bytes32 indexed _strike,
+        uint256 _limit,
+        uint256 _maxDays,
+        uint256 _minDays
+    );
+    event AssetActivatePair(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike);
+    event AssetDeactivatePair(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike);
+    event SetPurchaseLimit(address indexed _address, bytes32 indexed _primary, bytes32 indexed _strike, uint256 _limit);
+    event AssetPairMaxPeriodUpdate(
+        address indexed _address,
+        bytes32 indexed _primary,
+        bytes32 indexed _strike,
+        uint256 _maxDays
+    );
+    event AssetPairMinPeriodUpdate(
+        address indexed _address,
+        bytes32 indexed _primary,
+        bytes32 indexed _strike,
+        uint256 _minDays
+    );
+
     mapping(bytes32 => Asset) public assetNameMap;
     mapping(address => AssetPair) public addressPairMap;
 
@@ -28,42 +59,42 @@ contract OddzAssetManager is Ownable, IOddzAsset {
     }
 
     // Asset functions
-    function getAsset(bytes32 _asset) public view returns (Asset memory asset) {
+    function getAsset(bytes32 _asset) public view override returns (Asset memory asset) {
         asset = assetNameMap[_asset];
     }
 
-    function getPrecision(bytes32 _asset) public view returns (uint8 precision) {
+    function getPrecision(bytes32 _asset) public view override returns (uint8 precision) {
         precision = getAsset(_asset)._precision;
     }
 
-    function getAssetAddressByName(bytes32 _asset) public view returns (address asset) {
+    function getAssetAddressByName(bytes32 _asset) public view override returns (address asset) {
         require(_asset != "", "invalid asset name");
         require(getAsset(_asset)._address != address(0), "Invalid asset address");
         asset = getAsset(_asset)._address;
     }
 
     // Asset pair functions
-    function getPair(address _address) public view returns (AssetPair memory pair) {
+    function getPair(address _address) public view override returns (AssetPair memory pair) {
         pair = addressPairMap[_address];
     }
 
-    function getPrimaryFromPair(address _address) public view returns (bytes32 primary) {
+    function getPrimaryFromPair(address _address) public view override returns (bytes32 primary) {
         primary = getPair(_address)._primary;
     }
 
-    function getStatusOfPair(address _address) public view returns (bool status) {
+    function getStatusOfPair(address _address) public view override returns (bool status) {
         status = getPair(_address)._active;
     }
 
-    function getPurchaseLimit(address _address) public view returns (uint256 limit) {
+    function getPurchaseLimit(address _address) public view override returns (uint256 limit) {
         limit = getPair(_address)._limit;
     }
 
-    function getMaxPeriod(address _address) public view returns (uint256 maxPeriod) {
+    function getMaxPeriod(address _address) public view override returns (uint256 maxPeriod) {
         maxPeriod = getPair(_address)._maxDays;
     }
 
-    function getMinPeriod(address _address) public view returns (uint256 minPeriod) {
+    function getMinPeriod(address _address) public view override returns (uint256 minPeriod) {
         minPeriod = getPair(_address)._minDays;
     }
 

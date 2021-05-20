@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzAdministrator.sol";
 import "./IOddzSDK.sol";
 import "./Staking/IOddzStaking.sol";
-import "./Swap/DexManager.sol";
+import "./Swap/IDexManager.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -38,7 +38,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     /**
      * @dev DEX manager
      */
-    DexManager public dexManager;
+    IDexManager public dexManager;
     uint256 public deadline = 1 minutes;
 
     constructor(
@@ -48,7 +48,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         IOddzSDK _sdk,
         address _gaslessFacilitator,
         address _maintenanceFacilitator,
-        DexManager _dexManager
+        IDexManager _dexManager
     ) {
         usdcToken = _usdcToken;
         oddzToken = _oddzToken;

@@ -4,14 +4,13 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
-import "../Oracle/OddzPriceOracleManager.sol";
-import "../Oracle/OddzIVOracleManager.sol";
-import "../IOddzAdministrator.sol";
-import "./OddzAssetManager.sol";
-import "./IOddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
-import "./IERC20Extented.sol";
+import "./IOddzOptionPremiumManager.sol";
+import "../IOddzAdministrator.sol";
 import "../IOddzSDK.sol";
+import "../Oracle/IOddzPriceOracleManager.sol";
+import "../Oracle/IOddzIVOracleManager.sol";
+import "./IERC20Extented.sol";
 import "../Libs/ABDKMath64x64.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
@@ -19,10 +18,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
     using SafeERC20 for IERC20Extented;
     using Address for address;
 
-    OddzAssetManager public assetManager;
+    IOddzAsset public assetManager;
     IOddzLiquidityPoolManager public pool;
-    OddzPriceOracleManager public oracle;
-    OddzIVOracleManager public volatility;
+    IOddzPriceOracleManager public oracle;
+    IOddzIVOracleManager public volatility;
     IOddzOptionPremiumManager public premiumManager;
     IOddzAdministrator public administrator;
     IERC20Extented public token;
@@ -51,12 +50,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzSDK public sdk;
 
     constructor(
-        OddzPriceOracleManager _oracle,
-        OddzIVOracleManager _iv,
+        IOddzPriceOracleManager _oracle,
+        IOddzIVOracleManager _iv,
         IOddzAdministrator _administrator,
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
-        OddzAssetManager _assetManager,
+        IOddzAsset _assetManager,
         IOddzOptionPremiumManager _premiumManager
     ) {
         pool = _pool;

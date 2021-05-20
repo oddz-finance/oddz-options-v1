@@ -148,6 +148,7 @@ describe("Oddz Option Sdk Unit tests", function () {
       ])) as OddzOptionManager;
       await this.oddzLiquidityPoolManager.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
+      await this.oddzPriceOracleManager.setManager(this.oddzOptionManager.address);
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
         this.oddzLiquidityPoolManager.address,

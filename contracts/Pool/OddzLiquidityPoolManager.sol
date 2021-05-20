@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPoolManager.sol";
 import "../Libs/DateTimeLibrary.sol";
 import "../Libs/ABDKMath64x64.sol";
-import "../Swap/DexManager.sol";
+import "../Swap/IDexManager.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -55,7 +55,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     /**
      * @dev DEX manager
      */
-    DexManager public dexManager;
+    IDexManager public dexManager;
 
     /**
      * @dev Access control specific data definitions
@@ -88,7 +88,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         _;
     }
 
-    constructor(IERC20 _token, DexManager _dexManager) {
+    constructor(IERC20 _token, IDexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         token = _token;
         dexManager = _dexManager;
