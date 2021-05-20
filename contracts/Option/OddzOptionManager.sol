@@ -11,7 +11,7 @@ import "./OddzAssetManager.sol";
 import "./OddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
 import "./IERC20Extented.sol";
-import "../OddzSDK.sol";
+import "../IOddzSDK.sol";
 import "../Libs/ABDKMath64x64.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
@@ -48,7 +48,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @dev SDK contract address
      */
-    OddzSDK public sdk;
+    IOddzSDK public sdk;
 
     constructor(
         OddzPriceOracleManager _oracle,
@@ -468,7 +468,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice sets SDK address
      * @param _sdk Oddz SDK address
      */
-    function setSdk(OddzSDK _sdk) external onlyOwner {
+    function setSdk(IOddzSDK _sdk) external onlyOwner {
         require(address(_sdk).isContract(), "invalid SDK contract address");
         sdk = _sdk;
     }

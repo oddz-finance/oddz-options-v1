@@ -15,7 +15,7 @@ contract MockTokenStaking {
     }
 
     function burn() public {
-        staking.burn(msg.sender, 1000);
+        staking.unstake(msg.sender, 1000);
     }
 
     function setToken(address _token) public {

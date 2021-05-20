@@ -34,14 +34,14 @@ describe("Oddz Staking Manager Unit tests", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
       this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-        "oddz coin",
+        "Oddz Token",
         "ODDZ",
         totalSupply,
       ])) as MockERC20;
 
       this.oUsdToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-        "oUsd coin",
-        "oUsd",
+        "oUSD Token",
+        "oUSD",
         totalSupply,
       ])) as MockERC20;
 
@@ -84,7 +84,7 @@ describe("Oddz Staking Manager Unit tests", function () {
         70,
       );
       await this.oddzStakingManager.addToken(
-        utils.formatBytes32String("oUsd"),
+        utils.formatBytes32String("oUSD"),
         this.oUsdToken.address,
         this.oUsdTokenStaking.address,
         getExpiry(1),

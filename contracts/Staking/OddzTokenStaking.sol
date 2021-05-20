@@ -20,7 +20,7 @@ contract OddzTokenStaking is AbstractTokenStaking, ERC20("Oddz Staking Token", "
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function burn(address _staker, uint256 _amount) external override onlyOwner {
+    function unstake(address _staker, uint256 _amount) external override onlyOwner {
         _burn(_staker, _amount);
 
         // Transfer source staking tokens

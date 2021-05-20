@@ -41,11 +41,11 @@ abstract contract AbstractTokenStaking is Ownable {
     ) external virtual;
 
     /**
-     * @notice burn tokens of the staker
+     * @notice unstake tokens of the staker
      * @param _staker Address of the staker
-     * @param _amount Amount to burn
+     * @param _amount Amount to burn and transfer
      */
-    function burn(address _staker, uint256 _amount) external virtual;
+    function unstake(address _staker, uint256 _amount) external virtual;
 
     /**
      * @notice balane of tokens for the staker

@@ -145,7 +145,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
             "Staking: cannot withdraw within lockup period"
         );
         _transferRewards(msg.sender, _token, date);
-        AbstractTokenStaking(tokens[_token]._stakingContract).burn(msg.sender, _amount);
+        AbstractTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _token, _amount);
     }
