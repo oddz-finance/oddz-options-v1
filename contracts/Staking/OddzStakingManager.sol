@@ -42,6 +42,11 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         _;
     }
 
+    modifier validDuration(uint256 _duration) {
+        require(_duration >= 1 days, "Staking: invalid staking duration");
+        _;
+    }
+
     constructor(IERC20 _oddzToken) {
         oddzToken = _oddzToken;
     }
@@ -51,7 +56,12 @@ contract OddzStakingManager is Ownable, IOddzStaking {
      * @param _token token address
      * @param _duration lockup duration
      */
-    function setLockupDuration(address _token, uint256 _duration) external onlyOwner validToken(_token) {
+    function setLockupDuration(address _token, uint256 _duration)
+        external
+        onlyOwner
+        validToken(_token)
+        validDuration(_duration)
+    {
         tokens[_token]._lockupDuration = _duration;
     }
 
@@ -101,7 +111,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
         uint256 _lockupDuration,
         uint8 _txnFeeReward,
         uint8 _settlementFeeReward
-    ) external onlyOwner {
+    ) external onlyOwner validDuration(_lockupDuration) {
         require(_address.isContract(), "Staking: invalid token address");
         require(_stakingContract.isContract(), "Staking: invalid staking contract");
         tokens[_address] = Token(
