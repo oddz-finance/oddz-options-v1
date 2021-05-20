@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
+import "./IDexManager.sol";
 import "./ISwapUnderlyingAsset.sol";
 import "../Option/OddzAssetManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DexManager is AccessControl {
+contract DexManager is AccessControl, IDexManager {
     using Address for address;
-    OddzAssetManager assetManager;
+    OddzAssetManager public assetManager;
 
     bytes32 public constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
 
@@ -73,12 +74,12 @@ contract DexManager is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setSwapper(address _address) public {
+    function setSwapper(address _address) external {
         require(_address != address(0), "invalid address");
         grantRole(SWAPPER_ROLE, _address);
     }
 
-    function removeSwapper(address _address) public {
+    function removeSwapper(address _address) external {
         revokeRole(SWAPPER_ROLE, _address);
     }
 
@@ -92,7 +93,7 @@ contract DexManager is AccessControl {
         bytes32 _underlying,
         bytes32 _strike,
         ISwapUnderlyingAsset _exchange
-    ) public onlyOwner(msg.sender) returns (bytes32 exHash) {
+    ) external onlyOwner(msg.sender) returns (bytes32 exHash) {
         require(_underlying != _strike, "Invalid assets");
         require(address(_exchange).isContract(), "Invalid exchange");
 
@@ -107,7 +108,7 @@ contract DexManager is AccessControl {
      * @notice Function to set the exchange data.
      * @param _exHash hash of the underlying, strike asset and exchange.
      */
-    function setActiveExchange(bytes32 _exHash) public onlyOwner(msg.sender) {
+    function setActiveExchange(bytes32 _exHash) external onlyOwner(msg.sender) {
         ExchangeData storage data = exchangeMap[_exHash];
         require(address(data._exchange) != address(0), "Invalid exchange");
 
@@ -120,6 +121,7 @@ contract DexManager is AccessControl {
     function getExchange(bytes32 _underlying, bytes32 _strike)
         public
         view
+        override
         onlySwapper(msg.sender)
         returns (address exchangeAddress)
     {
@@ -144,7 +146,7 @@ contract DexManager is AccessControl {
         address _account,
         uint256 _amountIn,
         uint256 _deadline
-    ) public onlySwapper(msg.sender) {
+    ) public override onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
         require(address(exchange) == _exchange, "Invalid exchange");

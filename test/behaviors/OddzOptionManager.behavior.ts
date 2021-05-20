@@ -99,7 +99,7 @@ const addLiquidity = async (
   amount: number,
 ) => {
   const olp = await oddzLiquidityPoolManager.connect(admin);
-  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()), await admin.getAddress());
+  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()));
   return olp;
 };
 
@@ -1204,11 +1204,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await expect(
-      oddzLiquidityPoolManager.addLiquidity(
-        this.oddzDefaultPool.address,
-        utils.parseEther("1000000"),
-        this.accounts.admin,
-      ),
+      oddzLiquidityPoolManager.addLiquidity(this.oddzDefaultPool.address, utils.parseEther("1000000")),
       this.accounts.admin,
     ).to.emit(this.oddzDefaultPool, "PremiumCollected");
     await expect(
@@ -1451,7 +1447,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("should send settlement fee aggragrate staking contract successfully", async function () {
+  it("should send settlement fee aggregate to staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1486,7 +1482,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
-  it("should send transaction fee aggragrate staking contract successfully", async function () {
+  it("should send transaction fee aggregate to staking contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1512,6 +1508,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("12.71409331")),
     );
+
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
@@ -2134,7 +2131,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     await this.oddzLiquidityPoolManager
       .connect(this.signers.admin)
-      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
     const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
@@ -2182,7 +2179,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     await this.oddzLiquidityPoolManager
       .connect(this.signers.admin)
-      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
 
     const optionDetails = getOptionDetailsStruct(
       pair,

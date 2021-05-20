@@ -25,7 +25,7 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
         this.oddzPriceOracle.address,
         this.oddzPriceOracle.address,
       ),
-    ).to.be.revertedWith("Invalid assets");
+    ).to.be.revertedWith("OPOM Error: Invalid assets");
   });
 
   it("should throw Invalid aggregator message", async function () {
@@ -37,18 +37,17 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
         this.accounts.admin,
         this.accounts.admin,
       ),
-    ).to.be.revertedWith("Invalid aggregator");
+    ).to.be.revertedWith("OPOM Error: Invalid aggregator");
   });
 
   it("should not return underlying price and throw No aggregator message when no aggregator is set", async function () {
-    const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
-    await expect(
-      oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
-    ).to.be.revertedWith("No aggregator");
+    const mockPriceOracleUser = await this.mockPriceOracleUser.connect(this.signers.admin);
+    await expect(mockPriceOracleUser.getPrice()).to.be.revertedWith("OPOM Error: No aggregator");
   });
 
   it("Should throw out of synch message when price is not in sync", async function () {
     const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
+    const mockPriceOracleUser = await this.mockPriceOracleUser.connect(this.signers.admin);
 
     await oracleManager.addAggregator(
       utils.formatBytes32String("ETH"),
@@ -74,13 +73,12 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
       );
 
     await this.oddzPriceOracle.setUpdatedAt(2000);
-    await expect(
-      oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
-    ).to.be.revertedWith("Chain link Price Out Of Sync");
+    await expect(mockPriceOracleUser.getPrice()).to.be.revertedWith("Chain link Price Out Of Sync");
   });
 
   it("should return underlying price when an aggregator is set", async function () {
     const oracleManager = await this.oddzPriceOracleManager.connect(this.signers.admin);
+    const mockPriceOracleUser = await this.mockPriceOracleUser.connect(this.signers.admin);
 
     await oracleManager.addAggregator(
       utils.formatBytes32String("ETH"),
@@ -105,9 +103,7 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
         this.oddzPriceOracle.address,
       );
 
-    await expect(
-      oracleManager.getUnderlyingPrice(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD")),
-    ).to.not.equal(null);
+    await expect(mockPriceOracleUser.getPrice()).to.not.equal(null);
   });
 
   it("should revert for setting invalid active aggregator", async function () {
@@ -120,6 +116,6 @@ export function shouldBehaveLikeOddzPriceOracleManager(): void {
       ),
     );
     // tries to set address(0) as active aggregator
-    await expect(oracleManager.setActiveAggregator(hash)).to.be.revertedWith("Invalid aggregator");
+    await expect(oracleManager.setActiveAggregator(hash)).to.be.revertedWith("OPOM Error: Invalid aggregator");
   });
 }

@@ -4,14 +4,13 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
-import "../Oracle/OddzPriceOracleManager.sol";
-import "../Oracle/OddzIVOracleManager.sol";
-import "../Staking/IOddzStaking.sol";
-import "./OddzAssetManager.sol";
-import "./OddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
+import "./IOddzOptionPremiumManager.sol";
+import "../IOddzAdministrator.sol";
+import "../IOddzSDK.sol";
+import "../Oracle/IOddzPriceOracleManager.sol";
+import "../Oracle/IOddzIVOracleManager.sol";
 import "./IERC20Extented.sol";
-import "../OddzSDK.sol";
 import "../Libs/ABDKMath64x64.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
@@ -19,14 +18,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
     using SafeERC20 for IERC20Extented;
     using Address for address;
 
-    OddzAssetManager public assetManager;
+    IOddzAsset public assetManager;
     IOddzLiquidityPoolManager public pool;
-    OddzPriceOracleManager public oracle;
-    OddzIVOracleManager public volatility;
-    OddzOptionPremiumManager public premiumManager;
-    IOddzStaking public stakingBenficiary;
+    IOddzPriceOracleManager public oracle;
+    IOddzIVOracleManager public volatility;
+    IOddzOptionPremiumManager public premiumManager;
+    IOddzAdministrator public administrator;
     IERC20Extented public token;
-    Option[] public options;
+    Option[] public override options;
 
     /**
      * @dev Transaction Fee definitions
@@ -45,24 +44,30 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     uint32 public maxDeadline;
 
-    OddzSDK public sdk;
+    /**
+     * @dev SDK contract address
+     */
+    IOddzSDK public sdk;
 
     constructor(
-        OddzPriceOracleManager _oracle,
-        OddzIVOracleManager _iv,
-        IOddzStaking _staking,
+        IOddzPriceOracleManager _oracle,
+        IOddzIVOracleManager _iv,
+        IOddzAdministrator _administrator,
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
-        OddzAssetManager _assetManager,
-        OddzOptionPremiumManager _premiumManager
+        IOddzAsset _assetManager,
+        IOddzOptionPremiumManager _premiumManager
     ) {
         pool = _pool;
         oracle = _oracle;
         volatility = _iv;
-        stakingBenficiary = _staking;
+        administrator = _administrator;
         token = _token;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
+
+        // Approve token transfer to staking contract
+        token.approve(address(administrator), type(uint256).max);
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
@@ -462,7 +467,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice sets SDK address
      * @param _sdk Oddz SDK address
      */
-    function setSdk(OddzSDK _sdk) external onlyOwner {
+    function setSdk(IOddzSDK _sdk) external onlyOwner {
         require(address(_sdk).isContract(), "invalid SDK contract address");
         sdk = _sdk;
     }
@@ -474,8 +479,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
-        token.safeTransfer(address(stakingBenficiary), txnFee);
-        stakingBenficiary.deposit(txnFee, IOddzStaking.DepositType.Transaction);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
     }
 
     /**
@@ -485,8 +489,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
-        token.safeTransfer(address(stakingBenficiary), settlementFee);
-        stakingBenficiary.deposit(settlementFee, IOddzStaking.DepositType.Settlement);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
     }
 
     /**
