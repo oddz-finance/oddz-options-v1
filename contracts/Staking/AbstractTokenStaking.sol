@@ -75,6 +75,7 @@ abstract contract AbstractTokenStaking is Ownable {
      */
     function getLastStakedAt(address _staker) public view returns (uint256 lastStakedAt) {
         lastStakedAt = stakers[_staker]._lastStakedAt;
+        require(lastStakedAt > 0, "invalid staker");
     }
 
     /**
