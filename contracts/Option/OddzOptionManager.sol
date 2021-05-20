@@ -8,7 +8,7 @@ import "../Oracle/OddzPriceOracleManager.sol";
 import "../Oracle/OddzIVOracleManager.sol";
 import "../IOddzAdministrator.sol";
 import "./OddzAssetManager.sol";
-import "./OddzOptionPremiumManager.sol";
+import "./IOddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
 import "./IERC20Extented.sol";
 import "../IOddzSDK.sol";
@@ -23,7 +23,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzLiquidityPoolManager public pool;
     OddzPriceOracleManager public oracle;
     OddzIVOracleManager public volatility;
-    OddzOptionPremiumManager public premiumManager;
+    IOddzOptionPremiumManager public premiumManager;
     IOddzAdministrator public administrator;
     IERC20Extented public token;
     Option[] public override options;
@@ -57,7 +57,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
         OddzAssetManager _assetManager,
-        OddzOptionPremiumManager _premiumManager
+        IOddzOptionPremiumManager _premiumManager
     ) {
         pool = _pool;
         oracle = _oracle;

@@ -2,10 +2,11 @@
 pragma solidity 0.8.3;
 
 import "./IOddzPremium.sol";
+import "./IOddzOptionPremiumManager.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract OddzOptionPremiumManager is AccessControl {
+contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -55,12 +56,12 @@ contract OddzOptionPremiumManager is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setManager(address _address) public {
+    function setManager(address _address) external {
         require(_address != address(0) && _address.isContract(), "Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
 
-    function removeManager(address _address) public {
+    function removeManager(address _address) external {
         revokeRole(MANAGER_ROLE, _address);
     }
 
@@ -70,7 +71,7 @@ contract OddzOptionPremiumManager is AccessControl {
      * @param _modelAddress Address of the premium contract.
      */
     function addOptionPremiumModel(bytes32 _name, IOddzPremium _modelAddress)
-        public
+        external
         onlyOwner(msg.sender)
         validModelName(_name)
     {
@@ -85,7 +86,7 @@ contract OddzOptionPremiumManager is AccessControl {
      * @notice Function to enable option premium model
      * @param _name premium model identifier.
      */
-    function enableOptionPremiumModel(bytes32 _name) public onlyOwner(msg.sender) validModel(_name) {
+    function enableOptionPremiumModel(bytes32 _name) external onlyOwner(msg.sender) validModel(_name) {
         PremiumModel storage data = premiumModelMap[_name];
         require(data._active == false, "Premium model is enabled");
 
@@ -98,7 +99,7 @@ contract OddzOptionPremiumManager is AccessControl {
      * @notice Function to enable option premium model
      * @param _name premium model identifier.
      */
-    function disableOptionPremiumModel(bytes32 _name) public onlyOwner(msg.sender) validModel(_name) {
+    function disableOptionPremiumModel(bytes32 _name) external onlyOwner(msg.sender) validModel(_name) {
         PremiumModel storage data = premiumModelMap[_name];
         require(data._active == true, "Premium model is disabled");
 
@@ -129,7 +130,7 @@ contract OddzOptionPremiumManager is AccessControl {
         uint256 _amount,
         uint256 _iv,
         bytes32 _model
-    ) public view onlyManager(msg.sender) returns (uint256 premium) {
+    ) public view override onlyManager(msg.sender) returns (uint256 premium) {
         IOddzPremium.PremiumDetails memory premiumDetails =
             IOddzPremium.PremiumDetails(
                 _isCallOption,
