@@ -81,6 +81,11 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         depositFrequency = _depositFrequency;
     }
 
+    function updateDeadline(uint256 _deadline) external onlyOwner {
+        require(deadline >= 1 minutes && deadline <= 30 minutes, "Administrator: invalid deadline");
+        deadline = _deadline;
+    }
+
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
