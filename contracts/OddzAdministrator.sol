@@ -73,6 +73,14 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         maintenanceFacilitator = _maintenanceFacilitator;
     }
 
+    function updateDepositFrequency(uint256 _depositFrequency) external onlyOwner {
+        require(
+            _depositFrequency >= 1 days && _depositFrequency <= 30 days,
+            "Administrator: invalid deposit frequency"
+        );
+        depositFrequency = _depositFrequency;
+    }
+
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
