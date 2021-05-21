@@ -10,9 +10,9 @@ import "../IOddzAdministrator.sol";
 import "./OddzAssetManager.sol";
 import "./IOddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
-import "./IERC20Extented.sol";
 import "../IOddzSDK.sol";
 import "../Libs/ABDKMath64x64.sol";
+import "../Libs/IERC20Extented.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
