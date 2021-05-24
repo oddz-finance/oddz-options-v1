@@ -217,10 +217,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _strike,
         address _pair,
         uint8 _ivDecimal,
-        OptionType _optionType
+        OptionType _optionType,
+        uint256 _quantity
     ) private view returns (uint256 lockAmount) {
         (uint256 callOverColl, uint256 putOverColl) = getCollateralAmount(_cp, _iv, _strike, _pair, _ivDecimal);
         lockAmount = _optionType == OptionType.Call ? callOverColl : putOverColl;
+        lockAmount = (lockAmount * _quantity) / 1e18;
     }
 
     function buy(
@@ -264,7 +266,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 _details._strike,
                 _details._pair,
                 premiumResult.ivDecimal,
-                _details._optionType
+                _details._optionType,
+                _details._amount
             );
         optionId = options.length;
         Option memory option =
@@ -427,8 +430,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
         settlementFee = (profit * settlementFeePerc) / 100;
-        settlementFeeAggregate = settlementFeeAggregate + settlementFee;
-        profit = profit - settlementFee;
+        settlementFeeAggregate += settlementFee;
+        profit -= settlementFee;
     }
 
     /**
