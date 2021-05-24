@@ -60,7 +60,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 40, developer: 0, staker: 60 });
 
         dexManager = _dexManager;
-        minimumAmount = 10000 * 10**usdcToken.decimals();
+        minimumAmount = 1000 * 10**usdcToken.decimals();
         // Approve token transfer to staking contract
         oddzToken.approve(address(sdk), type(uint256).max);
         oddzToken.approve(address(staking), type(uint256).max);

@@ -19,7 +19,6 @@ interface IOddzStaking {
      * @param _name Name of the token
      * @param _address Address of the token
      * @param _stakingContract staking contract address for the token
-     * @param _rewardFrequency Reward distribution frequency
      * @param _lockupDuration Lock up duration for the token withdrawal
      * @param _lastDistributed last distributeds date for the token
      * @param _txnFeeReward Percentage txn fee reward
@@ -29,7 +28,6 @@ interface IOddzStaking {
         bytes32 _name;
         address _address;
         address _stakingContract;
-        uint256 _rewardFrequency;
         uint256 _lockupDuration;
         uint256 _lastDistributed;
         uint8 _txnFeeReward;
@@ -42,14 +40,12 @@ interface IOddzStaking {
      * @param _address Address of the token
      * @param _name Name of the token
      * @param _stakingContract Stacking contract address
-     * @param _rewardFrequency Reward distribution frequency
      * @param _lockupDuration Lock up duration for the token withdrawal
      */
     event TokenAdded(
         address indexed _address,
         bytes32 indexed _name,
         address indexed _stakingContract,
-        uint256 _rewardFrequency,
         uint256 _lockupDuration
     );
 
@@ -121,13 +117,6 @@ interface IOddzStaking {
      * @param _amount Amount to withdraw
      */
     function withdraw(address _token, uint256 _amount) external;
-
-    /**
-     * @notice Distribute rewards
-     * @param _token Address of the staked token
-     * @param _stakers Array of staker
-     */
-    function distributeRewards(address _token, address[] memory _stakers) external;
 
     /**
      * @notice Stake tokens

@@ -79,7 +79,6 @@ describe("Oddz Staking Manager Unit tests", function () {
         this.oddzToken.address,
         this.oddzTokenStaking.address,
         getExpiry(1),
-        getExpiry(1),
         50,
         70,
       );
@@ -88,8 +87,7 @@ describe("Oddz Staking Manager Unit tests", function () {
         this.oUsdToken.address,
         this.oUsdTokenStaking.address,
         getExpiry(1),
-        getExpiry(1),
-        30,
+        50,
         30,
       );
     });
