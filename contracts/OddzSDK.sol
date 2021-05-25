@@ -114,7 +114,8 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient {
         require(DateTimeLibrary.getMonth(block.timestamp) > _month, "SDK: Oddz rewards not enabled for the month");
         for (uint256 i = 0; i < _providers.length; i++) {
             bytes32 providerMonth = keccak256(abi.encode(_providers[i], _month));
-            require(usersForTheMonth[providerMonth], "SDK: provider not eligible for reward");
+            // skip reward for ineligible provider
+            if (!usersForTheMonth[providerMonth]) continue;
             // set provider as ineligible
             delete usersForTheMonth[providerMonth];
             uint256 amount =

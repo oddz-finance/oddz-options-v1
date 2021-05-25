@@ -1453,7 +1453,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("should send settlement fee aggregate to staking contract successfully", async function () {
+  it("should send settlement fee aggregate to administrator contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1472,7 +1472,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("500")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
@@ -1481,14 +1481,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await oddzOptionManager.exercise(0);
+
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("10")),
+      BigNumber.from(utils.parseEther("1000")),
     );
     await oddzOptionManager.transferSettlementFeeToBeneficiary();
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
-  it("should send transaction fee aggregate to staking contract successfully", async function () {
+  it("should send transaction fee aggregate to administrator contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1505,14 +1506,14 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("500")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("12.71409331")),
+      BigNumber.from(utils.parseEther("1271.409331")),
     );
 
     await oddzOptionManager.transferTxnFeeToBeneficiary();
@@ -2230,12 +2231,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // total: 1714.1460393
     await expect(
       ((await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18).toString(),
-    ).to.equal("1655.0375551862069");
+    ).to.equal("1708.2351908886205");
     await expect(
       (
         (await this.oddzEthUsdCallBS30Pool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18
       ).toString(),
-    ).to.equal("59.108484113793104");
+    ).to.equal("5.910848411379311");
 
     await provider.send("evm_snapshot", []);
     // execution day + 15 <= (2 + 3 + 10)
@@ -2252,7 +2253,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
 
     await expect(((await oddzLiquidityPoolManager.balanceOf(this.accounts.admin)) / 1e18).toString()).to.equal(
-      "1003228.4928454862",
+      "1003281.6904811887",
     );
     await expect(
       (await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)).toNumber(),

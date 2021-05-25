@@ -12,15 +12,19 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz USD Staking Token
         address _staker,
         uint256 _amount,
         uint256 _date
-    ) external override {
+    ) external override onlyOwner {
+        _stake(_staker, _amount, _date);
         _mint(_staker, _amount);
-        if (stakers[_staker]._lastStakedAt == 0) stakers[_staker] = StakerDetails(_date, 0);
-        else stakers[_staker]._lastStakedAt = _date;
 
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function unstake(address _staker, uint256 _amount) external override onlyOwner {
+    function unstake(
+        address _staker,
+        uint256 _amount,
+        uint256 _date
+    ) external override onlyOwner {
+        _unstake(_staker, _amount, _date);
         _burn(_staker, _amount);
 
         // Transfer source staking tokens
