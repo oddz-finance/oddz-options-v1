@@ -34,8 +34,4 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz USD Staking Token
     function balance(address _address) external view override returns (uint256 bal) {
         bal = balanceOf(_address);
     }
-
-    function supply() external view override returns (uint256 tsupply) {
-        tsupply = totalSupply();
-    }
 }

@@ -76,12 +76,6 @@ abstract contract AbstractTokenStaking is Ownable {
     function balance(address _staker) external view virtual returns (uint256 bal);
 
     /**
-     * @notice Supply of the tokens
-     * @return tsupply token supply
-     */
-    function supply() external view virtual returns (uint256 tsupply);
-
-    /**
      * @notice Sets staking token address
      * @param _token Address of the token
      */
