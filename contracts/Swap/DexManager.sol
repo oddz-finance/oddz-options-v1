@@ -119,7 +119,7 @@ contract DexManager is AccessControl, IDexManager {
     }
 
     function getExchange(bytes32 _underlying, bytes32 _strike)
-        public
+        external
         view
         override
         onlySwapper(msg.sender)
@@ -146,7 +146,7 @@ contract DexManager is AccessControl, IDexManager {
         address _account,
         uint256 _amountIn,
         uint256 _deadline
-    ) public override onlySwapper(msg.sender) {
+    ) external override onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
         require(address(exchange) == _exchange, "Invalid exchange");
