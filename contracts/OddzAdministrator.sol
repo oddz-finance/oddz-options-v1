@@ -5,12 +5,12 @@ import "./IOddzAdministrator.sol";
 import "./IOddzSDK.sol";
 import "./Staking/IOddzStaking.sol";
 import "./Swap/IDexManager.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./Libs/IERC20Extented.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract OddzAdministrator is IOddzAdministrator, Ownable {
-    using SafeERC20 for IERC20;
-    IERC20 public usdcToken;
+    using SafeERC20 for IERC20Extented;
+    IERC20Extented public usdcToken;
     IERC20 public oddzToken;
 
     IOddzStaking public staking;
@@ -20,7 +20,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     /**
      * @dev deppsit definitions
      */
-    uint256 public depositFrequency = 7 days;
+    uint256 public minimumAmount;
     uint256 public lastDeposit;
     /**
      * @dev distrbution percentage
@@ -42,7 +42,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     uint256 public deadline = 1 minutes;
 
     constructor(
-        IERC20 _usdcToken,
+        IERC20Extented _usdcToken,
         IERC20 _oddzToken,
         IOddzStaking _staking,
         IOddzSDK _sdk,
@@ -60,6 +60,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 40, developer: 0, staker: 60 });
 
         dexManager = _dexManager;
+        minimumAmount = 1000 * 10**usdcToken.decimals();
         // Approve token transfer to staking contract
         oddzToken.approve(address(sdk), type(uint256).max);
         oddzToken.approve(address(staking), type(uint256).max);
@@ -71,6 +72,19 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
 
     function changeMaintenanceFacilitator(address _maintenanceFacilitator) external onlyOwner {
         maintenanceFacilitator = _maintenanceFacilitator;
+    }
+
+    function updateMinimumAmount(uint256 _minimumAmount) external onlyOwner {
+        require(
+            _minimumAmount >= 1000 * 10**usdcToken.decimals() && _minimumAmount <= 1000000 * 10**usdcToken.decimals(),
+            "Administrator: invalid deposit frequency"
+        );
+        minimumAmount = _minimumAmount;
+    }
+
+    function updateDeadline(uint256 _deadline) external onlyOwner {
+        require(deadline >= 1 minutes && deadline <= 30 minutes, "Administrator: invalid deadline");
+        deadline = _deadline;
     }
 
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
@@ -89,8 +103,8 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) public override {
-        require((lastDeposit + depositFrequency) > block.timestamp, "Administrator: deposit not allowed");
+    function deposit(uint256 _amount, DepositType _depositType) external override {
+        require(_amount > minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
         if (_depositType == DepositType.Transaction)
