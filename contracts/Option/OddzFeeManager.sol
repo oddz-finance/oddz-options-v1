@@ -3,21 +3,20 @@ pragma solidity 0.8.3;
 
 import "./IOddzFeeManager.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../Libs/IERC20Extented.sol";
 
 contract OddzFeeManager is IOddzFeeManager, Ownable {
-    IERC20[] public txnFeeTokens;
-    IERC20[] public settlementFeeTokens;
+    IERC20Extented[] public txnFeeTokens;
+    IERC20Extented[] public settlementFeeTokens;
     mapping(IERC20 => bool) public tokens;
 
     // token -> digits -> discount percentage
     /**
      * Example: Oddz token
-     * 3 -> 10 #100 - 999 tokens can get 10% discount
-     * 4 -> 25 #1000 - 9999 tokens can get 25% discount
-     * 5 -> 50 #10000 - 99999 tokens can get 50% discount
-     * 6 -> 75 #100000 - 999999 tokens can get 75% discount
-     * 7 -> 100 #1000000 - 9999999 tokens can get 100% discount
+     * 4 -> 20 #1000 - 9999 tokens can get max 20% discount
+     * 5 -> 40 #10000 - 99999 tokens can get max 40% discount
+     * 6 -> 60 #100000 - 999999 tokens can get max 60% discount
+     * 7 -> 80 #1000000 - 9999999 tokens can get max 80% discount
      */
     mapping(IERC20 => mapping(uint8 => uint8)) public tokenFeeDiscounts;
 
@@ -43,7 +42,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice add transaction fee discount tokens
      * @param _token IERC20 token
      */
-    function addTxnTokens(IERC20 _token) public onlyOwner {
+    function addTxnTokens(IERC20Extented _token) public onlyOwner {
         txnFeeTokens.push(_token);
         tokens[_token] = true;
     }
@@ -52,7 +51,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice add settlement fee discount tokens
      * @param _token IERC20 token
      */
-    function addSettlementTokens(IERC20 _token) public onlyOwner {
+    function addSettlementTokens(IERC20Extented _token) public onlyOwner {
         settlementFeeTokens.push(_token);
         tokens[_token] = true;
     }
@@ -80,10 +79,14 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @param _buyer Address of buyer
      * @return txnFee Transaction fee percentage for the buyer
      */
-    function getTransactionFee(address _buyer) public view override returns (uint8 txnFee) {
-        uint8 maxDiscount;
+    function getTransactionFee(address _buyer) public view override returns (uint256 txnFee) {
+        uint256 maxDiscount;
         for (uint256 i = 0; i < txnFeeTokens.length; i++) {
-            uint8 discount = tokenFeeDiscounts[txnFeeTokens[i]][numDigits(txnFeeTokens[i].balanceOf(_buyer))];
+            if (txnFeeTokens[i].balanceOf(_buyer) == 0) continue;
+            uint256 discount =
+                tokenFeeDiscounts[txnFeeTokens[i]][
+                    numDigits(txnFeeTokens[i].balanceOf(_buyer) / 10**txnFeeTokens[i].decimals())
+                ];
             if (discount > maxDiscount) maxDiscount = discount;
         }
         txnFee = txnFeePerc - (txnFeePerc * maxDiscount) / 100;
@@ -95,10 +98,13 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @return settlementFee Transaction fee percentage for the buyer
      */
     function getSettlementFee(address _holder) public view override returns (uint256 settlementFee) {
-        uint8 maxDiscount;
+        uint256 maxDiscount;
         for (uint256 i = 0; i < settlementFeeTokens.length; i++) {
-            uint8 discount =
-                tokenFeeDiscounts[settlementFeeTokens[i]][numDigits(settlementFeeTokens[i].balanceOf(_holder))];
+            if (settlementFeeTokens[i].balanceOf(_holder) == 0) continue;
+            uint256 discount =
+                tokenFeeDiscounts[settlementFeeTokens[i]][
+                    numDigits(settlementFeeTokens[i].balanceOf(_holder) / 10**settlementFeeTokens[i].decimals())
+                ];
             if (discount > maxDiscount) maxDiscount = discount;
         }
         settlementFee = settlementFeePerc - (settlementFeePerc * maxDiscount) / 100;

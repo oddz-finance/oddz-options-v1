@@ -11,7 +11,7 @@ interface IOddzFeeManager {
      * @param _buyer Address of buyer
      * @return txnFee Transaction fee percentage for the buyer
      */
-    function getTransactionFee(address _buyer) external view returns (uint8 txnFee);
+    function getTransactionFee(address _buyer) external view returns (uint256 txnFee);
 
     /**
      * @notice Gets settlement fee for an option holder
