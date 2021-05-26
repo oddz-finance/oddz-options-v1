@@ -4,9 +4,11 @@ import "../Pool/IOddzLiquidityPoolManager.sol";
 
 contract MockOptionManager {
     IOddzLiquidityPoolManager public pool;
+    IERC20 public token;
 
-    constructor(IOddzLiquidityPoolManager _pool) {
+    constructor(IOddzLiquidityPoolManager _pool, IERC20 _token) {
         pool = _pool;
+        token = _token;
     }
 
     function lock(uint256 _id) public {
@@ -19,6 +21,7 @@ contract MockOptionManager {
                 IOddzOption.OptionType.Call
             );
         pool.lockLiquidity(_id, liquidityParams, 10000000000);
+        token.transfer(address(pool), 10000000000);
     }
 
     function unlock(uint256 _id) public {
