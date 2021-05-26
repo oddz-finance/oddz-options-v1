@@ -291,13 +291,10 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     }
 
     function _allocatePremium(address _provider) private {
-        uint256 premiumAllocated = liquidityProvider[_provider]._premiumAllocated;
         (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium) = getPremium(
             _provider
         );
-        // premium is calculated for one day less
-        if (liquidityProvider[_provider]._premiumAllocated != premiumAllocated)
-            liquidityProvider[_provider]._lastPremiumCollected = DateTimeLibrary.getPresentDayTimestamp();
+        liquidityProvider[_provider]._lastPremiumCollected = DateTimeLibrary.getPresentDayTimestamp();
     }
 
     /**
