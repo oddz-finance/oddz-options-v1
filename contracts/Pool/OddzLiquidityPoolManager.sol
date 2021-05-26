@@ -32,6 +32,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
+    mapping(IOddzLiquidityPool => bool) public validPools;
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
     mapping(bytes32 => bool) public uniquePoolMapper;
 
@@ -131,11 +132,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 mint) {
+        require(validPools[_pool], "LP Error: Invalid pool");
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         // transfer user eligible premium
-        transferEligiblePremium(date, msg.sender, _pool);
+        transferEligiblePremium(DateTimeLibrary.getPresentDayTimestamp(), msg.sender, _pool);
 
         _pool.addLiquidity(_amount, msg.sender);
 
@@ -144,6 +145,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 burn) {
+        require(validPools[_pool], "LP Error: Invalid pool");
         require(
             _amount * 10 <= _pool.availableBalance() * reqBalance,
             "LP Error: Not enough funds in the pool. Please lower the amount."
@@ -247,6 +249,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         lastPoolTransfer[msg.sender] = block.timestamp;
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
+            require(validPools[_poolTransfer._source[i]], "LP Error: Invalid pool");
             require(
                 _poolTransfer._sAmount[i] * 10 <= _poolTransfer._source[i].availableBalance() * reqBalance,
                 "LP Error: Not enough funds in the pool. Please lower the transfer amount."
@@ -556,6 +559,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
         for (uint256 i = 0; i < _pools.length; i++) {
             delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
+            validPools[_pools[i]] = false;
         }
 
         // add unique pool mapping
@@ -565,6 +569,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             if (!uniquePoolMapper[uPool]) {
                 poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
                 uniquePoolMapper[uPool] = true;
+                validPools[_pools[i]] = true;
             }
         }
     }
