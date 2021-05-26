@@ -19,4 +19,10 @@ interface IOddzFeeManager {
      * @return settlementFee Transaction fee percentage for the buyer
      */
     function getSettlementFee(address _holder) external view returns (uint256 settlementFee);
+
+    /**
+     * @notice returns fee decimals
+     * @return decimals fee decimals
+     */
+    function decimals() external view returns (uint8);
 }

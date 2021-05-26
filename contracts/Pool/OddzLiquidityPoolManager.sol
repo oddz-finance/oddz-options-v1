@@ -33,6 +33,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
+    mapping(IOddzLiquidityPool => bool) public validPools;
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
     mapping(bytes32 => bool) public uniquePoolMapper;
 
@@ -132,6 +133,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 mint) {
+        require(validPools[_pool], "LP Error: Invalid pool");
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
 
@@ -145,6 +147,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
+        require(validPools[_pool], "LP Error: Invalid pool");
         uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
         token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount) + eligiblePremium);
 
@@ -243,6 +246,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         lastPoolTransfer[msg.sender] = block.timestamp;
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
+            require(validPools[_poolTransfer._source[i]], "LP Error: Invalid pool");
             _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i]);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
@@ -453,6 +457,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
         for (uint256 i = 0; i < _pools.length; i++) {
             delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
+            validPools[_pools[i]] = false;
         }
 
         // add unique pool mapping
@@ -462,6 +467,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             if (!uniquePoolMapper[uPool]) {
                 poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
                 uniquePoolMapper[uPool] = true;
+                validPools[_pools[i]] = true;
             }
         }
     }

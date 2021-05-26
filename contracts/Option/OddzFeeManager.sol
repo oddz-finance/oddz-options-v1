@@ -9,6 +9,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
     IERC20Extented[] public txnFeeTokens;
     IERC20Extented[] public settlementFeeTokens;
     mapping(IERC20 => bool) public tokens;
+    uint8 public constant override decimals = 2;
 
     // token -> digits -> discount percentage
     /**
@@ -81,6 +82,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      */
     function getTransactionFee(address _buyer) public view override returns (uint256 txnFee) {
         uint256 maxDiscount;
+        txnFee = txnFeePerc * 10**decimals;
         for (uint256 i = 0; i < txnFeeTokens.length; i++) {
             if (txnFeeTokens[i].balanceOf(_buyer) == 0) continue;
             uint256 discount =
@@ -89,7 +91,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
                 ];
             if (discount > maxDiscount) maxDiscount = discount;
         }
-        txnFee = txnFeePerc - (txnFeePerc * maxDiscount) / 100;
+        txnFee -= (txnFeePerc * maxDiscount * 10**decimals) / 100;
     }
 
     /**
@@ -99,6 +101,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      */
     function getSettlementFee(address _holder) public view override returns (uint256 settlementFee) {
         uint256 maxDiscount;
+        settlementFee = settlementFeePerc * 10**decimals;
         for (uint256 i = 0; i < settlementFeeTokens.length; i++) {
             if (settlementFeeTokens[i].balanceOf(_holder) == 0) continue;
             uint256 discount =
@@ -107,7 +110,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
                 ];
             if (discount > maxDiscount) maxDiscount = discount;
         }
-        settlementFee = settlementFeePerc - (settlementFeePerc * maxDiscount) / 100;
+        settlementFee -= (settlementFeePerc * maxDiscount * 10**decimals) / 100;
     }
 
     /**

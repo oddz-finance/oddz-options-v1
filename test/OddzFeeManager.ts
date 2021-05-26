@@ -61,6 +61,7 @@ describe("Oddz Fee Manager Unit tests", function () {
       await this.oddzFeeManager.addSettlementTokens(this.oUsdToken.address);
       await this.oddzFeeManager.addSettlementTokens(this.random2Token.address);
 
+      await this.oddzFeeManager.addTokenDiscounts(this.oddzToken.address, 3, 10);
       await this.oddzFeeManager.addTokenDiscounts(this.oddzToken.address, 4, 20);
       await this.oddzFeeManager.addTokenDiscounts(this.oddzToken.address, 5, 40);
       await this.oddzFeeManager.addTokenDiscounts(this.oddzToken.address, 6, 60);
@@ -71,6 +72,7 @@ describe("Oddz Fee Manager Unit tests", function () {
       await this.oddzFeeManager.addTokenDiscounts(this.random1Token.address, 6, 80);
       await this.oddzFeeManager.addTokenDiscounts(this.random1Token.address, 7, 100);
 
+      await this.oddzFeeManager.addTokenDiscounts(this.oUsdToken.address, 3, 10);
       await this.oddzFeeManager.addTokenDiscounts(this.oUsdToken.address, 4, 20);
       await this.oddzFeeManager.addTokenDiscounts(this.oUsdToken.address, 5, 40);
       await this.oddzFeeManager.addTokenDiscounts(this.oUsdToken.address, 6, 60);
