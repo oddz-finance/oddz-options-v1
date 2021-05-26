@@ -21,7 +21,6 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
      * @dev deppsit definitions
      */
     uint256 public minimumAmount;
-    uint256 public lastDeposit;
     /**
      * @dev distrbution percentage
      */
