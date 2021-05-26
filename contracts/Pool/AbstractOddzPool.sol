@@ -15,75 +15,75 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     uint256 public poolBalance;
     uint256 public oUsdSupply;
     uint256 public lockedAmount;
-    struct LPBalance {
-        uint256 currentBalance;
-        uint256 transactionDate;
+    struct ProviderBalance {
+        uint256 _amount;
+        uint256 _date;
+        uint256 _premiumAllocated;
+        uint256 _lastPremiumCollected;
+        bool _isNegativePremium;
     }
-    mapping(address => LPBalance[]) public lpBalanceMap;
+    mapping(address => ProviderBalance) public liquidityProvider;
     // To distribute loss in the pool
-    mapping(address => uint256) public negativeLpBalance;
     mapping(uint256 => uint256) public daysActiveLiquidity;
-    mapping(address => uint256) public latestLiquidityDateMap;
     uint256 public latestLiquidityEvent;
 
     /**
      * @dev Premium specific data definitions
      */
     struct PremiumPool {
-        uint256 collected;
-        uint256 eligible;
-        uint256 distributed;
-        bool isNegative;
-        bool enabled;
+        uint256 _collected;
+        uint256 _exercised;
+        uint256 _surplus;
     }
     mapping(uint256 => PremiumPool) public premiumDayPool;
-    mapping(uint256 => uint256) internal daysExercise;
-    uint256 public surplus;
-
-    // premium
-    mapping(address => uint256) public lpPremium;
-    mapping(address => mapping(uint256 => uint256)) public lpPremiumDistributionMap;
 
     /**
      * @notice Add liquidity for the day
      * @param _amount USD value
-     * @param _account Address of the Liquidity Provider
+     * @param _provider Address of the Liquidity Provider
      */
-    function addLiquidity(uint256 _amount, address _account) public override onlyOwner {
+    function addLiquidity(uint256 _amount, address _provider) public override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
-        updateLiquidity(date, _amount, TransactionType.ADD);
-        updateLpBalance(TransactionType.ADD, date, _amount, _account);
-        latestLiquidityDateMap[_account] = date;
+        _updateLiquidity(_amount, TransactionType.ADD);
+        _allocatePremium(_provider);
+        _updateProviderBalance(TransactionType.ADD, _amount, _provider);
         oUsdSupply += _amount;
 
-        emit AddLiquidity(_account, _amount);
+        emit AddLiquidity(_provider, _amount);
     }
 
     /**
      * @notice Provider burns oUSD and receives USD from the pool
      * @param _amount Amount of USD to receive
      * @param _oUSD Amount of oUSD to be burnt
-     * @param _account Address of the Liquidity Provider
+     * @param _provider Address of the Liquidity Provider
+     * @param _lockDuration premium lockup days
      */
     function removeLiquidity(
         uint256 _amount,
         uint256 _oUSD,
-        address _account
+        address _provider,
+        uint256 _lockDuration
     ) public override onlyOwner {
-        LPBalance[] memory lpBalance = lpBalanceMap[_account];
         require(
-            _amount <= lpBalance[lpBalance.length - 1].currentBalance - negativeLpBalance[_account],
+            _amount <=
+                liquidityProvider[_provider]._amount -
+                    (
+                        (liquidityProvider[_provider]._isNegativePremium)
+                            ? liquidityProvider[_provider]._premiumAllocated
+                            : 0
+                    ),
             "LP Error: Amount is too large"
         );
         require(_amount > 0, "LP Error: Amount is too small");
 
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
-        updateLiquidity(date, _amount, TransactionType.REMOVE);
-        updateLpBalance(TransactionType.REMOVE, date, _amount, _account);
+        _updateLiquidity(_amount, TransactionType.REMOVE);
+        _allocatePremium(_provider);
+        _forfeitPremium(_provider, _amount, _lockDuration);
+        _updateProviderBalance(TransactionType.REMOVE, _amount, _provider);
         oUsdSupply -= _oUSD;
 
-        emit RemoveLiquidity(_account, _amount, _oUSD);
+        emit RemoveLiquidity(_provider, _amount, _oUSD);
     }
 
     /**
@@ -107,65 +107,14 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     }
 
     /**
-     * @notice latest transaction date of the user
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function latestLiquidityDate(address _account) public view override returns (uint256) {
-        return latestLiquidityDateMap[_account];
-    }
-
-    /**
-     * @notice current balance of the user
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function activeLiquidity(address _account) public view override returns (uint256) {
-        return activeLiquidityByDate(_account, DateTimeLibrary.getPresentDayTimestamp());
-    }
-
-    /**
-     * @notice active liquitdity for the date
-     * @param _date UTC timestamp of the date
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function activeLiquidityByDate(address _account, uint256 _date) public view override returns (uint256) {
-        LPBalance[] storage lpBalanceList = lpBalanceMap[_account];
-        uint256 len = lpBalanceList.length;
-        while (len > 0 && lpBalanceList[len - 1].transactionDate > _date) {
-            len--;
-        }
-        if (len > 0) return lpBalanceList[len - 1].currentBalance;
-        else return 0;
-    }
-
-    /**
-     * @notice returns user premium allocated for the date
-     * @param _account Address of the Liquidity Provider
-     * @param _date premium eligible date
-     * @return premium Premium distribution amount for the date
-     */
-    function getPremiumDistribution(address _account, uint256 _date) public view override returns (uint256) {
-        return lpPremiumDistributionMap[_account][_date];
-    }
-
-    /**
-     * @notice fetches user premium
-     * @param _account Address of the Liquidity Provider
-     */
-    function getPremium(address _account) public view override returns (uint256) {
-        return lpPremium[_account];
-    }
-
-    /**
      * @notice Allocate premium to pool
      * @param _lid liquidity ID
      * @param _amount Premium amount
      */
     function unlockPremium(uint256 _lid, uint256 _amount) public override onlyOwner {
         PremiumPool storage dayPremium = premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()];
-        dayPremium.collected = dayPremium.collected + _amount;
+        dayPremium._collected = dayPremium._collected + _amount;
+        oUsdSupply -= _amount;
 
         emit Profit(_lid, _amount);
     }
@@ -183,132 +132,78 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     ) public override onlyOwner {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         PremiumPool storage dayPremium = premiumDayPool[date];
-        dayPremium.collected = dayPremium.collected + _amount;
-        daysExercise[date] += _transfer;
+        dayPremium._collected += _amount;
+        dayPremium._exercised += _transfer;
+        oUsdSupply -= _transfer;
 
         if (_amount >= _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);
     }
 
     /**
-     * @notice Enable premium distribution for a date
-     * @param _date Premium eligibility date
-     */
-    function enablePremiumDistribution(uint256 _date) public override {
-        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
-        PremiumPool storage premium = premiumDayPool[_date];
-        require(!premium.enabled, "LP Error: Premium eligibilty already updated for the date");
-        premium.enabled = true;
-        if (premium.collected + surplus >= daysExercise[_date]) {
-            premium.eligible = premium.collected + surplus - daysExercise[_date];
-            premium.isNegative = false;
-        } else {
-            premium.eligible = daysExercise[_date] - premium.collected + surplus;
-            premium.isNegative = true;
-        }
-        surplus = 0;
-    }
-
-    /**
-     * @notice gets premium distribution status for a date
-     * @param _date Premium eligibility date
-     */
-    function isPremiumDistributionEnabled(uint256 _date) public view override returns (bool) {
-        return premiumDayPool[_date].enabled;
-    }
-
-    /**
-     * @notice returns eligible premium for a date
-     * @param _date Premium date
-     */
-    function getEligiblePremium(uint256 _date) public view override returns (uint256) {
-        return premiumDayPool[_date].eligible;
-    }
-
-    /**
-     * @notice returns distributed premium for a date
-     * @param _date Premium date
-     */
-    function getDistributedPremium(uint256 _date) public view override returns (uint256) {
-        return premiumDayPool[_date].distributed;
-    }
-
-    /**
-     * @notice allocated premium to provider
-     * @param _account Address of the Liquidity Provider
-     * @param _amount Premium amount
-     * @param _date premium eligible date
-     */
-    function allocatePremiumToProvider(
-        address _account,
-        uint256 _amount,
-        uint256 _date
-    ) public override onlyOwner {
-        lpPremiumDistributionMap[_account][_date] = _amount;
-        if (premiumDayPool[_date].isNegative) {
-            if (lpPremium[_account] > 0) {
-                if (lpPremium[_account] > _amount) {
-                    lpPremium[_account] -= _amount;
-                    _amount = 0;
-                } else {
-                    _amount -= lpPremium[_account];
-                    lpPremium[_account] = 0;
-                }
-            }
-            negativeLpBalance[_account] += _amount;
-        } else {
-            if (negativeLpBalance[_account] > 0) {
-                if (negativeLpBalance[_account] > _amount) {
-                    negativeLpBalance[_account] -= _amount;
-                    _amount = 0;
-                } else {
-                    _amount -= negativeLpBalance[_account];
-                    negativeLpBalance[_account] = 0;
-                }
-            }
-            lpPremium[_account] += _amount;
-        }
-
-        premiumDayPool[_date].distributed = premiumDayPool[_date].distributed + _amount;
-    }
-
-    /**
      * @notice forfeite user premium
-     * @param _account Address of the Liquidity Provider
-     * @param _amount Premium amount
+     * @param _provider Address of the Liquidity Provider
+     * @param _withdrawalAmount Amount being withdrawn by the provider
+     * @param _lockupDuration Premium lockup duration
      */
-    function forfeitPremium(address _account, uint256 _amount) public override onlyOwner {
-        lpPremium[_account] -= _amount;
-        surplus += _amount;
+    function _forfeitPremium(
+        address _provider,
+        uint256 _withdrawalAmount,
+        uint256 _lockupDuration
+    ) private {
+        if (liquidityProvider[_provider]._isNegativePremium) return;
+        if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) {
+            uint256 _amount =
+                (liquidityProvider[_provider]._premiumAllocated * _withdrawalAmount) /
+                    liquidityProvider[_provider]._amount;
+            liquidityProvider[_provider]._premiumAllocated -= _amount;
+            premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()]._surplus += _amount;
 
-        emit PremiumForfeited(_account, _amount);
+            emit PremiumForfeited(_provider, _amount);
+        }
     }
 
     /**
      * @notice helper to convert premium to oUSD and sets the premium to zero
-     * @param _account Address of the Liquidity Provider
+     * @param _provider Address of the Liquidity Provider
+     * @param _lockupDuration premium lockup days
      * @return premium Premium balance
      */
-    function collectPremium(address _account) public override onlyOwner returns (uint256 premium) {
-        premium = lpPremium[_account];
-        lpPremium[_account] = 0;
+    function collectPremium(address _provider, uint256 _lockupDuration)
+        public
+        override
+        onlyOwner
+        returns (uint256 premium)
+    {
+        if (liquidityProvider[_provider]._date == 0) return 0;
+        if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) return 0;
 
-        emit PremiumCollected(_account, premium);
+        _allocatePremium(_provider);
+        require(!liquidityProvider[_provider]._isNegativePremium, "LP Error: Premium is negative");
+        premium = liquidityProvider[_provider]._premiumAllocated;
+        liquidityProvider[_provider]._premiumAllocated = 0;
+
+        emit PremiumCollected(_provider, premium);
     }
 
     /**
      * @notice Get active liquidity for a date
      * @param _date liquidity date
      */
-    function getDaysActiveLiquidity(uint256 _date) public override returns (uint256 _liquidity) {
+    function getDaysActiveLiquidity(uint256 _date) public returns (uint256 _liquidity) {
+        require(_date <= DateTimeLibrary.getPresentDayTimestamp(), "LP Error: invalid date");
+        if (daysActiveLiquidity[_date] > 0) return daysActiveLiquidity[_date];
+
         // Skip for the first time liqiduity
-        if (daysActiveLiquidity[_date] == 0 && latestLiquidityEvent != 0) {
-            uint256 stDate = latestLiquidityEvent;
-            while (stDate <= _date) {
-                daysActiveLiquidity[stDate] = daysActiveLiquidity[latestLiquidityEvent];
-                stDate = stDate + 1 days;
-            }
+        if (latestLiquidityEvent == 0) return 0;
+
+        uint256 stDate = latestLiquidityEvent;
+        while (stDate <= _date) {
+            stDate = stDate + 1 days;
+            daysActiveLiquidity[stDate] = daysActiveLiquidity[latestLiquidityEvent];
         }
+
+        if (_date > latestLiquidityEvent) latestLiquidityEvent = _date;
         _liquidity = daysActiveLiquidity[_date];
     }
 
@@ -337,47 +232,105 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     }
 
     /**
+     * @notice Get staker rewards
+     * @param _provider Address of the liquidity provider
+     * @return rewards staker rewards
+     * @return isNegative true if rewards is negative
+     */
+    function getPremium(address _provider) public view override returns (uint256 rewards, bool isNegative) {
+        if (liquidityProvider[_provider]._amount == 0)
+            return (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium);
+
+        (uint256 tLiquidty, uint256 tReward, uint256 tExercised, uint256 count) = _getPremium(_provider);
+
+        if (tLiquidty == 0)
+            return (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium);
+
+        rewards = liquidityProvider[_provider]._premiumAllocated;
+
+        if (liquidityProvider[_provider]._isNegativePremium) {
+            if (tExercised + rewards > tReward) rewards += tExercised - tReward;
+            else {
+                rewards = tReward - (tExercised + rewards);
+                isNegative = true;
+            }
+        } else {
+            if (tExercised > tReward + rewards) {
+                rewards = tExercised - (tReward + rewards);
+                isNegative = true;
+            } else rewards += tReward - tExercised;
+        }
+        rewards = ((liquidityProvider[_provider]._amount * count * rewards) / tLiquidty);
+    }
+
+    function _getPremium(address _provider)
+        private
+        view
+        returns (
+            uint256 tLiquidty,
+            uint256 tReward,
+            uint256 tExercised,
+            uint256 count
+        )
+    {
+        uint256 startDate;
+        if (liquidityProvider[_provider]._lastPremiumCollected > 0)
+            startDate = liquidityProvider[_provider]._lastPremiumCollected;
+        else startDate = liquidityProvider[_provider]._date;
+
+        // premium should always be calculated for one day less
+        count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
+        PremiumPool memory pd;
+        for (uint256 i = 0; i < count; i++) {
+            // (startDate + (i * 1 days), daysActiveLiquidity[startDate + (i * 1 days)]);
+            tLiquidty += daysActiveLiquidity[startDate + (i * 1 days)];
+            pd = premiumDayPool[startDate + (i * 1 days)];
+            tReward += pd._collected + pd._surplus;
+            tExercised += pd._exercised;
+        }
+    }
+
+    function _allocatePremium(address _provider) private {
+        uint256 premiumAllocated = liquidityProvider[_provider]._premiumAllocated;
+        (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium) = getPremium(
+            _provider
+        );
+        // premium is calculated for one day less
+        if (liquidityProvider[_provider]._premiumAllocated != premiumAllocated)
+            liquidityProvider[_provider]._lastPremiumCollected = DateTimeLibrary.getPresentDayTimestamp();
+    }
+
+    /**
      * @notice Updates liquidity provider balance
      * @param _type Transaction type
-     * @param _date Epoch time for 00:00:00 hours of the date
      * @param _amount amount of liquidity added/removed
      */
-    function updateLpBalance(
+    function _updateProviderBalance(
         TransactionType _type,
-        uint256 _date,
         uint256 _amount,
-        address _account
+        address _provider
     ) private {
-        uint256 bal = activeLiquidity(_account);
-        if (_type == TransactionType.ADD) bal = bal + _amount;
-        else bal = bal - _amount;
+        if (_type == TransactionType.ADD) liquidityProvider[_provider]._amount += _amount;
+        else liquidityProvider[_provider]._amount -= _amount;
 
-        LPBalance[] storage lpBalance = lpBalanceMap[_account];
-
-        if (lpBalance.length > 0 && lpBalance[lpBalance.length - 1].transactionDate == _date)
-            lpBalance[lpBalance.length - 1].currentBalance = bal;
-        else lpBalance.push(LPBalance(bal, _date));
+        liquidityProvider[_provider]._date = DateTimeLibrary.getPresentDayTimestamp();
     }
 
     /**
      * @notice Updates liquidity for a given date
-     * @param _date liquidity date
      * @param _amount amount of liquidity added/removed
      * @param _type transaction type
      */
-    function updateLiquidity(
-        uint256 _date,
-        uint256 _amount,
-        TransactionType _type
-    ) private {
+    function _updateLiquidity(uint256 _amount, TransactionType _type) private {
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         if (_type == TransactionType.ADD) {
-            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) + _amount;
+            daysActiveLiquidity[date] = getDaysActiveLiquidity(date) + _amount;
             poolBalance += _amount;
         } else {
-            daysActiveLiquidity[_date] = getDaysActiveLiquidity(_date) - _amount;
+            daysActiveLiquidity[date] = getDaysActiveLiquidity(date) - _amount;
             poolBalance -= _amount;
         }
 
-        if (_date > latestLiquidityEvent) latestLiquidityEvent = _date;
+        if (date > latestLiquidityEvent) latestLiquidityEvent = date;
     }
 }
