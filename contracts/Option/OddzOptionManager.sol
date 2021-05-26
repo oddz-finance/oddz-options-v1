@@ -388,7 +388,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @return txnFee Transaction Fee
      */
     function getTransactionFee(uint256 _amount, address _buyer) private view returns (uint256 txnFee) {
-        txnFee = (_amount * oddzFeeManager.getTransactionFee(_buyer)) / 100;
+        txnFee = ((_amount * oddzFeeManager.getTransactionFee(_buyer)) / (100 * 10**oddzFeeManager.decimals()));
     }
 
     /**
@@ -415,7 +415,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
 
-        settlementFee = (profit * oddzFeeManager.getSettlementFee(msg.sender)) / 100;
+        settlementFee = ((profit * oddzFeeManager.getSettlementFee(msg.sender)) /
+            (100 * 10**oddzFeeManager.decimals()));
         settlementFeeAggregate += settlementFee;
         profit -= settlementFee;
     }
