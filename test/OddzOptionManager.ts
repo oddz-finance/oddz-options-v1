@@ -13,6 +13,7 @@ import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzP
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
 import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS30Pool.json";
+import OddzFeeManagerArtifact from "../artifacts/contracts/Option/OddzFeeManager.sol/OddzFeeManager.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
@@ -34,6 +35,7 @@ import {
   OddzIVOracleManager,
   OddzOptionPremiumManager,
   OddzPremiumBlackScholes,
+  OddzFeeManager,
   MockOddzDex,
   OddzTokenStaking,
 } from "../typechain";
@@ -160,6 +162,8 @@ describe("Oddz Option Manager Unit tests", function () {
         [],
       )) as OddzOptionPremiumManager;
 
+      this.oddzFeeManager = (await deployContract(this.signers.admin, OddzFeeManagerArtifact, [])) as OddzFeeManager;
+
       // Staking setup
       this.oddzStakingManager = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
         this.usdcToken.address,
@@ -173,6 +177,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.usdcToken.address,
         this.oddzAssetManager.address,
         oddzOptionPremiumManager.address,
+        this.oddzFeeManager.address,
       ])) as OddzOptionManager;
       await this.oddzOptionManager.setMaxDeadline(100);
       await this.oddzLiquidityPoolManager.setManager(this.oddzOptionManager.address);

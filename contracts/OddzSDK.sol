@@ -98,7 +98,7 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient {
     {
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
-        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option);
+        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, msg.sender);
         optionPremium = premiumResult.optionPremium;
         txnFee = premiumResult.txnFee;
         iv = premiumResult.iv;
