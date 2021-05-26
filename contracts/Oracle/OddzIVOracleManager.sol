@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
+import "./IOddzIVOracleManager.sol";
 import "./IOddzVolatilityOracle.sol";
 import "../Option/IOddzOption.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract OddzIVOracleManager is AccessControl {
+contract OddzIVOracleManager is AccessControl, IOddzIVOracleManager {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -43,12 +44,12 @@ contract OddzIVOracleManager is AccessControl {
     );
 
     modifier onlyOwner(address _address) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "OIOM Error: caller has no access to the method");
         _;
     }
 
     modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
+        require(hasRole(MANAGER_ROLE, _address), "OIOM Error: caller has no access to the method");
         _;
     }
 
@@ -56,12 +57,12 @@ contract OddzIVOracleManager is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setManager(address _address) public {
-        require(_address != address(0) && _address.isContract(), "Invalid manager address");
+    function setManager(address _address) external {
+        require(_address != address(0) && _address.isContract(), "OIOM Error: Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
 
-    function removeManager(address _address) public {
+    function removeManager(address _address) external {
         revokeRole(MANAGER_ROLE, _address);
     }
 
@@ -79,9 +80,9 @@ contract OddzIVOracleManager is AccessControl {
         IOddzVolatilityOracle _aggregator,
         address _aggregatorPriceContract,
         uint8 _aggregatorPeriod
-    ) public onlyOwner(msg.sender) returns (bytes32 agHash) {
-        require(_underlying != _strike, "Invalid assets");
-        require(address(_aggregator).isContract(), "Invalid aggregator");
+    ) external onlyOwner(msg.sender) returns (bytes32 agHash) {
+        require(_underlying != _strike, "OIOM Error: Invalid assets");
+        require(address(_aggregator).isContract(), "OIOM Error: Invalid aggregator");
 
         AggregatorIVData memory data = AggregatorIVData(_underlying, _strike, _aggregator);
         agHash = keccak256(abi.encode(_underlying, _strike, address(_aggregator)));
@@ -96,9 +97,9 @@ contract OddzIVOracleManager is AccessControl {
      * @notice Function to add the the IV Oracle aggregator data.
      * @param _agHash hash of the underlying, strike asset and oddz aggregator.
      */
-    function setActiveIVAggregator(bytes32 _agHash) public onlyOwner(msg.sender) {
+    function setActiveIVAggregator(bytes32 _agHash) external onlyOwner(msg.sender) {
         AggregatorIVData storage ivData = aggregatorIVMap[_agHash];
-        require(address(ivData._aggregator) != address(0), "Invalid aggregator");
+        require(address(ivData._aggregator) != address(0), "OIOM Error: Invalid aggregator");
 
         IOddzVolatilityOracle oldIvAg = activeIVAggregator[ivData._underlying][ivData._strike];
         activeIVAggregator[ivData._underlying][ivData._strike] = ivData._aggregator;
@@ -112,9 +113,9 @@ contract OddzIVOracleManager is AccessControl {
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
-    ) public view onlyManager(msg.sender) returns (uint256 iv, uint8 decimals) {
+    ) public view override onlyManager(msg.sender) returns (uint256 iv, uint8 decimals) {
         IOddzVolatilityOracle aggregator = activeIVAggregator[_underlying][_strike];
-        require(address(aggregator) != address(0), "No aggregator");
+        require(address(aggregator) != address(0), "OIOM Error: No aggregator");
 
         (iv, decimals) = aggregator.getIv(_underlying, _strike, _expiration, _currentPrice, _strikePrice);
     }

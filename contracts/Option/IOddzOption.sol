@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./IOddzAsset.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
@@ -57,7 +56,7 @@ interface IOddzOption {
      * @notice Buy a new option
      * @param _option Options details
      * @param _premiumWithSlippage Options details
-     * @param _buyer Address of buyer
+     * @param _buyer Address of option buyer
      * @return optionId Created option ID
      */
     function buy(
@@ -69,9 +68,13 @@ interface IOddzOption {
     /**
      * @notice getPremium of option
      * @param _option Options details
+     * @param _buyer Address of option buyer
      * @return premiumResult premium Result Created option ID
      */
-    function getPremium(OptionDetails memory _option) external view returns (PremiumResult memory premiumResult);
+    function getPremium(OptionDetails memory _option, address _buyer)
+        external
+        view
+        returns (PremiumResult memory premiumResult);
 
     /**
      * @notice Exercises an active option
@@ -85,4 +88,22 @@ interface IOddzOption {
      * @param _deadline Deadline until which txn does not revert
      */
     function exerciseUA(uint256 _optionId, uint32 _deadline) external;
+
+    /**
+     * @notice Returns option details
+     * @param _optionId Option ID
+     */
+    function options(uint256 _optionId)
+        external
+        returns (
+            State state,
+            address holder,
+            uint256 strike,
+            uint256 amount,
+            uint256 lockedAmount,
+            uint256 premium,
+            uint256 expiration,
+            address pair,
+            OptionType optionType
+        );
 }

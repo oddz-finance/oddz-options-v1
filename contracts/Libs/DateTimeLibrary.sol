@@ -134,4 +134,11 @@ library DateTimeLibrary {
         (uint256 year, uint256 month, uint256 day) = timestampToDate(block.timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
+
+    /**
+     * @dev get month for the timestamp
+     */
+    function getMonth(uint256 timestamp) internal pure returns (uint256 month) {
+        (, month, ) = _daysToDate(timestamp / SECONDS_PER_DAY);
+    }
 }

@@ -3,12 +3,12 @@ import { ethers, waffle } from "hardhat";
 
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
+import MockPriceOracleUserArtifact from "../artifacts/contracts/Mocks/MockPriceOracleUser.sol/MockPriceOracleUser.json";
 
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
-import { OddzPriceOracleManager } from "../typechain/OddzPriceOracleManager";
-import { MockOddzPriceOracle } from "../typechain";
+import { MockOddzPriceOracle, MockPriceOracleUser, OddzPriceOracleManager } from "../typechain";
 import { shouldBehaveLikeOddzPriceOracleManager } from "./behaviors/OddzPriceOracleManager.behavior";
 import { BigNumber } from "ethers";
 
@@ -37,7 +37,12 @@ describe("Oddz Price Oracle Manager Unit tests", function () {
         [],
       )) as OddzPriceOracleManager;
 
+      this.mockPriceOracleUser = (await deployContract(this.signers.admin, MockPriceOracleUserArtifact, [
+        this.oddzPriceOracleManager.address,
+      ])) as MockPriceOracleUser;
+
       await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
+      await this.oddzPriceOracleManager.setManager(this.mockPriceOracleUser.address);
     });
 
     shouldBehaveLikeOddzPriceOracleManager();
