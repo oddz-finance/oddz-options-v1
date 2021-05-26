@@ -41,7 +41,7 @@ const getPremiumWithSlippageAndBuy = async (
   admin: string,
   isBuy: boolean,
 ) => {
-  const premium: any = await oddzOptionManager.getPremium(optionDetails);
+  const premium: any = await oddzOptionManager.getPremium(optionDetails, admin);
   const premiumWithSlippage = Number(premium.optionPremium * (1 + slippage / 100));
   if (isBuy) {
     await oddzOptionManager.buy(
@@ -99,7 +99,7 @@ const addLiquidity = async (
   amount: number,
 ) => {
   const olp = await oddzLiquidityPoolManager.connect(admin);
-  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()), await admin.getAddress());
+  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()));
   return olp;
 };
 
@@ -114,7 +114,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(1234),
       OptionType.Call,
     );
-    await expect(oddzOptionManager.getPremium(optionDetails)).to.be.revertedWith("Invalid Asset pair");
+    await expect(oddzOptionManager.getPremium(optionDetails, this.accounts.admin)).to.be.revertedWith(
+      "Invalid Asset pair",
+    );
   });
 
   it("should return premium price only if the asset pair is active", async function () {
@@ -137,9 +139,11 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    await expect(oddzOptionManager.getPremium(optionDetails)).to.be.revertedWith("Invalid Asset pair");
+    await expect(oddzOptionManager.getPremium(optionDetails, this.accounts.admin)).to.be.revertedWith(
+      "Invalid Asset pair",
+    );
     await oddzAssetManager.activateAssetPair(pair);
-    const option = await oddzOptionManager.getPremium(optionDetails);
+    const option = await oddzOptionManager.getPremium(optionDetails, this.accounts.admin);
     const { optionPremium, txnFee } = option;
     await expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
     await expect(BigNumber.from(txnFee).div(1e10)).to.equal(332658431);
@@ -164,7 +168,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const option = await oddzOptionManager.getPremium(optionDetails);
+    const option = await oddzOptionManager.getPremium(optionDetails, this.accounts.admin);
     const { optionPremium, txnFee, iv } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(6653168625);
@@ -191,7 +195,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(160000000000),
       OptionType.Call,
     );
-    const option = await oddzOptionManager.getPremium(optionDetails);
+    const option = await oddzOptionManager.getPremium(optionDetails, this.accounts.admin);
     const { optionPremium, txnFee, iv } = option;
     expect(iv.toNumber()).to.equal(180000);
     expect(BigNumber.from(optionPremium).div(1e10)).to.equal(16536825618);
@@ -931,9 +935,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   it("should throw an error when transaction fee updated", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    await expect(oddzOptionManager.setTransactionFeePerc(0)).to.be.revertedWith("Invalid transaction fee");
-    await expect(oddzOptionManager.setTransactionFeePerc(11)).to.be.revertedWith("Invalid transaction fee");
+    const oddzFeeManager = await this.oddzFeeManager.connect(this.signers.admin);
+    await expect(oddzFeeManager.setTransactionFeePerc(0)).to.be.revertedWith("Invalid transaction fee");
+    await expect(oddzFeeManager.setTransactionFeePerc(11)).to.be.revertedWith("Invalid transaction fee");
   });
 
   it("should update transaction percentage and option transaction fee", async function () {
@@ -949,8 +953,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
-    await oddzOptionManager.setTransactionFeePerc(2);
-    expect(await oddzOptionManager.txnFeePerc()).to.equal(2);
+    const oddzFeeManager = await this.oddzFeeManager.connect(this.signers.admin);
+    await oddzFeeManager.setTransactionFeePerc(2);
+    expect(await oddzFeeManager.txnFeePerc()).to.equal(2);
 
     const optionDetails = getOptionDetailsStruct(
       pair,
@@ -960,7 +965,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(134100000000),
       OptionType.Call,
     );
-    const option = await oddzOptionManager.getPremium(optionDetails);
+    const option = await oddzOptionManager.getPremium(optionDetails, this.accounts.admin);
 
     expect(BigNumber.from(option.txnFee)).to.equal(utils.parseEther("5.4465919032"));
   });
@@ -1204,11 +1209,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await expect(
-      oddzLiquidityPoolManager.addLiquidity(
-        this.oddzDefaultPool.address,
-        utils.parseEther("1000000"),
-        this.accounts.admin,
-      ),
+      oddzLiquidityPoolManager.addLiquidity(this.oddzDefaultPool.address, utils.parseEther("1000000")),
       this.accounts.admin,
     ).to.emit(this.oddzDefaultPool, "PremiumCollected");
     await expect(
@@ -1313,8 +1314,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
-    await oddzOptionManager.setSettlementFeePerc(5);
-    expect((await oddzOptionManager.settlementFeePerc()).toNumber()).to.equal(5);
+    const oddzFeeManager = await this.oddzFeeManager.connect(this.signers.admin);
+    await oddzFeeManager.setSettlementFeePerc(5);
+    expect(await oddzFeeManager.settlementFeePerc()).to.equal(5);
 
     const optionDetails = getOptionDetailsStruct(
       pair,
@@ -1451,7 +1453,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
-  it("should send settlement fee aggragrate staking contract successfully", async function () {
+  it("should send settlement fee aggregate to administrator contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1470,7 +1472,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("500")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
@@ -1479,14 +1481,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     await oddzOptionManager.exercise(0);
+
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("10")),
+      BigNumber.from(utils.parseEther("1000")),
     );
     await oddzOptionManager.transferSettlementFeeToBeneficiary();
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
-  it("should send transaction fee aggragrate staking contract successfully", async function () {
+  it("should send transaction fee aggregate to administrator contract successfully", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
     const pair = await getAssetPair(
@@ -1503,15 +1506,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       pair,
       utils.formatBytes32String("B_S"),
       getExpiry(2),
-      BigNumber.from(utils.parseEther("5")), // number of options
+      BigNumber.from(utils.parseEther("500")), // number of options
       BigNumber.from(170000000000),
       OptionType.Call,
     );
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
 
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("12.71409331")),
+      BigNumber.from(utils.parseEther("1271.409331")),
     );
+
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
@@ -1871,9 +1875,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   });
 
   it("should revert set settlement fee for invalid value", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-
-    await expect(oddzOptionManager.setSettlementFeePerc(11)).to.be.revertedWith("Invalid settlement fee");
+    const oddzFeeManager = await this.oddzFeeManager.connect(this.signers.admin);
+    await expect(oddzFeeManager.setSettlementFeePerc(11)).to.be.revertedWith("Invalid settlement fee");
   });
 
   it("should revert exercise UA with more than deadline limit", async function () {
@@ -2134,7 +2137,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     await this.oddzLiquidityPoolManager
       .connect(this.signers.admin)
-      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
     const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
@@ -2182,7 +2185,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     await this.oddzLiquidityPoolManager
       .connect(this.signers.admin)
-      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"), this.accounts.admin);
+      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
 
     const optionDetails = getOptionDetailsStruct(
       pair,
@@ -2228,12 +2231,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // total: 1714.1460393
     await expect(
       ((await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18).toString(),
-    ).to.equal("1655.0375551862069");
+    ).to.equal("1708.2351908886205");
     await expect(
       (
         (await this.oddzEthUsdCallBS30Pool.connect(this.accounts.admin).lpPremium(this.accounts.admin)) / 1e18
       ).toString(),
-    ).to.equal("59.108484113793104");
+    ).to.equal("5.910848411379311");
 
     await provider.send("evm_snapshot", []);
     // execution day + 15 <= (2 + 3 + 10)
@@ -2250,7 +2253,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
 
     await expect(((await oddzLiquidityPoolManager.balanceOf(this.accounts.admin)) / 1e18).toString()).to.equal(
-      "1003228.4928454862",
+      "1003281.6904811887",
     );
     await expect(
       (await this.oddzDefaultPool.connect(this.accounts.admin).lpPremium(this.accounts.admin)).toNumber(),

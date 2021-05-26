@@ -2,11 +2,14 @@
 pragma solidity 0.8.3;
 
 import "./IOddzPriceOracle.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IOddzPriceOracleManager.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract OddzPriceOracleManager is Ownable {
+contract OddzPriceOracleManager is AccessControl, IOddzPriceOracleManager {
     using Address for address;
+
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     struct AggregatorData {
         bytes32 _underlying;
@@ -39,6 +42,29 @@ contract OddzPriceOracleManager is Ownable {
         IOddzPriceOracle _newAggregator
     );
 
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "OPOM Error: caller has no access to the method");
+        _;
+    }
+
+    modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "OPOM Error: caller has no access to the method");
+        _;
+    }
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setManager(address _address) external {
+        require(_address != address(0) && _address.isContract(), "OPOM Error: Invalid manager address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    function removeManager(address _address) external {
+        revokeRole(MANAGER_ROLE, _address);
+    }
+
     /**
      * @notice Function to add the the Oracle aggregator data.
      * @param _underlying Id of the underlying.
@@ -51,9 +77,9 @@ contract OddzPriceOracleManager is Ownable {
         bytes32 _strike,
         IOddzPriceOracle _aggregator,
         address _aggregatorPriceContract
-    ) public onlyOwner returns (bytes32 agHash) {
-        require(_underlying != _strike, "Invalid assets");
-        require(address(_aggregator).isContract(), "Invalid aggregator");
+    ) external onlyOwner(msg.sender) returns (bytes32 agHash) {
+        require(_underlying != _strike, "OPOM Error: Invalid assets");
+        require(address(_aggregator).isContract(), "OPOM Error: Invalid aggregator");
 
         AggregatorData memory data = AggregatorData(_underlying, _strike, _aggregator);
         agHash = keccak256(abi.encode(_underlying, _strike, address(_aggregator)));
@@ -68,9 +94,9 @@ contract OddzPriceOracleManager is Ownable {
      * @notice Function to add the the Oracle aggregator data.
      * @param _agHash hash of the underlying, strike asset and oddz aggregator.
      */
-    function setActiveAggregator(bytes32 _agHash) public onlyOwner {
+    function setActiveAggregator(bytes32 _agHash) external onlyOwner(msg.sender) {
         AggregatorData storage data = aggregatorMap[_agHash];
-        require(address(data._aggregator) != address(0), "Invalid aggregator");
+        require(address(data._aggregator) != address(0), "OPOM Error: Invalid aggregator");
 
         IOddzPriceOracle oldAg = activeAggregator[data._underlying][data._strike];
         activeAggregator[data._underlying][data._strike] = data._aggregator;
@@ -81,10 +107,12 @@ contract OddzPriceOracleManager is Ownable {
     function getUnderlyingPrice(bytes32 _underlying, bytes32 _strike)
         public
         view
+        override
+        onlyManager(msg.sender)
         returns (uint256 price, uint8 decimal)
     {
         IOddzPriceOracle aggregator = activeAggregator[_underlying][_strike];
-        require(address(aggregator) != address(0), "No aggregator");
+        require(address(aggregator) != address(0), "OPOM Error: No aggregator");
 
         (price, decimal) = aggregator.getPrice(_underlying, _strike);
     }

@@ -1,28 +1,38 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./Option/IOddzOption.sol";
-import "./Pool/IOddzLiquidityPoolManager.sol";
+import "./IOddzSDK.sol";
+import "./Libs/DateTimeLibrary.sol";
 import "./Integrations/Gasless/BaseRelayRecipient.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract OddzSDK is BaseRelayRecipient {
+contract OddzSDK is IOddzSDK, BaseRelayRecipient {
+    using Address for address;
+    using SafeERC20 for IERC20;
+
     IOddzOption public optionManager;
-    IOddzLiquidityPoolManager public pool;
-    mapping(address => uint256) public optionCount;
-    mapping(address => uint256) public liquidityCount;
+    IERC20 public oddzToken;
+    mapping(bytes32 => bool) public usersForTheMonth;
+    // Month -> Amount
+    mapping(uint256 => uint256) public totalPremiumCollected;
+    mapping(uint256 => uint256) public totalOddzAllocated;
+    // Address -> Month -> Amount
+    mapping(address => mapping(uint256 => uint256)) public premiumCollected;
 
     constructor(
         IOddzOption _optionManager,
-        IOddzLiquidityPoolManager _pool,
-        address _trustedForwarder
+        address _trustedForwarder,
+        IERC20 _oddzToken
     ) {
+        oddzToken = _oddzToken;
         optionManager = _optionManager;
-        pool = _pool;
         trustedForwarder = _trustedForwarder;
     }
 
     function setTrustedForwarder(address forwarderAddress) public {
-        require(forwarderAddress != address(0), "Forwarder Address cannot be 0");
+        require(forwarderAddress != address(0), "SDK: Forwarder Address cannot be 0");
         trustedForwarder = forwarderAddress;
     }
 
@@ -52,12 +62,20 @@ contract OddzSDK is BaseRelayRecipient {
         uint256 _strike,
         IOddzOption.OptionType _optionType,
         address _provider
-    ) external returns (uint256 optionId) {
-        require(_provider != address(0), "invalid provider address");
+    ) public override returns (uint256 optionId) {
+        require(_provider != address(0), "SDK: invalid provider address");
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
         optionId = optionManager.buy(option, _premiumWithSlippage, msgSender());
-        optionCount[_provider] += 1;
+        (, , , , , uint256 premium, , , ) = optionManager.options(optionId);
+        uint256 month = DateTimeLibrary.getMonth(block.timestamp);
+
+        if (!usersForTheMonth[keccak256(abi.encode(_provider, month))]) {
+            usersForTheMonth[keccak256(abi.encode(_provider, month))] = true;
+            emit OptionProvider(month, _provider);
+        }
+        premiumCollected[_provider][month] += premium;
+        totalPremiumCollected[month] += premium;
     }
 
     function getPremium(
@@ -68,8 +86,9 @@ contract OddzSDK is BaseRelayRecipient {
         uint256 _strike,
         IOddzOption.OptionType _optionType
     )
-        external
+        public
         view
+        override
         returns (
             uint256 optionPremium,
             uint256 txnFee,
@@ -79,21 +98,29 @@ contract OddzSDK is BaseRelayRecipient {
     {
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
-        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option);
+        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, msg.sender);
         optionPremium = premiumResult.optionPremium;
         txnFee = premiumResult.txnFee;
         iv = premiumResult.iv;
         ivDecimal = premiumResult.ivDecimal;
     }
 
-    function addLiquidity(
-        uint256 _amount,
-        IOddzLiquidityPool _pool,
-        address _provider
-    ) external returns (uint256 mint) {
-        require(_provider != address(0), "invalid provider address");
+    function allocateOddzReward(uint256 _amount) public override {
+        totalOddzAllocated[DateTimeLibrary.getMonth(block.timestamp)] += _amount;
+        oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
+    }
 
-        mint = pool.addLiquidity(_pool, _amount, msg.sender);
-        liquidityCount[_provider] += 1;
+    function distributeReward(address[] memory _providers, uint256 _month) public override {
+        require(DateTimeLibrary.getMonth(block.timestamp) > _month, "SDK: Oddz rewards not enabled for the month");
+        for (uint256 i = 0; i < _providers.length; i++) {
+            bytes32 providerMonth = keccak256(abi.encode(_providers[i], _month));
+            // skip reward for ineligible provider
+            if (!usersForTheMonth[providerMonth]) continue;
+            // set provider as ineligible
+            delete usersForTheMonth[providerMonth];
+            uint256 amount =
+                (totalOddzAllocated[_month] * premiumCollected[_providers[i]][_month]) / totalPremiumCollected[_month];
+            if (amount > 0) oddzToken.safeTransfer(_providers[i], amount);
+        }
     }
 }

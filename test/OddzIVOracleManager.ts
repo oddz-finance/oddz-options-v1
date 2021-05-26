@@ -52,7 +52,15 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
 
       await this.oddzIVOracle
         .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 5);
+        .setDefaultIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 11010);
+
+      await this.oddzIVOracle.connect(this.signers.admin).addVolatilityMapping(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        1,
+        110,
+        9668, //96.68
+      );
     });
 
     shouldBehaveLikeOddzIVOracleManager();
