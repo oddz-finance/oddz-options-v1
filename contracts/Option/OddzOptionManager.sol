@@ -4,40 +4,39 @@ pragma solidity 0.8.3;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
-import "../Oracle/OddzPriceOracleManager.sol";
-import "../Oracle/OddzIVOracleManager.sol";
-import "../IOddzAdministrator.sol";
-import "./OddzAssetManager.sol";
-import "./IOddzOptionPremiumManager.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
+import "./IOddzOptionPremiumManager.sol";
+import "../IOddzAdministrator.sol";
 import "../IOddzSDK.sol";
+import "../Oracle/IOddzPriceOracleManager.sol";
+import "../Oracle/IOddzIVOracleManager.sol";
 import "../Libs/ABDKMath64x64.sol";
 import "../Libs/IERC20Extented.sol";
+import "./IOddzFeeManager.sol";
 
 contract OddzOptionManager is IOddzOption, Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
     using Address for address;
 
-    OddzAssetManager public assetManager;
+    IOddzAsset public assetManager;
     IOddzLiquidityPoolManager public pool;
-    OddzPriceOracleManager public oracle;
-    OddzIVOracleManager public volatility;
+    IOddzPriceOracleManager public oracle;
+    IOddzIVOracleManager public volatility;
     IOddzOptionPremiumManager public premiumManager;
     IOddzAdministrator public administrator;
     IERC20Extented public token;
+    IOddzFeeManager public oddzFeeManager;
     Option[] public override options;
 
     /**
      * @dev Transaction Fee definitions
      */
-    uint256 public txnFeePerc = 5;
     uint256 public txnFeeAggregate;
 
     /**
      * @dev Settlement Fee definitions
      */
-    uint256 public settlementFeePerc = 4;
     uint256 public settlementFeeAggregate;
 
     /**
@@ -51,13 +50,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzSDK public sdk;
 
     constructor(
-        OddzPriceOracleManager _oracle,
-        OddzIVOracleManager _iv,
+        IOddzPriceOracleManager _oracle,
+        IOddzIVOracleManager _iv,
         IOddzAdministrator _administrator,
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
-        OddzAssetManager _assetManager,
-        IOddzOptionPremiumManager _premiumManager
+        IOddzAsset _assetManager,
+        IOddzOptionPremiumManager _premiumManager,
+        IOddzFeeManager _oddzFeeManager
     ) {
         pool = _pool;
         oracle = _oracle;
@@ -66,6 +66,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         token = _token;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
+        oddzFeeManager = _oddzFeeManager;
 
         // Approve token transfer to staking contract
         token.approve(address(administrator), type(uint256).max);
@@ -193,24 +194,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
         putOverColl = updatePrecision(_strike - minAssetPrice, primary._precision, token.decimals());
     }
 
-    /**
-     * @notice set transaction fee percentage
-     * @param _feePerc transaction fee percentage valid range (1, 10)
-     */
-    function setTransactionFeePerc(uint256 _feePerc) external onlyOwner {
-        require(_feePerc >= 1 && _feePerc <= 10, "Invalid transaction fee");
-        txnFeePerc = _feePerc;
-    }
-
-    /**
-     * @notice set settlement fee percentage
-     * @param _feePerc settlement fee percentage valid range (1, 10)
-     */
-    function setSettlementFeePerc(uint256 _feePerc) external onlyOwner {
-        require(_feePerc >= 1 && _feePerc <= 10, "Invalid settlement fee");
-        settlementFeePerc = _feePerc;
-    }
-
     function getLockAmount(
         uint256 _cp,
         uint256 _iv,
@@ -252,7 +235,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 _premiumWithSlippage,
         address _buyer
     ) private returns (uint256 optionId) {
-        PremiumResult memory premiumResult = getPremium(_details);
+        PremiumResult memory premiumResult = getPremium(_details, _buyer);
         require(_premiumWithSlippage >= premiumResult.optionPremium, "Premium crossed slippage tolerance");
         uint256 cp = getCurrentPrice(assetManager.getPair(_details._pair));
         validateOptionAmount(
@@ -311,9 +294,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Used for getting the actual options prices
      * @param _option Option details
+     * @param _buyer Address of option buyer
      * @return premiumResult Premium, iv  Details
      */
-    function getPremium(OptionDetails memory _option)
+    function getPremium(OptionDetails memory _option, address _buyer)
         public
         view
         override
@@ -322,7 +306,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     {
         (premiumResult.ivDecimal, premiumResult.iv, premiumResult.optionPremium) = getOptionPremiumDetails(_option);
 
-        premiumResult.txnFee = getTransactionFee(premiumResult.optionPremium);
+        premiumResult.txnFee = getTransactionFee(premiumResult.optionPremium, _buyer);
     }
 
     function getOptionPremiumDetails(OptionDetails memory optionDetails)
@@ -400,10 +384,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @notice Transaction fee calculation for the option premium
      * @param _amount Option premium
+     * @param _buyer Option buyer address
      * @return txnFee Transaction Fee
      */
-    function getTransactionFee(uint256 _amount) private view returns (uint256 txnFee) {
-        txnFee = (_amount * txnFeePerc) / 100;
+    function getTransactionFee(uint256 _amount, address _buyer) private view returns (uint256 txnFee) {
+        txnFee = ((_amount * oddzFeeManager.getTransactionFee(_buyer)) / (100 * 10**oddzFeeManager.decimals()));
     }
 
     /**
@@ -429,7 +414,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = updatePrecision(profit, assetManager.getPrecision(pair._primary), token.decimals());
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
-        settlementFee = (profit * settlementFeePerc) / 100;
+
+        settlementFee = ((profit * oddzFeeManager.getSettlementFee(msg.sender)) /
+            (100 * 10**oddzFeeManager.decimals()));
         settlementFeeAggregate += settlementFee;
         profit -= settlementFee;
     }

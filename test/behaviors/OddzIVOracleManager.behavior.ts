@@ -45,34 +45,6 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     ).to.be.revertedWith("Invalid assets");
   });
 
-  it("should throw Invalid decimal message", async function () {
-    await expect(
-      this.oddzIVOracle
-        .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 4),
-    ).to.be.revertedWith("Invalid Decimal");
-
-    await expect(
-      this.oddzIVOracle
-        .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 180000, 9),
-    ).to.be.revertedWith("Invalid Decimal");
-  });
-
-  it("should throw Invalid IV message", async function () {
-    await expect(
-      this.oddzIVOracle
-        .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 9000, 5),
-    ).to.be.revertedWith("Invalid IV");
-
-    await expect(
-      this.oddzIVOracle
-        .connect(this.signers.admin)
-        .setIv(utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), 1e9, 5),
-    ).to.be.revertedWith("Invalid IV");
-  });
-
   it("should throw Invalid aggregator message", async function () {
     const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
     await expect(
@@ -123,8 +95,42 @@ export function shouldBehaveLikeOddzIVOracleManager(): void {
     const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
-    expect(iv).to.equal(180000);
-    expect(decimals).to.equal(5);
+    expect(iv).to.equal(9668);
+    expect(decimals).to.equal(2);
+  });
+
+  it("should return default IV when an expiry specific iv is not set", async function () {
+    const oracleManager = await this.oddzIVOracleManager.connect(this.signers.admin);
+
+    await oracleManager.addIVAggregator(
+      utils.formatBytes32String("ETH"),
+      utils.formatBytes32String("USD"),
+      this.oddzIVOracle.address,
+      this.oddzIVOracle.address,
+      1,
+    );
+
+    const hash = utils.keccak256(
+      utils.defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "address"],
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzIVOracle.address],
+      ),
+    );
+
+    await expect(oracleManager.setActiveIVAggregator(hash))
+      .to.emit(oracleManager, "SetIVAggregator")
+      .withArgs(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        constants.AddressZero,
+        this.oddzIVOracle.address,
+      );
+
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(2), 160000000000, 176000000000);
+    expect(iv).to.equal(11010);
+    expect(decimals).to.equal(2);
   });
 
   it("Should throw out of synch message when IV is not in sync", async function () {
