@@ -25,6 +25,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev Liquidity specific data definitions
      */
     LockedLiquidity[] public lockedLiquidity;
+    uint256 public totalLockedPremium;
     IERC20 public token;
 
     /**
@@ -187,8 +188,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             count++;
         }
         lockedLiquidity.push(LockedLiquidity(_liquidityParams._amount, _premium, true, pools, share));
-        // Allocate premium to the self until premium unlock
-        _mint(address(this), _premium);
+        totalLockedPremium += _premium;
     }
 
     function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
@@ -198,7 +198,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             IOddzLiquidityPool(ll._pools[i]).unlockPremium(_id, (ll._premium * ll._share[i]) / ll._amount);
         }
         ll._locked = false;
-        _burn(address(this), ll._premium);
+        totalLockedPremium -= ll._premium;
     }
 
     function send(
@@ -228,8 +228,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function totalBalance() public view override returns (uint256 balance) {
-        // though balance is oUSD its 1 - 1 minted for premium in USD
-        return token.balanceOf(address(this)) - balanceOf(address(this));
+        return token.balanceOf(address(this)) - totalLockedPremium;
     }
 
     /**
@@ -302,8 +301,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 (transferAmount * ll._share[i]) / ll._amount
             );
         }
-
-        _burn(address(this), lockedPremium);
+        totalLockedPremium -= lockedPremium;
     }
 
     /**
