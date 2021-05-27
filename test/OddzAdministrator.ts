@@ -139,8 +139,8 @@ describe("Oddz Administrator Unit tests", function () {
 
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
-        this.oddzLiquidityPoolManager.address,
         bscForwarder,
+        this.oddzToken.address
       ])) as OddzSDK;
 
       this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [
