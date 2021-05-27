@@ -4,16 +4,6 @@
 
 World's First multi-chain Options trading Protocol built on Binance chain with built-in oracle
 
-## Oddz finance Token (ODDZ) contracts
-
-Token Details:
-
-| Name       | Symbol | Decimals | Total Supply |
-| ---------- | ------ | -------: | -----------: |
-| Oddz Token | `ODDZ` |       18 |  100,000,000 |
-
-The ODDZ token is a standard ERC20 token implementing the [ERC20](https://eips.ethereum.org/EIPS/eip-20) interface.
-
 - [Hardhat](https://github.com/nomiclabs/hardhat): compile and run the smart contracts on a local development network
 - [TypeChain](https://github.com/ethereum-ts/TypeChain): generate TypeScript types for smart contracts
 - [Ethers](https://github.com/ethers-io/ethers.js/): renowned Ethereum library and wallet implementation
