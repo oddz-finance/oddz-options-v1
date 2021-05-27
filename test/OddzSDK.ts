@@ -151,7 +151,6 @@ describe("Oddz Option Sdk Unit tests", function () {
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
         oddzIVOracleManager.address,
-        oddzStaking.address,
         this.oddzLiquidityPoolManager.address,
         this.usdcToken.address,
         this.oddzAssetManager.address,
@@ -168,6 +167,7 @@ describe("Oddz Option Sdk Unit tests", function () {
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setSdk(this.oddzSDK.address);
+      await this.oddzOptionManager.setAdministrator(oddzStaking.address);
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
 
