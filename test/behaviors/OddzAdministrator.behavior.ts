@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
 import { OddzAssetManager, MockERC20 } from "../../typechain";
+import { DistributionPercentage, DepositType } from "../../test-utils";
+
 import { Signer } from "@ethersproject/abstract-signer";
 
 const addAssetPair = async (
@@ -61,8 +63,8 @@ export function shouldBehaveLikeOddzAdministrator(): void {
 
   it("should change maintenance facililatator", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
-    await oddzAdministrator.changeMaintenanceFacilitator(this.accounts.admin1);
-    expect(await oddzAdministrator.maintenanceFacilitator()).to.equal(this.accounts.admin1);
+    await oddzAdministrator.changeMaintenanceFacilitator(this.accounts.admin);
+    expect(await oddzAdministrator.maintenanceFacilitator()).to.equal(this.accounts.admin);
   });
 
   it("should revert update deadline for non owner", async function () {
@@ -82,6 +84,98 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     await oddzAdministrator.updateDeadline(30 * 60);
     expect(await oddzAdministrator.deadline()).to.equal(30 * 60);
   });
+
+  it("should revert update txn distribution for non owner", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
+    const distribution: DistributionPercentage = {
+        gasless: 40,
+        maintainer: 0,
+        developer: 20,
+        staker: 40,
+      };
+    await expect(oddzAdministrator.updateTxnDistribution(distribution))
+        .to.be.revertedWith("Ownable: caller is not the owner")
+  });
+
+  it("should revert update txn distribution for invalid value", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const distribution: DistributionPercentage = {
+        gasless: 40,
+        maintainer: 10,
+        developer: 20,
+        staker: 40,
+      };
+    await expect(oddzAdministrator.updateTxnDistribution(distribution))
+        .to.be.revertedWith("Administrator: invalid txn distribution")
+  });
+
+  it("should update txn distribution", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const distribution: DistributionPercentage = {
+        gasless: 30,
+        maintainer: 10,
+        developer: 20,
+        staker: 40,
+      };
+    await oddzAdministrator.updateTxnDistribution(distribution);
+    let maintainer;
+    [, maintainer,,,]=await oddzAdministrator.txnDistribution();
+    expect(maintainer).to.equal(10)
+  });
+
+  it("should revert update settlement distribution for non owner", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
+    const distribution: DistributionPercentage = {
+        gasless: 40,
+        maintainer: 0,
+        developer: 20,
+        staker: 40,
+      };
+    await expect(oddzAdministrator.updateSettlementDistribution(distribution))
+        .to.be.revertedWith("Ownable: caller is not the owner")
+  });
+
+  it("should revert update settlement distribution for invalid value", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const distribution: DistributionPercentage = {
+        gasless: 40,
+        maintainer: 10,
+        developer: 20,
+        staker: 40,
+      };
+    await expect(oddzAdministrator.updateSettlementDistribution(distribution))
+        .to.be.revertedWith("Administrator: invalid settlement distribution")
+  });
+
+  it("should update settlement distribution", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const distribution: DistributionPercentage = {
+        gasless: 30,
+        maintainer: 10,
+        developer: 20,
+        staker: 40,
+      };
+    await oddzAdministrator.updateSettlementDistribution(distribution);
+    let maintainer;
+    [, maintainer,,,]=await oddzAdministrator.settlementDistribution();
+    expect(maintainer).to.equal(10)
+  });
+
+  it("should revert deposit for lower amount", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    
+    await expect(oddzAdministrator.deposit(BigNumber.from(utils.parseEther("999")), DepositType.Transaction))
+            .to.be.revertedWith("Administrator: amount is low for deposit")
+    
+  });
+
+  it.only("should deposit amount", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    
+    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction)
+    
+  });
+
 
   
 }

@@ -11,6 +11,7 @@ import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOra
 import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
 import OddzFeeManagerArtifact from "../artifacts/contracts/Option/OddzFeeManager.sol/OddzFeeManager.json";
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -27,6 +28,7 @@ import {
     OddzOptionManager,
     OddzOptionPremiumManager,
     OddzPriceOracleManager,
+    MockOddzDex,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -65,7 +67,7 @@ describe("Oddz Administrator Unit tests", function () {
             "ODDZ",
             totalSupply,
           ])) as MockERC20;
-          
+
       this.oddzAssetManager = (await deployContract(
         this.signers.admin,
         OddzAssetManagerArtifact,
@@ -75,6 +77,23 @@ describe("Oddz Administrator Unit tests", function () {
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
+
+      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+
+      await this.dexManager.addExchange(
+        utils.formatBytes32String("ODDZ"),
+        utils.formatBytes32String("USDC"),
+        mockOddzDex.address,
+      );
+
+      const dexHash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), mockOddzDex.address],
+        ),
+      );
+
+      await this.dexManager.setActiveExchange(dexHash);
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
         this.usdcToken.address,
@@ -133,7 +152,12 @@ describe("Oddz Administrator Unit tests", function () {
         this.accounts.admin1,
         this.dexManager.address,
       ])) as OddzAdministrator;
+
+    this.dexManager.setSwapper(this.oddzAdministrator.address);
+
     });
+
+
     shouldBehaveLikeOddzAdministrator();
   });
 });
