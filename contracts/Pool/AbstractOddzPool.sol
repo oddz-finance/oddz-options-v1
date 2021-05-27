@@ -42,7 +42,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @param _amount USD value
      * @param _provider Address of the Liquidity Provider
      */
-    function addLiquidity(uint256 _amount, address _provider) public override onlyOwner {
+    function addLiquidity(uint256 _amount, address _provider) external override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
         _updateLiquidity(_amount, TransactionType.ADD);
         _allocatePremium(_provider);
@@ -64,7 +64,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         uint256 _oUSD,
         address _provider,
         uint256 _lockDuration
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         require(
             _amount <=
                 liquidityProvider[_provider]._amount -
@@ -91,7 +91,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @param _amount Amount of funds that should be locked in an option
      * @param _premium premium allocated to the pool
      */
-    function lockLiquidity(uint256 _amount, uint256 _premium) public override onlyOwner {
+    function lockLiquidity(uint256 _amount, uint256 _premium) external override onlyOwner {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
         lockedAmount = lockedAmount + _amount;
         oUsdSupply += _premium;
@@ -101,7 +101,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @notice called by Oddz option to unlock the funds
      * @param _amount Amount of funds that should be unlocked in an option
      */
-    function unlockLiquidity(uint256 _amount) public override onlyOwner {
+    function unlockLiquidity(uint256 _amount) external override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
         lockedAmount = lockedAmount - _amount;
     }
@@ -111,7 +111,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @param _lid liquidity ID
      * @param _amount Premium amount
      */
-    function unlockPremium(uint256 _lid, uint256 _amount) public override onlyOwner {
+    function unlockPremium(uint256 _lid, uint256 _amount) external override onlyOwner {
         PremiumPool storage dayPremium = premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()];
         dayPremium._collected = dayPremium._collected + _amount;
         oUsdSupply -= _amount;
@@ -129,7 +129,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         uint256 _lid,
         uint256 _amount,
         uint256 _transfer
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium._collected += _amount;
@@ -141,36 +141,13 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     }
 
     /**
-     * @notice forfeite user premium
-     * @param _provider Address of the Liquidity Provider
-     * @param _withdrawalAmount Amount being withdrawn by the provider
-     * @param _lockupDuration Premium lockup duration
-     */
-    function _forfeitPremium(
-        address _provider,
-        uint256 _withdrawalAmount,
-        uint256 _lockupDuration
-    ) private {
-        if (liquidityProvider[_provider]._isNegativePremium) return;
-        if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) {
-            uint256 _amount =
-                (liquidityProvider[_provider]._premiumAllocated * _withdrawalAmount) /
-                    liquidityProvider[_provider]._amount;
-            liquidityProvider[_provider]._premiumAllocated -= _amount;
-            premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()]._surplus += _amount;
-
-            emit PremiumForfeited(_provider, _amount);
-        }
-    }
-
-    /**
      * @notice helper to convert premium to oUSD and sets the premium to zero
      * @param _provider Address of the Liquidity Provider
      * @param _lockupDuration premium lockup days
      * @return premium Premium balance
      */
     function collectPremium(address _provider, uint256 _lockupDuration)
-        public
+        external
         override
         onlyOwner
         returns (uint256 premium)
@@ -227,7 +204,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @notice Returns the total supply allocated for the pool
      * @return balance total supply allocated to the pool
      */
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() external view override returns (uint256) {
         return oUsdSupply;
     }
 
@@ -261,6 +238,29 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
             } else rewards += tReward - tExercised;
         }
         rewards = ((liquidityProvider[_provider]._amount * count * rewards) / tLiquidty);
+    }
+
+    /**
+     * @notice forfeite user premium
+     * @param _provider Address of the Liquidity Provider
+     * @param _withdrawalAmount Amount being withdrawn by the provider
+     * @param _lockupDuration Premium lockup duration
+     */
+    function _forfeitPremium(
+        address _provider,
+        uint256 _withdrawalAmount,
+        uint256 _lockupDuration
+    ) private {
+        if (liquidityProvider[_provider]._isNegativePremium) return;
+        if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) {
+            uint256 _amount =
+                (liquidityProvider[_provider]._premiumAllocated * _withdrawalAmount) /
+                    liquidityProvider[_provider]._amount;
+            liquidityProvider[_provider]._premiumAllocated -= _amount;
+            premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()]._surplus += _amount;
+
+            emit PremiumForfeited(_provider, _amount);
+        }
     }
 
     function _getPremium(address _provider)

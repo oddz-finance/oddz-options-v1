@@ -170,7 +170,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _id,
         LiquidityParams memory _liquidityParams,
         uint256 _premium
-    ) public override onlyManager(msg.sender) {
+    ) external override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
         (address[] memory pools, uint256[] memory poolBalances) = getSortedEligiblePools(_liquidityParams);
         require(pools.length > 0, "LP Error: No pool balance");
@@ -194,7 +194,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         totalLockedPremium += _premium;
     }
 
-    function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
+    function unlockLiquidity(uint256 _id) external override onlyManager(msg.sender) validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         for (uint8 i = 0; i < ll._pools.length; i++) {
             IOddzLiquidityPool(ll._pools[i]).unlockLiquidity(ll._share[i]);
@@ -208,8 +208,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _id,
         address _account,
         uint256 _amount
-    ) public override onlyManager(msg.sender) validLiquidty(_id) {
-        (, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+    ) external override onlyManager(msg.sender) validLiquidty(_id) {
+        (, uint256 transferAmount) = _updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
     }
@@ -221,8 +221,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline
-    ) public override onlyManager(msg.sender) validLiquidty(_id) {
-        (, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+    ) external override onlyManager(msg.sender) validLiquidty(_id) {
+        (, uint256 transferAmount) = _updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
         // Transfer Funds
         token.safeTransfer(exchange, transferAmount);
@@ -238,7 +238,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice Move liquidity between pools
      * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function move(PoolTransfer memory _poolTransfer) public {
+    function move(PoolTransfer memory _poolTransfer) external {
         require(
             lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + 1 weeks) < block.timestamp,
             "LP Error: Pool transfer available only once in 7 days"
@@ -285,7 +285,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _account Provider account address
      * @param _amount Funds that should be sent
      */
-    function updateAndFetchLockedLiquidity(
+    function _updateAndFetchLockedLiquidity(
         uint256 _lid,
         address _account,
         uint256 _amount
@@ -349,7 +349,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 j++;
             }
         }
-        (poolBalance, pools) = sort(poolBalance, pools);
+        (poolBalance, pools) = _sort(poolBalance, pools);
         require(balance > _liquidityParams._amount, "LP Error: Amount is too large");
     }
 
@@ -360,7 +360,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @return sorted balance list in ascending order
      * @return sorted pool list in ascending order of balance list
      */
-    function sort(uint256[] memory balance, address[] memory pools)
+    function _sort(uint256[] memory balance, address[] memory pools)
         private
         pure
         returns (uint256[] memory, address[] memory)
@@ -403,7 +403,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _address manager contract address
      * Note: This can be called only by the owner
      */
-    function setManager(address _address) public {
+    function setManager(address _address) external {
         require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
@@ -413,7 +413,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _address manager contract address
      * Note: This can be called only by the owner
      */
-    function removeManager(address _address) public {
+    function removeManager(address _address) external {
         revokeRole(MANAGER_ROLE, _address);
     }
 
@@ -422,7 +422,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _reqBalance required balance between 6 and 9
      * Note: This can be called only by the owner
      */
-    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
+    function setReqBalance(uint8 _reqBalance) external onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
         reqBalance = _reqBalance;
     }
 
