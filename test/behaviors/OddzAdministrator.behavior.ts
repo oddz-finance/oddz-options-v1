@@ -61,8 +61,8 @@ export function shouldBehaveLikeOddzAdministrator(): void {
 
   it("should change maintenance facililatator", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
-    await oddzAdministrator.changeMaintenanceFacilitator(this.accounts.admin);
-    expect(await oddzAdministrator.maintenanceFacilitator()).to.equal(this.accounts.admin);
+    await oddzAdministrator.changeMaintenanceFacilitator(this.accounts.admin1);
+    expect(await oddzAdministrator.maintenanceFacilitator()).to.equal(this.accounts.admin1);
   });
 
   it("should revert update deadline for non owner", async function () {
@@ -71,7 +71,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
         .to.be.revertedWith("Ownable: caller is not the owner")
   });
 
-  it.only("should revert update deadline for invalid value", async function () {
+  it("should revert update deadline for invalid value", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     await expect(oddzAdministrator.updateDeadline(31 * 60))
         .to.be.revertedWith("Administrator: invalid deadline")
