@@ -163,7 +163,7 @@ describe("Oddz Option Sdk Unit tests", function () {
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
         bscForwarder,
-        this.oddzToken.address
+        this.oddzToken.address,
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setSdk(this.oddzSDK.address);

@@ -15,20 +15,20 @@ import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/Mo
 
 import { Accounts, Signers } from "../types";
 
-import { 
-    MockERC20, 
-    OddzStakingManager, 
-    DexManager, 
-    OddzAssetManager,
-    OddzLiquidityPoolManager, 
-    OddzSDK, 
-    OddzAdministrator,
-    OddzIVOracleManager,
-    OddzFeeManager,
-    OddzOptionManager,
-    OddzOptionPremiumManager,
-    OddzPriceOracleManager,
-    MockOddzDex,
+import {
+  MockERC20,
+  OddzStakingManager,
+  DexManager,
+  OddzAssetManager,
+  OddzLiquidityPoolManager,
+  OddzSDK,
+  OddzAdministrator,
+  OddzIVOracleManager,
+  OddzFeeManager,
+  OddzOptionManager,
+  OddzOptionPremiumManager,
+  OddzPriceOracleManager,
+  MockOddzDex,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -56,17 +56,17 @@ describe("Oddz Administrator Unit tests", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
 
-        this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-            "USD coin",
-            "USDC",
-            totalSupply,
-          ])) as MockERC20;
-    
-          this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
-            "ODDZ Token",
-            "ODDZ",
-            totalSupply,
-          ])) as MockERC20;
+      this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "USD coin",
+        "USDC",
+        totalSupply,
+      ])) as MockERC20;
+
+      this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "ODDZ Token",
+        "ODDZ",
+        totalSupply,
+      ])) as MockERC20;
 
       this.oddzAssetManager = (await deployContract(
         this.signers.admin,
@@ -110,11 +110,11 @@ describe("Oddz Administrator Unit tests", function () {
         [],
       )) as OddzIVOracleManager;
 
-        this.oddzPriceOracleManager = (await deployContract(
-            this.signers.admin,
-            OddzPriceOracleManagerArtifact,
-            [],
-          )) as OddzPriceOracleManager;
+      this.oddzPriceOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzPriceOracleManagerArtifact,
+        [],
+      )) as OddzPriceOracleManager;
 
       const oddzOptionPremiumManager = (await deployContract(
         this.signers.admin,
@@ -123,11 +123,12 @@ describe("Oddz Administrator Unit tests", function () {
       )) as OddzOptionPremiumManager;
 
       const oddzFeeManager = (await deployContract(this.signers.admin, OddzFeeManagerArtifact, [])) as OddzFeeManager;
-      
+
+      const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
+
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
         oddzIVOracleManager.address,
-        this.oddzStaking.address,
         this.oddzLiquidityPoolManager.address,
         this.usdcToken.address,
         this.oddzAssetManager.address,
@@ -135,17 +136,15 @@ describe("Oddz Administrator Unit tests", function () {
         oddzFeeManager.address,
       ])) as OddzOptionManager;
 
-      const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
-
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
         bscForwarder,
-        this.oddzToken.address
+        this.oddzToken.address,
       ])) as OddzSDK;
 
       this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [
         this.usdcToken.address,
-        this.oddzToken.address,  
+        this.oddzToken.address,
         this.oddzStaking.address,
         this.oddzSDK.address,
         this.accounts.admin,
@@ -153,10 +152,10 @@ describe("Oddz Administrator Unit tests", function () {
         this.dexManager.address,
       ])) as OddzAdministrator;
 
-    this.dexManager.setSwapper(this.oddzAdministrator.address);
+      await this.oddzOptionManager.setAdministrator(this.oddzAdministrator.address);
 
+      await this.dexManager.setSwapper(this.oddzAdministrator.address);
     });
-
 
     shouldBehaveLikeOddzAdministrator();
   });
