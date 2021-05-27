@@ -24,7 +24,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzPriceOracleManager public oracle;
     IOddzIVOracleManager public volatility;
     IOddzOptionPremiumManager public premiumManager;
-    IOddzAdministrator public administrator;
     IERC20Extented public token;
     IOddzFeeManager public oddzFeeManager;
     Option[] public override options;
@@ -48,11 +47,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @dev SDK contract address
      */
     IOddzSDK public sdk;
+    IOddzAdministrator public administrator;
 
     constructor(
         IOddzPriceOracleManager _oracle,
         IOddzIVOracleManager _iv,
-        IOddzAdministrator _administrator,
         IOddzLiquidityPoolManager _pool,
         IERC20Extented _token,
         IOddzAsset _assetManager,
@@ -62,14 +61,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
         pool = _pool;
         oracle = _oracle;
         volatility = _iv;
-        administrator = _administrator;
         token = _token;
         assetManager = _assetManager;
         premiumManager = _premiumManager;
         oddzFeeManager = _oddzFeeManager;
-
-        // Approve token transfer to staking contract
-        token.approve(address(administrator), type(uint256).max);
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
@@ -464,12 +459,25 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
+     * @notice sets administrator address
+     * @param _administrator Oddz administrator address
+     */
+    function setAdministrator(IOddzAdministrator _administrator) external onlyOwner {
+        require(address(_administrator).isContract(), "invalid SDK contract address");
+        administrator = _administrator;
+
+        // Approve token transfer to administrator contract
+        token.approve(address(administrator), type(uint256).max);
+    }
+
+    /**
      * @notice transfer transaction fee to beneficiary
      */
     function transferTxnFeeToBeneficiary() external {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
+        require(address(administrator) != address(0), "invalid administrator address");
         administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
     }
 
@@ -480,6 +488,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
+        require(address(administrator) != address(0), "invalid administrator address");
         administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
     }
 
