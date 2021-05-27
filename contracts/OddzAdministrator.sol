@@ -103,7 +103,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     }
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
-        require(_amount > minimumAmount, "Administrator: amount is low for deposit");
+        require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
         if (_depositType == DepositType.Transaction)
