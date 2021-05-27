@@ -82,7 +82,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     }
 
     function updateDeadline(uint256 _deadline) external onlyOwner {
-        require(deadline >= 1 minutes && deadline <= 30 minutes, "Administrator: invalid deadline");
+        require(_deadline >= 1 minutes && _deadline <= 30 minutes, "Administrator: invalid deadline");
         deadline = _deadline;
     }
 
