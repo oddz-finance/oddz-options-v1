@@ -8,6 +8,7 @@ import "./OddzTokenStaking.sol";
 import "./OUsdTokenStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract OddzStakingManager is Ownable, IOddzStaking {
     using Address for address;
@@ -79,6 +80,7 @@ contract OddzStakingManager is Ownable, IOddzStaking {
     }
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
+        console.log("oddzToken: ", oddzToken.allowance(msg.sender, address(this)));
         oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();

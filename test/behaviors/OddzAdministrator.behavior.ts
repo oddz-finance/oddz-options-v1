@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
-import { OddzAssetManager, MockERC20 } from "../../typechain";
+import { OddzAssetManager, MockERC20, OddzTokenStaking } from "../../typechain";
 import { DistributionPercentage, DepositType } from "../../test-utils";
 
 import { Signer } from "@ethersproject/abstract-signer";
@@ -9,14 +9,14 @@ const addAssetPair = async (
   oddzAssetManager: OddzAssetManager,
   admin: Signer,
   usdcToken: MockERC20,
-  ethToken: MockERC20,
+  oddzToken: MockERC20,
 ) => {
   const oam = await oddzAssetManager.connect(admin);
-  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
-  await oam.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
+  await oam.addAsset(utils.formatBytes32String("USDC"), usdcToken.address, 8);
+  await oam.addAsset(utils.formatBytes32String("ODDZ"), oddzToken.address, 8);
   await oam.addAssetPair(
-    utils.formatBytes32String("ETH"),
-    utils.formatBytes32String("USD"),
+    utils.formatBytes32String("ODDZ"),
+    utils.formatBytes32String("USDC"),
     BigNumber.from(utils.parseEther("0.01")),
     2592000,
     86400,
@@ -169,13 +169,45 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     
   });
 
-  it.only("should deposit amount", async function () {
+  it("should deposit amount of transaction type", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+
+    await addAssetPair(this.oddzAssetManager,this.signers.admin, this.usdcToken, this.oddzToken);
+    const distribution: DistributionPercentage = {
+        gasless: 50,
+        maintainer: 50,
+        developer: 0,
+        staker: 0,
+      };
+    await oddzAdministrator.updateTxnDistribution(distribution);
+    await usdcToken.approve(this.oddzAdministrator.address,BigNumber.from(utils.parseEther("1000000")));
     
     await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction)
+    // check balance of maintenance facilitator
+    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(2))
     
   });
 
+  it("should deposit amount of settlement type", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+
+    await addAssetPair(this.oddzAssetManager,this.signers.admin, this.usdcToken, this.oddzToken);
+    const distribution: DistributionPercentage = {
+        gasless: 50,
+        maintainer: 50,
+        developer: 0,
+        staker: 0,
+      };
+    await oddzAdministrator.updateSettlementDistribution(distribution);
+    await usdcToken.approve(this.oddzAdministrator.address,BigNumber.from(utils.parseEther("1000000")));
+
+    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Settlement)
+    // check balance of maintenance facilitator
+    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(2))
+    
+  });
 
   
 }
