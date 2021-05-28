@@ -37,7 +37,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
-        ERC20(_fromToken).approve(address(pancakeSwap), _amountIn);
+        ERC20(_fromToken).safeApprove(address(pancakeSwap), _amountIn);
         result = pancakeSwap.swapExactTokensForTokens(_amountIn, amountOutMin, path, address(this), _deadline);
         // converting address to address payable
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
