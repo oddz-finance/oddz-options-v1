@@ -12,7 +12,7 @@ interface IOddzStakingManager {
     /**
      * @dev Deposit Type details
      */
-    enum DepositType { Transaction, Settlement }
+    enum DepositType { Transaction, Settlement, Rewards }
 
     /**
      * @notice Withdraw staked tokens

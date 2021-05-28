@@ -20,6 +20,8 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @param _lastDistributed last distributeds date for the token
      * @param _txnFeeReward Percentage txn fee reward
      * @param _settlementFeeReward Percentage settlement fee reward
+     * @param _allotedReward Percentage oddz reward alloted
+     * @param _active Token is active or not
      */
     struct Token {
         bytes32 _name;
@@ -29,6 +31,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         uint256 _lastDistributed;
         uint8 _txnFeeReward;
         uint8 _settlementFeeReward;
+        uint8 _allotedReward;
         bool _active;
     }
 
@@ -170,7 +173,8 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             if (!tokensList[i]._active) continue;
             uint8 feePerc;
             if (_depositType == DepositType.Transaction) feePerc = tokensList[i]._txnFeeReward;
-            else feePerc = tokensList[i]._settlementFeeReward;
+            else if (_depositType == DepositType.Settlement) feePerc = tokensList[i]._settlementFeeReward;
+            else feePerc = tokensList[i]._allotedReward;
             totalPerc += feePerc;
 
             IOddzTokenStaking(tokensList[i]._stakingContract).allocateRewards(date, (_amount * feePerc) / 100);
