@@ -229,7 +229,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
             if (tExercised + rewards > tReward) rewards += tExercised - tReward;
             else {
                 rewards = tReward - (tExercised + rewards);
-                isNegative = true;
+                isNegative = false;
             }
         } else {
             if (tExercised > tReward + rewards) {
