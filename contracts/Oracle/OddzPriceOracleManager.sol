@@ -108,7 +108,6 @@ contract OddzPriceOracleManager is AccessControl, IOddzPriceOracleManager {
         public
         view
         override
-        onlyManager(msg.sender)
         returns (uint256 price, uint8 decimal)
     {
         IOddzPriceOracle aggregator = activeAggregator[_underlying][_strike];
