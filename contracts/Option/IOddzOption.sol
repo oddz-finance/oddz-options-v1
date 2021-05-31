@@ -88,7 +88,11 @@ interface IOddzOption {
      * @param _deadline Deadline until which txn does not revert
      * @param _slippage Slippage percentage
      */
-    function exerciseUA(uint256 _optionId, uint32 _deadline, uint8 _slippage) external;
+    function exerciseUA(
+        uint256 _optionId,
+        uint32 _deadline,
+        uint8 _slippage
+    ) external;
 
     /**
      * @notice Returns option details

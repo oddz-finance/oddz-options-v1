@@ -72,8 +72,6 @@ const getAssetPair = async (
     86400,
   );
 
-  
-
   await oddzPriceOracleManager
     .connect(admin)
     .addAggregator(
@@ -1470,7 +1468,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await this.oddzAssetManager.addAsset(utils.formatBytes32String("ODDZ"), this.oddzToken.address, 8);
     await this.oddzAssetManager.addAsset(utils.formatBytes32String("USDC"), this.usdcToken.address, 8);
 
-
     await this.oddzAssetManager.addAssetPair(
       utils.formatBytes32String("ODDZ"),
       utils.formatBytes32String("USDC"),
@@ -1519,7 +1516,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await this.oddzAssetManager.addAsset(utils.formatBytes32String("ODDZ"), this.oddzToken.address, 8);
     await this.oddzAssetManager.addAsset(utils.formatBytes32String("USDC"), this.usdcToken.address, 8);
 
-
     await this.oddzAssetManager.addAssetPair(
       utils.formatBytes32String("ODDZ"),
       utils.formatBytes32String("USDC"),
@@ -1542,7 +1538,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("1271.409331")),
     );
-    
+
     const slippage = 1;
     // for having oddz balance
     await this.oddzToken.transfer(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000")));

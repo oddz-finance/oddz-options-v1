@@ -25,9 +25,5 @@ interface IPancakeSwap {
      * @param _path array of token addresses
      * @return amounts output tokens
      */
-    function getAmountsOut(uint _amountIn, address[] memory _path)
-        external
-        view
-        returns (uint[] memory amounts);
-    
+    function getAmountsOut(uint256 _amountIn, address[] memory _path) external view returns (uint256[] memory amounts);
 }

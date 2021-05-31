@@ -102,7 +102,11 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType, uint8 _slippage) external override {
+    function deposit(
+        uint256 _amount,
+        DepositType _depositType,
+        uint8 _slippage
+    ) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;

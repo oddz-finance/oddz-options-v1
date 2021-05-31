@@ -42,7 +42,7 @@ import {
   MockOddzDex,
   OddzTokenStaking,
   OddzAdministrator,
-  OddzSDK
+  OddzSDK,
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -214,7 +214,7 @@ describe("Oddz Option Manager Unit tests", function () {
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
         bscForwarder,
-        this.oddzToken.address
+        this.oddzToken.address,
       ])) as OddzSDK;
 
       this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [

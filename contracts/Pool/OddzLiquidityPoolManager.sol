@@ -231,14 +231,14 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         token.safeTransfer(exchange, transferAmount);
         // block.timestamp + deadline --> deadline from the current block
         dexManager.swap(
-            _strike, 
-            _underlying, 
-            exchange, 
-            _account, 
-            transferAmount, 
-            block.timestamp + _deadline, 
+            _strike,
+            _underlying,
+            exchange,
+            _account,
+            transferAmount,
+            block.timestamp + _deadline,
             _slippage
-            );
+        );
     }
 
     function totalBalance() public view override returns (uint256 balance) {

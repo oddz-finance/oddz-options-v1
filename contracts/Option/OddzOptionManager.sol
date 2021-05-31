@@ -362,7 +362,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _deadline Deadline until which txn does not revert
      * @param _slippage Slippage percentage
      */
-    function exerciseUA(uint256 _optionId, uint32 _deadline, uint8 _slippage) external override {
+    function exerciseUA(
+        uint256 _optionId,
+        uint32 _deadline,
+        uint8 _slippage
+    ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
