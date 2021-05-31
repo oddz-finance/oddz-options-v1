@@ -9,6 +9,7 @@ interface IPancakeSwap {
      * @param _path array of token addresses
      * @param _to receiver address
      * @param _deadline deadline after which transaction reverts.
+     * @return amounts output tokens
      */
     function swapExactTokensForTokens(
         uint256 _amountIn,
@@ -17,4 +18,16 @@ interface IPancakeSwap {
         address _to,
         uint256 _deadline
     ) external returns (uint256[] memory amounts);
+
+    /**
+     * @notice Function to get min amount output tokend
+     * @param _amountIn input tokens
+     * @param _path array of token addresses
+     * @return amounts output tokens
+     */
+    function getAmountsOut(uint _amountIn, address[] memory _path)
+        external
+        view
+        returns (uint[] memory amounts);
+    
 }

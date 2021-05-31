@@ -360,8 +360,9 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice Used for physical settlement excerise for an active option
      * @param _optionId Option id
      * @param _deadline Deadline until which txn does not revert
+     * @param _slippage Slippage percentage
      */
-    function exerciseUA(uint256 _optionId, uint32 _deadline) external override {
+    function exerciseUA(uint256 _optionId, uint32 _deadline, uint8 _slippage) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
@@ -371,7 +372,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pair);
-        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline);
+        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _slippage);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -472,24 +473,28 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     /**
      * @notice transfer transaction fee to beneficiary
+     * @param _slippage Slippage percentage
+
      */
-    function transferTxnFeeToBeneficiary() external {
+    function transferTxnFeeToBeneficiary(uint8 _slippage) external {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction, _slippage);
     }
 
     /**
      * @notice transfer settlement fee to beneficiary
+     * @param _slippage Slippage percentage
+
      */
-    function transferSettlementFeeToBeneficiary() external {
+    function transferSettlementFeeToBeneficiary(uint8 _slippage) external {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement, _slippage);
     }
 
     /**

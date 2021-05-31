@@ -40,6 +40,6 @@ contract MockOptionManager {
         uint256 _id
     ) public {
         lock(_id);
-        pool.sendUA(_id, _account, _amount, "ETH", "USD", 86400);
+        pool.sendUA(_id, _account, _amount, "ETH", "USD", 86400, 1);
     }
 }

@@ -102,8 +102,8 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) external override {
-        require(_amount > minimumAmount, "Administrator: amount is low for deposit");
+    function deposit(uint256 _amount, DepositType _depositType, uint8 _slippage) external override {
+        require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
         if (_depositType == DepositType.Transaction)
@@ -111,7 +111,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         else usdcAmount = (_amount * (settlementDistribution.gasless + settlementDistribution.maintainer)) / 100;
 
         uint256 oddzAmount = _amount - usdcAmount;
-        convertToOddz(oddzAmount);
+        convertToOddz(oddzAmount, _slippage);
 
         if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzAmount);
         else distrbuteSettlement(usdcAmount, oddzAmount);
@@ -119,12 +119,12 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount) private {
+    function convertToOddz(uint256 _amount, uint8 _slippage) private {
         address exchange = dexManager.getExchange("ODDZ", "USDC");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline);
+        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, _slippage);
     }
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {

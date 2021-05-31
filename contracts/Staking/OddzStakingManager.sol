@@ -80,7 +80,6 @@ contract OddzStakingManager is Ownable, IOddzStaking {
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
         oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
-
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         uint8 totalPerc;
         for (uint256 i = 0; i < tokensList.length; i++) {

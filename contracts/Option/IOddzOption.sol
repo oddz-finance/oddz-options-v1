@@ -86,8 +86,9 @@ interface IOddzOption {
      * @notice Exercises an active option in underlying asset
      * @param _optionId Option ID
      * @param _deadline Deadline until which txn does not revert
+     * @param _slippage Slippage percentage
      */
-    function exerciseUA(uint256 _optionId, uint32 _deadline) external;
+    function exerciseUA(uint256 _optionId, uint32 _deadline, uint8 _slippage) external;
 
     /**
      * @notice Returns option details

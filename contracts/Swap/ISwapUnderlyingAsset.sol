@@ -9,12 +9,15 @@ interface ISwapUnderlyingAsset {
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
+     * @param _slippage slippage percentage
+
      */
     function swapTokensForUA(
         address _fromToken,
         address _toToken,
         address _account,
         uint256 _amountIn,
-        uint256 _deadline
+        uint256 _deadline,
+        uint8 _slippage
     ) external returns (uint256[] memory swapResult);
 }

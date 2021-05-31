@@ -17,6 +17,9 @@ import OddzFeeManagerArtifact from "../artifacts/contracts/Option/OddzFeeManager
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
+import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
+import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
+
 import { OptionType } from "../test-utils";
 import { Accounts, Signers } from "../types";
 
@@ -38,6 +41,8 @@ import {
   OddzFeeManager,
   MockOddzDex,
   OddzTokenStaking,
+  OddzAdministrator,
+  OddzSDK
 } from "../typechain";
 import { shouldBehaveLikeOddzOptionManager } from "./behaviors/OddzOptionManager.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -89,6 +94,21 @@ describe("Oddz Option Manager Unit tests", function () {
 
       await this.dexManager.setActiveExchange(dexHash);
 
+      await this.dexManager.addExchange(
+        utils.formatBytes32String("ODDZ"),
+        utils.formatBytes32String("USDC"),
+        mockOddzDex.address,
+      );
+
+      const dexHash1 = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), mockOddzDex.address],
+        ),
+      );
+
+      await this.dexManager.setActiveExchange(dexHash1);
+
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
       ])) as MockOddzPriceOracle;
@@ -135,6 +155,12 @@ describe("Oddz Option Manager Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
 
+      this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "ODDZ token",
+        "ODDZ",
+        totalSupply,
+      ])) as MockERC20;
+
       this.ethToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "ETH Token",
         "ETH",
@@ -166,8 +192,10 @@ describe("Oddz Option Manager Unit tests", function () {
 
       // Staking setup
       this.oddzStakingManager = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
-        this.usdcToken.address,
+        this.oddzToken.address,
       ])) as OddzStakingManager;
+
+      const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzPriceOracleManager.address,
@@ -183,7 +211,25 @@ describe("Oddz Option Manager Unit tests", function () {
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
       await this.oddzPriceOracleManager.setManager(this.oddzOptionManager.address);
 
-      await this.oddzOptionManager.setAdministrator(this.oddzStakingManager.address);
+      this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
+        this.oddzOptionManager.address,
+        bscForwarder,
+        this.oddzToken.address
+      ])) as OddzSDK;
+
+      this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [
+        this.usdcToken.address,
+        this.oddzToken.address,
+        this.oddzStakingManager.address,
+        this.oddzSDK.address,
+        this.accounts.admin,
+        this.accounts.admin1,
+        this.dexManager.address,
+      ])) as OddzAdministrator;
+
+      await this.dexManager.setSwapper(this.oddzAdministrator.address);
+
+      await this.oddzOptionManager.setAdministrator(this.oddzAdministrator.address);
 
       const usdcToken = await this.usdcToken.connect(this.signers.admin);
       const usdcToken1 = await this.usdcToken.connect(this.signers.admin1);
@@ -288,7 +334,7 @@ describe("Oddz Option Manager Unit tests", function () {
 
       await this.oddzStakingManager.addToken(
         utils.formatBytes32String("ODDZ"),
-        this.usdcToken.address,
+        this.oddzToken.address,
         this.oddzTokenStaking.address,
         86400,
         100,

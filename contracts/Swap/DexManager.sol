@@ -137,6 +137,7 @@ contract DexManager is AccessControl, IDexManager {
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
+     * @param _slippage slippage percentage
      */
 
     function swap(
@@ -145,7 +146,8 @@ contract DexManager is AccessControl, IDexManager {
         address _exchange,
         address _account,
         uint256 _amountIn,
-        uint256 _deadline
+        uint256 _deadline,
+        uint8 _slippage
     ) external override onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
@@ -157,7 +159,8 @@ contract DexManager is AccessControl, IDexManager {
                 assetManager.getAssetAddressByName(_toToken),
                 _account,
                 _amountIn,
-                _deadline
+                _deadline,
+                _slippage
             );
         emit Swapped(_fromToken, _toToken, swapResult[0], swapResult[1]);
     }

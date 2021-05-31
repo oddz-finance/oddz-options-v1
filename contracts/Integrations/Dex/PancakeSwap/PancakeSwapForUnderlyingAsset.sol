@@ -10,12 +10,10 @@ import "../../../Swap/ISwapUnderlyingAsset.sol";
 contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
-    uint256 amountOutMin = 0;
-
     IPancakeSwap pancakeSwap;
 
-    constructor(address _pancakeSwap) {
-        pancakeSwap = IPancakeSwap(_pancakeSwap);
+    constructor(address _router) {
+        pancakeSwap = IPancakeSwap(_router);
     }
 
     /**
@@ -25,6 +23,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
+     * @param _slippage Slippage percentage
      */
 
     function swapTokensForUA(
@@ -32,12 +31,17 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         address _toToken,
         address _account,
         uint256 _amountIn,
-        uint256 _deadline
+        uint256 _deadline,
+        uint8 _slippage
     ) public override onlyOwner returns (uint256[] memory result) {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
         ERC20(_fromToken).safeApprove(address(pancakeSwap), _amountIn);
+        // gets amount of output tokens for input tokens
+        uint[] memory amounts = pancakeSwap.getAmountsOut(_amountIn, path);
+        // /1000 --> slippage decimals restricted to 2 (0.09)
+        uint256 amountOutMin = amounts[amounts.length - 1] * _slippage / 1000; 
         result = pancakeSwap.swapExactTokensForTokens(_amountIn, amountOutMin, path, address(this), _deadline);
         // converting address to address payable
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
