@@ -44,6 +44,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     uint32 public maxDeadline;
 
     /**
+     * @dev Max Slippage
+     */
+    uint16 public maxSlippage = 100;
+
+    /**
      * @dev SDK contract address
      */
     IOddzSDK public sdk;
@@ -374,6 +379,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint16 _slippage
     ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
+        require(_slippage <= maxDeadline, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
@@ -458,6 +464,14 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     function setMaxDeadline(uint32 _deadline) external onlyOwner {
         maxDeadline = _deadline;
+    }
+
+     /**
+     * @notice sets maximum slippage for DEX swap
+     * @param _slippage maximum slippage
+     */
+    function setMaxSlippage(uint16 _slippage) external onlyOwner {
+        maxSlippage = _slippage;
     }
 
     /**
