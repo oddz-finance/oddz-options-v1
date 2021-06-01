@@ -246,6 +246,7 @@ describe("Oddz Liquidity Pool Unit tests", function () {
 
       this.mockOptionManager = (await deployContract(this.signers.admin, MockOptionManagerArtifact, [
         this.oddzLiquidityPoolManager.address,
+        this.usdcToken.address,
       ])) as MockOptionManager;
 
       await this.usdcToken.approve(
@@ -257,6 +258,10 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       await usdcToken1.allowance(this.accounts.admin1, this.oddzLiquidityPoolManager.address);
       await this.usdcToken.transfer(this.accounts.admin, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
       await this.usdcToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther(this.transferTokenAmout)));
+      await this.usdcToken.transfer(
+        this.mockOptionManager.address,
+        BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      );
 
       await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
       await this.oddzEthUsdCallBS1Pool.transferOwnership(this.oddzLiquidityPoolManager.address);

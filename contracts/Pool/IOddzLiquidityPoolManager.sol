@@ -39,9 +39,8 @@ interface IOddzLiquidityPoolManager {
      * @notice Provider burns oUSD and receives USD from the pool
      * @param _pool Remove liquidity from a pool
      * @param _amount Amount of USD to receive
-     * @return burn Amount of tokens to be burnt
      */
-    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external returns (uint256 burn);
+    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external;
 
     /**
      * @notice called by Oddz call options to lock the funds

@@ -42,7 +42,6 @@ describe("Oddz Price Oracle Manager Unit tests", function () {
       ])) as MockPriceOracleUser;
 
       await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
-      await this.oddzPriceOracleManager.setManager(this.mockPriceOracleUser.address);
     });
 
     shouldBehaveLikeOddzPriceOracleManager();

@@ -25,6 +25,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev Liquidity specific data definitions
      */
     LockedLiquidity[] public lockedLiquidity;
+    uint256 public totalLockedPremium;
     IERC20 public token;
 
     /**
@@ -46,7 +47,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256[] _dAmount;
     }
     // user address -> date of transfer
-    mapping(address => uint256) lastPoolTransfer;
+    mapping(address => uint256) public lastPoolTransfer;
 
     /**
      * @dev Premium specific data definitions
@@ -135,8 +136,9 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(validPools[_pool], "LP Error: Invalid pool");
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
-        // transfer user eligible premium
-        transferEligiblePremium(DateTimeLibrary.getPresentDayTimestamp(), msg.sender, _pool);
+
+        uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
+        if (eligiblePremium > 0) token.safeTransfer(msg.sender, eligiblePremium);
 
         _pool.addLiquidity(_amount, msg.sender);
 
@@ -144,35 +146,31 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 burn) {
+    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
         require(validPools[_pool], "LP Error: Invalid pool");
+        uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
+        token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount) + eligiblePremium);
+
+        _burn(msg.sender, _amount);
+    }
+
+    function _removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) private returns (uint256 transferAmount) {
         require(
             _amount * 10 <= _pool.availableBalance() * reqBalance,
             "LP Error: Not enough funds in the pool. Please lower the amount."
         );
+        require(_amount <= balanceOf(msg.sender), "LP Error: Amount is too large");
+        require(_amount > 0, "LP Error: Amount is too small");
 
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
-        // burn = _amount + fetch eligible premium if any
-        burn = _amount + transferEligiblePremium(date, msg.sender, _pool);
-        require(burn <= balanceOf(msg.sender), "LP Error: Amount is too large");
-        require(burn > 0, "LP Error: Amount is too small");
-
-        // Forfeit premium if less than premium locked period
-        forfeitPremiumIfApplicable(_amount, date, _pool);
-
-        uint256 transferAmount =
-            ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), burn);
-        _pool.removeLiquidity(transferAmount, burn, msg.sender);
-
-        _burn(msg.sender, burn);
-        token.safeTransfer(msg.sender, transferAmount);
+        transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), _amount);
+        _pool.removeLiquidity(transferAmount, _amount, msg.sender, premiumLockupDuration);
     }
 
     function lockLiquidity(
         uint256 _id,
         LiquidityParams memory _liquidityParams,
         uint256 _premium
-    ) public override onlyManager(msg.sender) {
+    ) external override onlyManager(msg.sender) {
         require(_id == lockedLiquidity.length, "LP Error: Invalid id");
         (address[] memory pools, uint256[] memory poolBalances) = getSortedEligiblePools(_liquidityParams);
         require(pools.length > 0, "LP Error: No pool balance");
@@ -193,25 +191,25 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             count++;
         }
         lockedLiquidity.push(LockedLiquidity(_liquidityParams._amount, _premium, true, pools, share));
-        // Allocate premium to the self until premium unlock
-        _mint(address(this), _premium);
+        totalLockedPremium += _premium;
     }
 
-    function unlockLiquidity(uint256 _id) public override onlyManager(msg.sender) validLiquidty(_id) {
+    function unlockLiquidity(uint256 _id) external override onlyManager(msg.sender) validLiquidty(_id) {
         LockedLiquidity storage ll = lockedLiquidity[_id];
         for (uint8 i = 0; i < ll._pools.length; i++) {
             IOddzLiquidityPool(ll._pools[i]).unlockLiquidity(ll._share[i]);
             IOddzLiquidityPool(ll._pools[i]).unlockPremium(_id, (ll._premium * ll._share[i]) / ll._amount);
         }
         ll._locked = false;
+        totalLockedPremium -= ll._premium;
     }
 
     function send(
         uint256 _id,
         address _account,
         uint256 _amount
-    ) public override onlyManager(msg.sender) validLiquidty(_id) {
-        (, uint256 transferAmount) = updateAndFetchLockedLiquidity(_id, _account, _amount);
+    ) external override onlyManager(msg.sender) validLiquidty(_id) {
+        (, uint256 transferAmount) = _updateAndFetchLockedLiquidity(_id, _account, _amount);
         // Transfer Funds
         token.safeTransfer(_account, transferAmount);
     }
@@ -242,15 +240,14 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function totalBalance() public view override returns (uint256 balance) {
-        // though balance is oUSD its 1 - 1 minted for premium in USD
-        return token.balanceOf(address(this)) - balanceOf(address(this));
+        return token.balanceOf(address(this)) - totalLockedPremium;
     }
 
     /**
      * @notice Move liquidity between pools
      * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function move(PoolTransfer memory _poolTransfer) public {
+    function move(PoolTransfer memory _poolTransfer) external {
         require(
             lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + 1 weeks) < block.timestamp,
             "LP Error: Pool transfer available only once in 7 days"
@@ -259,11 +256,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
             require(validPools[_poolTransfer._source[i]], "LP Error: Invalid pool");
-            require(
-                _poolTransfer._sAmount[i] * 10 <= _poolTransfer._source[i].availableBalance() * reqBalance,
-                "LP Error: Not enough funds in the pool. Please lower the transfer amount."
-            );
-            _poolTransfer._source[i].removeLiquidity(_poolTransfer._sAmount[i], _poolTransfer._sAmount[i], msg.sender);
+            _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i]);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
         for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
@@ -285,110 +278,14 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     /**
-     * @notice Distributes the Premium for the Liquidity Provider for the given date
-     * @param _date Epoch time for 00:00:00 hours of the date
-     * @param _lp active liquidity provider address
-     * @param _pool liquidity pool address
-     */
-    function distributePremiumPerLP(
-        uint256 _date,
-        address _lp,
-        IOddzLiquidityPool _pool
-    ) private {
-        // Invalid liquidity provider
-        uint256 _pending = _pool.getEligiblePremium(_date) - _pool.getDistributedPremium(_date);
-        if (_pending == 0) return;
-        if (_pool.activeLiquidity(_lp) <= 0) return;
-        require(
-            _pool.getPremiumDistribution(_lp, _date) <= 0,
-            "LP Error: Premium already distributed for the provider"
-        );
-        uint256 lpEligible =
-            (_pool.getEligiblePremium(_date) * _pool.activeLiquidityByDate(_lp, _date)) /
-                _pool.getDaysActiveLiquidity(_date);
-        // if lpEligible goes to 0 round up to 1
-        if (lpEligible == 0) lpEligible = 1;
-        _pool.allocatePremiumToProvider(_lp, _pending.min(lpEligible), _date);
-
-        transferEligiblePremium(DateTimeLibrary.getPresentDayTimestamp(), _lp, _pool);
-    }
-
-    /**
-     * @notice Distributes the Premium for the Liquidity Providers for the given date
-     * @param _date Epoch time for 00:00:00 hours of the date
-     * @param _lps List of the active liquidity provider addresses
-     * @param _pool liquidity pool address
-     */
-    function distributePremium(
-        uint256 _date,
-        address[] memory _lps,
-        IOddzLiquidityPool _pool
-    ) public {
-        require(_date < DateTimeLibrary.getPresentDayTimestamp(), "LP Error: Invalid Date");
-        if (!_pool.isPremiumDistributionEnabled(_date)) {
-            _pool.enablePremiumDistribution(_date);
-        }
-        require(_pool.getEligiblePremium(_date) > 0, "LP Error: No premium collected for the date");
-        require(
-            _pool.getEligiblePremium(_date) > _pool.getDistributedPremium(_date),
-            "LP Error: Premium already distributed for this date"
-        );
-        for (uint256 lpid = 0; lpid < _lps.length; lpid++) {
-            distributePremiumPerLP(_date, _lps[lpid], _pool);
-        }
-    }
-
-    /**
      * @notice withdraw porfits from the pool
      * @param _pool liquidity pool address
      */
     function withdrawProfits(IOddzLiquidityPool _pool) external {
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
-        require(
-            _pool.activeLiquidity(msg.sender) > 0 &&
-                (date - _pool.latestLiquidityDate(msg.sender)) > premiumLockupDuration,
-            "LP Error: Address not eligible for premium collection"
-        );
-        transferEligiblePremium(date, msg.sender, _pool);
-    }
+        uint256 premium = _pool.collectPremium(msg.sender, premiumLockupDuration);
+        require(premium > 0, "LP Error: No premium allocated");
 
-    /**
-     * @notice sends the eligible premium for the provider address while add liquidity
-     * @param _date liquidity date
-     * @param _lp liquidity provider address
-     * @param _pool liquidity pool address
-     * @return premium eligible premium i.e. transferred to liquidity provider
-     */
-    function transferEligiblePremium(
-        uint256 _date,
-        address _lp,
-        IOddzLiquidityPool _pool
-    ) private returns (uint256 premium) {
-        if (_date - _pool.latestLiquidityDate(_lp) <= premiumLockupDuration) return 0;
-        premium = _pool.collectPremium(_lp);
-        // do nothing and return 0
-        if (premium <= 0) return 0;
-
-        _transfer(address(this), _lp, premium);
-    }
-
-    /**
-     * @notice updates eligible premium for the provider address while remove liquidity
-     * @param _amount amount of liquidity removed
-     * @param _date liquidity date
-     * @param _pool liquidity pool address
-     */
-    function forfeitPremiumIfApplicable(
-        uint256 _amount,
-        uint256 _date,
-        IOddzLiquidityPool _pool
-    ) private {
-        if (_pool.getPremium(msg.sender) <= 0) return;
-        uint256 balance = _pool.activeLiquidity(msg.sender);
-        require(balance > 0, "LP Error: current balance is less than or equal to zero");
-        if (_date - (_pool.latestLiquidityDate(msg.sender)) <= premiumLockupDuration) {
-            _pool.forfeitPremium(msg.sender, (_pool.getPremium(msg.sender) * _amount) / balance);
-        }
+        token.safeTransfer(msg.sender, premium);
     }
 
     /**
@@ -397,7 +294,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _account Provider account address
      * @param _amount Funds that should be sent
      */
-    function updateAndFetchLockedLiquidity(
+    function _updateAndFetchLockedLiquidity(
         uint256 _lid,
         address _account,
         uint256 _amount
@@ -417,6 +314,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 (transferAmount * ll._share[i]) / ll._amount
             );
         }
+        totalLockedPremium -= lockedPremium;
     }
 
     /**
@@ -460,7 +358,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 j++;
             }
         }
-        (poolBalance, pools) = sort(poolBalance, pools);
+        (poolBalance, pools) = _sort(poolBalance, pools);
         require(balance > _liquidityParams._amount, "LP Error: Amount is too large");
     }
 
@@ -471,7 +369,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @return sorted balance list in ascending order
      * @return sorted pool list in ascending order of balance list
      */
-    function sort(uint256[] memory balance, address[] memory pools)
+    function _sort(uint256[] memory balance, address[] memory pools)
         private
         pure
         returns (uint256[] memory, address[] memory)
@@ -514,7 +412,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _address manager contract address
      * Note: This can be called only by the owner
      */
-    function setManager(address _address) public {
+    function setManager(address _address) external {
         require(_address != address(0) && _address.isContract(), "LP Error: Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
@@ -524,7 +422,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _address manager contract address
      * Note: This can be called only by the owner
      */
-    function removeManager(address _address) public {
+    function removeManager(address _address) external {
         revokeRole(MANAGER_ROLE, _address);
     }
 
@@ -533,7 +431,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _reqBalance required balance between 6 and 9
      * Note: This can be called only by the owner
      */
-    function setReqBalance(uint8 _reqBalance) public onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
+    function setReqBalance(uint8 _reqBalance) external onlyOwner(msg.sender) reqBalanceValidRange(_reqBalance) {
         reqBalance = _reqBalance;
     }
 

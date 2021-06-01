@@ -209,7 +209,6 @@ describe("Oddz Option Manager Unit tests", function () {
       await this.oddzOptionManager.setMaxDeadline(100);
       await this.oddzLiquidityPoolManager.setManager(this.oddzOptionManager.address);
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
-      await this.oddzPriceOracleManager.setManager(this.oddzOptionManager.address);
 
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
@@ -337,6 +336,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.oddzToken.address,
         this.oddzTokenStaking.address,
         86400,
+        100,
         100,
         100,
       );

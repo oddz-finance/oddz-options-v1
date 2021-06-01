@@ -134,6 +134,17 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     expect(await oddzToken.balanceOf(this.oddzStakingManager.address)).to.equal(BigNumber.from(utils.parseEther("10")));
   });
 
+  it("Should successfully deposit amount of reward type", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+    await oddzToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("10")));
+    await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("10")), DepositType.Rewards)).to.emit(
+      oddzStakingManager,
+      "Deposit",
+    );
+    expect(await oddzToken.balanceOf(this.oddzStakingManager.address)).to.equal(BigNumber.from(utils.parseEther("10")));
+  });
+
   it("Should revert claim rewards for invalid token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(oddzStakingManager.claimRewards(constants.AddressZero)).to.be.revertedWith("token not added");

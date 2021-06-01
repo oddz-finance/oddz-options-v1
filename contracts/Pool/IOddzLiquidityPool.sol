@@ -48,11 +48,13 @@ interface IOddzLiquidityPool {
      * @param _amount Amount of USD to receive
      * @param _oUSD Amount of oUSD to be burnt
      * @param _account Address of the Liquidity Provider
+     * @param _lockDuration premium lockup days
      */
     function removeLiquidity(
         uint256 _amount,
         uint256 _oUSD,
-        address _account
+        address _account,
+        uint256 _lockDuration
     ) external;
 
     /**
@@ -87,28 +89,6 @@ interface IOddzLiquidityPool {
     function totalSupply() external view returns (uint256);
 
     /**
-     * @notice active liquitdity for the date
-     * @param _date UTC timestamp of the date
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function activeLiquidityByDate(address _account, uint256 _date) external view returns (uint256);
-
-    /**
-     * @notice current balance of the user
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function activeLiquidity(address _account) external view returns (uint256);
-
-    /**
-     * @notice latest transaction date of the user
-     * @param _account Address of the Liquidity Provider
-     * @return balance account balance
-     */
-    function latestLiquidityDate(address _account) external view returns (uint256);
-
-    /**
      * @notice Allocate premium to pool
      * @param _lid liquidity ID
      * @param _amount Premium amount
@@ -128,73 +108,16 @@ interface IOddzLiquidityPool {
     ) external;
 
     /**
-     * @notice gets premium distribution status for a date
-     * @param _date Premium eligibility date
-     */
-    function isPremiumDistributionEnabled(uint256 _date) external view returns (bool);
-
-    /**
-     * @notice returns eligible premium for a date
-     * @param _date Premium date
-     */
-    function getEligiblePremium(uint256 _date) external view returns (uint256);
-
-    /**
-     * @notice returns distributed premium for a date
-     * @param _date Premium date
-     */
-    function getDistributedPremium(uint256 _date) external view returns (uint256);
-
-    /**
-     * @notice Enable premium distribution for a date
-     * @param _date Premium eligibility date
-     */
-    function enablePremiumDistribution(uint256 _date) external;
-
-    /**
-     * @notice allocated premium to provider
-     * @param _account Address of the Liquidity Provider
-     * @param _amount Premium amount
-     * @param _date premium eligible date
-     */
-    function allocatePremiumToProvider(
-        address _account,
-        uint256 _amount,
-        uint256 _date
-    ) external;
-
-    /**
      * @notice fetches user premium
-     * @param _account Address of the Liquidity Provider
+     * @param _provider Address of the Liquidity Provider
      */
-    function getPremium(address _account) external view returns (uint256);
-
-    /**
-     * @notice forfeite user premium
-     * @param _account Address of the Liquidity Provider
-     * @param _amount Premium amount
-     */
-    function forfeitPremium(address _account, uint256 _amount) external;
+    function getPremium(address _provider) external view returns (uint256 rewards, bool isNegative);
 
     /**
      * @notice helper to convert premium to oUSD and sets the premium to zero
-     * @param _account Address of the Liquidity Provider
+     * @param _provider Address of the Liquidity Provider
+     * @param _lockDuration premium lockup days
      * @return premium Premium balance
      */
-    function collectPremium(address _account) external returns (uint256 premium);
-
-    /**
-     * @notice returns user premium allocated for the date
-     * @param _account Address of the Liquidity Provider
-     * @param _date premium eligible date
-     * @return premium Premium distribution amount for the date
-     */
-    function getPremiumDistribution(address _account, uint256 _date) external view returns (uint256);
-
-    /**
-     * @notice returns active liquidity for the date
-     * @param _date premium eligible date
-     * @return liquidity Liquidity
-     */
-    function getDaysActiveLiquidity(uint256 _date) external returns (uint256);
+    function collectPremium(address _provider, uint256 _lockDuration) external returns (uint256 premium);
 }
