@@ -15,7 +15,7 @@ export const OptionType = {
 export const DepositType = {
   Transaction: 0,
   Settlement: 1,
-  Invalid: 2,
+  Rewards: 2,
 };
 
 export const AssetIds = {
