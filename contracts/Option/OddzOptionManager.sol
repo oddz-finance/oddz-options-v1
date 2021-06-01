@@ -466,7 +466,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         maxDeadline = _deadline;
     }
 
-     /**
+    /**
      * @notice sets maximum slippage for DEX swap
      * @param _slippage maximum slippage
      */

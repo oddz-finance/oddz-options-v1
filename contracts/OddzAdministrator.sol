@@ -92,7 +92,6 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         slippage = _slippage;
     }
 
-
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
@@ -109,10 +108,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(
-        uint256 _amount,
-        DepositType _depositType
-    ) external override {
+    function deposit(uint256 _amount, DepositType _depositType) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;

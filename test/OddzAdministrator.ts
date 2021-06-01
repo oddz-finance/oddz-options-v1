@@ -65,7 +65,7 @@ describe("Oddz Administrator Unit tests", function () {
         OddzAssetManagerArtifact,
         [],
       )) as OddzAssetManager;
-      
+
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
@@ -84,7 +84,7 @@ describe("Oddz Administrator Unit tests", function () {
           [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), mockOddzDex.address],
         ),
       );
-          
+
       await this.dexManager.setActiveExchange(dexHash);
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
@@ -100,7 +100,7 @@ describe("Oddz Administrator Unit tests", function () {
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
         this.oddzLiquidityPoolManager.address,
-        this.usdcToken.address
+        this.usdcToken.address,
       ])) as OddzOptionManager;
 
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [

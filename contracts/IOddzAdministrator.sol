@@ -14,8 +14,5 @@ interface IOddzAdministrator {
      */
     event Deposit(address indexed _sender, DepositType indexed _type, uint256 _amount);
 
-    function deposit(
-        uint256 _amount,
-        DepositType _depositType
-    ) external;
+    function deposit(uint256 _amount, DepositType _depositType) external;
 }
