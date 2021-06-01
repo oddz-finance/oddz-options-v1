@@ -76,7 +76,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     function updateMinimumAmount(uint256 _minimumAmount) external onlyOwner {
         require(
             _minimumAmount >= 1000 * 10**usdcToken.decimals() && _minimumAmount <= 1000000 * 10**usdcToken.decimals(),
-            "Administrator: invalid deposit frequency"
+            "Administrator: invalid deposit amount"
         );
         minimumAmount = _minimumAmount;
     }

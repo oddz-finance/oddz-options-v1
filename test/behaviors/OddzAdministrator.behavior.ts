@@ -31,10 +31,10 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     );
   });
 
-  it("should revert set update minimum amount for invalid amount", async function () {
+  it("should revert set update minimum amount for less than minimum amount range", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     await expect(oddzAdministrator.updateMinimumAmount(BigNumber.from(utils.parseEther("999")))).to.be.revertedWith(
-      "Administrator: invalid deposit frequency",
+      "Administrator: invalid deposit amount",
     );
   });
 
@@ -42,6 +42,13 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     await oddzAdministrator.updateMinimumAmount(BigNumber.from(utils.parseEther("1100")));
     expect(await oddzAdministrator.minimumAmount()).to.equal(BigNumber.from(utils.parseEther("1100")));
+  });
+
+  it("should revert set update minimum amount for more than minimum amount range", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    await expect(oddzAdministrator.updateMinimumAmount(BigNumber.from(utils.parseEther("1000001")))).to.be.revertedWith(
+      "Administrator: invalid deposit amount",
+    );
   });
 
   it("should revert change gasless facililatator for non owner", async function () {

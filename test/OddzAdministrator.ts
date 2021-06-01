@@ -6,11 +6,7 @@ import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetMan
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
-import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
-import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
-import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionManager.sol/OddzOptionManager.json";
-import OddzFeeManagerArtifact from "../artifacts/contracts/Option/OddzFeeManager.sol/OddzFeeManager.json";
-import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
 import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
 
 import { Accounts, Signers } from "../types";
@@ -23,11 +19,7 @@ import {
   OddzLiquidityPoolManager,
   OddzSDK,
   OddzAdministrator,
-  OddzIVOracleManager,
-  OddzFeeManager,
   OddzOptionManager,
-  OddzOptionPremiumManager,
-  OddzPriceOracleManager,
   MockOddzDex,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
@@ -104,36 +96,10 @@ describe("Oddz Administrator Unit tests", function () {
         this.dexManager.address,
       ])) as OddzLiquidityPoolManager;
 
-      const oddzIVOracleManager = (await deployContract(
-        this.signers.admin,
-        OddzIVOracleManagerArtifact,
-        [],
-      )) as OddzIVOracleManager;
-
-      this.oddzPriceOracleManager = (await deployContract(
-        this.signers.admin,
-        OddzPriceOracleManagerArtifact,
-        [],
-      )) as OddzPriceOracleManager;
-
-      const oddzOptionPremiumManager = (await deployContract(
-        this.signers.admin,
-        OddzOptionPremiumManagerArtifact,
-        [],
-      )) as OddzOptionPremiumManager;
-
-      const oddzFeeManager = (await deployContract(this.signers.admin, OddzFeeManagerArtifact, [])) as OddzFeeManager;
-
       const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
 
       this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
-        this.oddzPriceOracleManager.address,
-        oddzIVOracleManager.address,
         this.oddzLiquidityPoolManager.address,
-        this.usdcToken.address,
-        this.oddzAssetManager.address,
-        oddzOptionPremiumManager.address,
-        oddzFeeManager.address,
       ])) as OddzOptionManager;
 
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
@@ -151,8 +117,6 @@ describe("Oddz Administrator Unit tests", function () {
         this.accounts.admin1,
         this.dexManager.address,
       ])) as OddzAdministrator;
-
-      await this.oddzOptionManager.setAdministrator(this.oddzAdministrator.address);
 
       await this.dexManager.setSwapper(this.oddzAdministrator.address);
     });
