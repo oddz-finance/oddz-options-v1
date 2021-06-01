@@ -54,3 +54,10 @@ export interface PoolTransfer {
   _sAmount: BigNumber[];
   _dAmount: BigNumber[];
 }
+
+export interface DistributionPercentage {
+  gasless: number;
+  maintainer: number;
+  developer: number;
+  staker: number;
+}

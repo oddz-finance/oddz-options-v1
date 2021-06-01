@@ -122,6 +122,12 @@ describe("Oddz Option Sdk Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
 
+      this.oddzToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
+        "ODDZ Token",
+        "ODDZ",
+        totalSupply,
+      ])) as MockERC20;
+
       const oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
         this.usdcToken.address,
       ])) as OddzStakingManager;
@@ -155,8 +161,8 @@ describe("Oddz Option Sdk Unit tests", function () {
       await oddzIVOracleManager.setManager(this.oddzOptionManager.address);
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
         this.oddzOptionManager.address,
-        this.oddzLiquidityPoolManager.address,
         bscForwarder,
+        this.oddzToken.address,
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setSdk(this.oddzSDK.address);

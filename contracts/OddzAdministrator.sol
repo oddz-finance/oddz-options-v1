@@ -76,13 +76,13 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     function updateMinimumAmount(uint256 _minimumAmount) external onlyOwner {
         require(
             _minimumAmount >= 1000 * 10**usdcToken.decimals() && _minimumAmount <= 1000000 * 10**usdcToken.decimals(),
-            "Administrator: invalid deposit frequency"
+            "Administrator: invalid deposit amount"
         );
         minimumAmount = _minimumAmount;
     }
 
     function updateDeadline(uint256 _deadline) external onlyOwner {
-        require(deadline >= 1 minutes && deadline <= 30 minutes, "Administrator: invalid deadline");
+        require(_deadline >= 1 minutes && _deadline <= 30 minutes, "Administrator: invalid deadline");
         deadline = _deadline;
     }
 
@@ -103,7 +103,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     }
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
-        require(_amount > minimumAmount, "Administrator: amount is low for deposit");
+        require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
         if (_depositType == DepositType.Transaction)
