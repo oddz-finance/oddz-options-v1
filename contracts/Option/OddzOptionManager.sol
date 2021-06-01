@@ -49,6 +49,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzSDK public sdk;
     IOddzAdministrator public administrator;
 
+    /**
+     * @dev minimum premium
+     */
+    uint256 public minimumPremium;
+
     constructor(
         IOddzPriceOracleManager _oracle,
         IOddzIVOracleManager _iv,
@@ -68,6 +73,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
+        require(_amount > minimumPremium, "amount is lower than minimum premium");
         require(_amount >= assetManager.getPurchaseLimit(_pair), "amount less than purchase limit");
         _;
     }
@@ -77,17 +83,17 @@ contract OddzOptionManager is IOddzOption, Ownable {
         address _pair,
         uint256 _expiration
     ) {
-        validAssetPair(_pair);
-        validExpiration(_expiration, _pair);
+        _validAssetPair(_pair);
+        _validExpiration(_expiration, _pair);
         _;
     }
 
-    function validExpiration(uint256 _expiration, address _pair) private view {
+    function _validExpiration(uint256 _expiration, address _pair) private view {
         require(_expiration <= assetManager.getMaxPeriod(_pair), "Expiration is greater than max expiry");
         require(_expiration >= assetManager.getMinPeriod(_pair), "Expiration is less than min expiry");
     }
 
-    function validAssetPair(address _pair) private view {
+    function _validAssetPair(address _pair) private view {
         require(assetManager.getStatusOfPair(_pair) == true, "Invalid Asset pair");
     }
 
@@ -97,7 +103,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _minPrice minumum allowed strike price
      * @param _maxPrice maximum allowed strike price
      */
-    function validStrike(
+    function _validStrike(
         uint256 _strike,
         uint256 _minPrice,
         uint256 _maxPrice
@@ -110,7 +116,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _value user paid amount
      * @param _premium option premium
      */
-    function validateOptionAmount(uint256 _value, uint256 _premium) private pure {
+    function _validateOptionAmount(uint256 _value, uint256 _premium) private pure {
         require(_value >= _premium, "Premium is low");
     }
 
@@ -121,7 +127,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _ivDecimal iv precision
      * @return oc - over collateralization
      */
-    function getMaxStrikePrice(
+    function _getMaxStrikePrice(
         uint256 _cp,
         uint256 _iv,
         uint8 _ivDecimal
@@ -138,7 +144,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _ivDecimal iv precision
      * @return oc - over collateralization
      */
-    function getMinStrikePrice(
+    function _getMinStrikePrice(
         uint256 _cp,
         uint256 _iv,
         uint8 _ivDecimal
@@ -154,13 +160,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _pair asset pair
      * @return cp - current price of the underlying asset
      */
-    function getCurrentPrice(IOddzAsset.AssetPair memory _pair) private view returns (uint256 cp) {
+    function _getCurrentPrice(IOddzAsset.AssetPair memory _pair) private view returns (uint256 cp) {
         uint8 decimal;
         // retrieving struct if more than one field is used, to reduce gas for memory storage
         IOddzAsset.Asset memory primary = assetManager.getAsset(_pair._primary);
         (cp, decimal) = oracle.getUnderlyingPrice(primary._name, _pair._strike);
 
-        cp = updatePrecision(cp, decimal, primary._precision);
+        cp = _updatePrecision(cp, decimal, primary._precision);
     }
 
     /**
@@ -173,7 +179,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @return callOverColl - call over collateral
      * @return putOverColl - put over collateral
      */
-    function getCollateralAmount(
+    function _getCollateralAmount(
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
@@ -181,15 +187,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint8 _ivDecimal
     ) private view returns (uint256 callOverColl, uint256 putOverColl) {
         IOddzAsset.Asset memory primary = assetManager.getAsset(assetManager.getPrimaryFromPair(_pair));
-        uint256 minAssetPrice = getMinStrikePrice(_cp, _iv, _ivDecimal);
-        uint256 maxAssetPrice = getMaxStrikePrice(_cp, _iv, _ivDecimal);
-        validStrike(_strike, minAssetPrice, maxAssetPrice);
+        uint256 minAssetPrice = _getMinStrikePrice(_cp, _iv, _ivDecimal);
+        uint256 maxAssetPrice = _getMaxStrikePrice(_cp, _iv, _ivDecimal);
+        _validStrike(_strike, minAssetPrice, maxAssetPrice);
         // limit call over collateral to _strike i.e. max profit is limited to _strike
-        callOverColl = updatePrecision(maxAssetPrice.min(_strike), primary._precision, token.decimals());
-        putOverColl = updatePrecision(_strike - minAssetPrice, primary._precision, token.decimals());
+        callOverColl = _updatePrecision(maxAssetPrice.min(_strike), primary._precision, token.decimals());
+        putOverColl = _updatePrecision(_strike - minAssetPrice, primary._precision, token.decimals());
     }
 
-    function getLockAmount(
+    function _getLockAmount(
         uint256 _cp,
         uint256 _iv,
         uint256 _strike,
@@ -198,7 +204,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         OptionType _optionType,
         uint256 _quantity
     ) private view returns (uint256 lockAmount) {
-        (uint256 callOverColl, uint256 putOverColl) = getCollateralAmount(_cp, _iv, _strike, _pair, _ivDecimal);
+        (uint256 callOverColl, uint256 putOverColl) = _getCollateralAmount(_cp, _iv, _strike, _pair, _ivDecimal);
         lockAmount = _optionType == OptionType.Call ? callOverColl : putOverColl;
         lockAmount = (lockAmount * _quantity) / 1e18;
     }
@@ -215,7 +221,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         returns (uint256 optionId)
     {
         address buyer_ = msg.sender == address(sdk) ? _buyer : msg.sender;
-        optionId = createOption(_details, _premiumWithSlippage, buyer_);
+        optionId = _createOption(_details, _premiumWithSlippage, buyer_);
     }
 
     /**
@@ -225,20 +231,20 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _buyer Address of buyer
      * @return optionId newly created Option Id
      */
-    function createOption(
+    function _createOption(
         OptionDetails memory _details,
         uint256 _premiumWithSlippage,
         address _buyer
     ) private returns (uint256 optionId) {
         PremiumResult memory premiumResult = getPremium(_details, _buyer);
         require(_premiumWithSlippage >= premiumResult.optionPremium, "Premium crossed slippage tolerance");
-        uint256 cp = getCurrentPrice(assetManager.getPair(_details._pair));
-        validateOptionAmount(
+        uint256 cp = _getCurrentPrice(assetManager.getPair(_details._pair));
+        _validateOptionAmount(
             token.allowance(_buyer, address(this)),
             premiumResult.optionPremium + premiumResult.txnFee
         );
         uint256 lockAmount =
-            getLockAmount(
+            _getLockAmount(
                 cp,
                 premiumResult.iv,
                 _details._strike,
@@ -299,12 +305,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
         validateOptionParams(_option._optionType, _option._pair, _option._expiration)
         returns (PremiumResult memory premiumResult)
     {
-        (premiumResult.ivDecimal, premiumResult.iv, premiumResult.optionPremium) = getOptionPremiumDetails(_option);
+        (premiumResult.ivDecimal, premiumResult.iv, premiumResult.optionPremium) = _getOptionPremiumDetails(_option);
 
-        premiumResult.txnFee = getTransactionFee(premiumResult.optionPremium, _buyer);
+        premiumResult.txnFee = _getTransactionFee(premiumResult.optionPremium, _buyer);
     }
 
-    function getOptionPremiumDetails(OptionDetails memory optionDetails)
+    function _getOptionPremiumDetails(OptionDetails memory optionDetails)
         private
         view
         returns (
@@ -314,7 +320,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         )
     {
         IOddzAsset.AssetPair memory pair = assetManager.getPair(optionDetails._pair);
-        uint256 price = getCurrentPrice(pair);
+        uint256 price = _getCurrentPrice(pair);
         (iv, ivDecimal) = volatility.calculateIv(
             pair._primary,
             pair._strike,
@@ -336,7 +342,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         );
         // convert to USD price precision
         uint8 _decimal = assetManager.getPrecision(pair._primary);
-        optionPremium = updatePrecision(optionPremium, _decimal, token.decimals());
+        optionPremium = _updatePrecision(optionPremium, _decimal, token.decimals());
     }
 
     /**
@@ -350,7 +356,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
+        (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
         pool.send(_optionId, option.holder, profit);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Cash);
@@ -369,7 +375,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(option.state == State.Active, "Wrong state");
 
         option.state = State.Exercised;
-        (uint256 profit, uint256 settlementFee) = getProfit(_optionId);
+        (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pair);
         pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline);
 
@@ -382,7 +388,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _buyer Option buyer address
      * @return txnFee Transaction Fee
      */
-    function getTransactionFee(uint256 _amount, address _buyer) private view returns (uint256 txnFee) {
+    function _getTransactionFee(uint256 _amount, address _buyer) private view returns (uint256 txnFee) {
         txnFee = ((_amount * oddzFeeManager.getTransactionFee(_buyer)) / (100 * 10**oddzFeeManager.decimals()));
     }
 
@@ -390,10 +396,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice Sends profits in USD from the USD pool to an option holder's address
      * @param _optionId ID of the option
      */
-    function getProfit(uint256 _optionId) internal returns (uint256 profit, uint256 settlementFee) {
+    function _getProfit(uint256 _optionId) private returns (uint256 profit, uint256 settlementFee) {
         Option memory option = options[_optionId];
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pair);
-        uint256 _cp = getCurrentPrice(pair);
+        uint256 _cp = _getCurrentPrice(pair);
 
         if (option.optionType == OptionType.Call) {
             require(option.strike <= _cp, "Call option: Current price is too low");
@@ -406,7 +412,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         profit = profit / 1e18;
 
         // convert profit to usd decimals
-        profit = updatePrecision(profit, assetManager.getPrecision(pair._primary), token.decimals());
+        profit = _updatePrecision(profit, assetManager.getPrecision(pair._primary), token.decimals());
 
         if (profit > option.lockedAmount) profit = option.lockedAmount;
 
@@ -445,7 +451,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice sets maximum deadline for DEX swap
      * @param _deadline maximum swap transaction time
      */
-    function setMaxDeadline(uint32 _deadline) public onlyOwner {
+    function setMaxDeadline(uint32 _deadline) external onlyOwner {
         maxDeadline = _deadline;
     }
 
@@ -468,6 +474,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         // Approve token transfer to administrator contract
         token.approve(address(administrator), type(uint256).max);
+    }
+
+    function setMinimumPremium(uint256 _amount) external onlyOwner {
+        uint256 amount = _amount / token.decimals();
+        require(amount > 5 && amount < 50, "invalid minimum premium");
+        minimumPremium = _amount;
     }
 
     /**
@@ -499,7 +511,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _required required precision
      * @return result updated _value
      */
-    function updatePrecision(
+    function _updatePrecision(
         uint256 _value,
         uint8 _current,
         uint8 _required

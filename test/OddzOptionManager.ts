@@ -292,6 +292,7 @@ describe("Oddz Option Manager Unit tests", function () {
         86400,
         100,
         100,
+        100,
       );
     });
     shouldBehaveLikeOddzOptionManager();

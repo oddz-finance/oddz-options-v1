@@ -81,6 +81,7 @@ describe("Oddz Staking Manager Unit tests", function () {
         getExpiry(1),
         50,
         70,
+        50,
       );
       await this.oddzStakingManager.addToken(
         utils.formatBytes32String("oUSD"),
@@ -89,6 +90,7 @@ describe("Oddz Staking Manager Unit tests", function () {
         getExpiry(1),
         50,
         30,
+        50,
       );
     });
 

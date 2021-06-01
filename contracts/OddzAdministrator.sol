@@ -3,7 +3,7 @@ pragma solidity 0.8.3;
 
 import "./IOddzAdministrator.sol";
 import "./IOddzSDK.sol";
-import "./Staking/IOddzStaking.sol";
+import "./Staking/IOddzStakingManager.sol";
 import "./Swap/IDexManager.sol";
 import "./Libs/IERC20Extented.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,7 +13,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     IERC20Extented public usdcToken;
     IERC20 public oddzToken;
 
-    IOddzStaking public staking;
+    IOddzStakingManager public staking;
     IOddzSDK public sdk;
     address public gaslessFacilitator;
     address public maintenanceFacilitator;
@@ -43,7 +43,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     constructor(
         IERC20Extented _usdcToken,
         IERC20 _oddzToken,
-        IOddzStaking _staking,
+        IOddzStakingManager _staking,
         IOddzSDK _sdk,
         address _gaslessFacilitator,
         address _maintenanceFacilitator,
@@ -129,7 +129,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {
         if (txnDistribution.staker > 0)
-            staking.deposit((_oddzAmount * txnDistribution.staker) / 100, IOddzStaking.DepositType.Transaction);
+            staking.deposit((_oddzAmount * txnDistribution.staker) / 100, IOddzStakingManager.DepositType.Transaction);
         if (txnDistribution.developer > 0) sdk.allocateOddzReward((_oddzAmount * txnDistribution.developer) / 100);
         if (txnDistribution.gasless > 0)
             usdcToken.safeTransferFrom(msg.sender, gaslessFacilitator, (_usdcAmount * txnDistribution.gasless) / 100);
@@ -143,7 +143,10 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
 
     function distrbuteSettlement(uint256 _usdcAmount, uint256 _oddzAmount) private {
         if (settlementDistribution.staker > 0 && oddzToken.balanceOf(address(this)) > 0)
-            staking.deposit((_oddzAmount * settlementDistribution.staker) / 100, IOddzStaking.DepositType.Settlement);
+            staking.deposit(
+                (_oddzAmount * settlementDistribution.staker) / 100,
+                IOddzStakingManager.DepositType.Settlement
+            );
         if (settlementDistribution.developer > 0)
             sdk.allocateOddzReward((_oddzAmount * settlementDistribution.developer) / 100);
         if (settlementDistribution.gasless > 0)
