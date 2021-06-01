@@ -379,7 +379,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         uint16 _slippage
     ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
-        require(_slippage <= maxDeadline, "Slippage input is more than maximum limit allowed");
+        require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");

@@ -1173,6 +1173,15 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     );
   });
 
+  it("should revert exercise UA with more than slippage limit", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const deadline = 15;
+    const slippage = 101;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
+      "Slippage input is more than maximum limit allowed",
+    );
+  });
+
   it("should revert exercise after expiration period", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
