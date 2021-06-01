@@ -283,7 +283,9 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         PremiumPool memory pd;
         for (uint256 i = 0; i < count; i++) {
             // (startDate + (i * 1 days), daysActiveLiquidity[startDate + (i * 1 days)]);
-            tLiquidty += daysActiveLiquidity[startDate + (i * 1 days)];
+            uint256 dActiveLiquidity = daysActiveLiquidity[startDate + (i * 1 days)];
+            require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
+            tLiquidty += dActiveLiquidity;
             pd = premiumDayPool[startDate + (i * 1 days)];
             tReward += pd._collected + pd._surplus;
             tExercised += pd._exercised;
