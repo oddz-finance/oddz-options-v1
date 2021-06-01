@@ -39,6 +39,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
      */
     IDexManager public dexManager;
     uint256 public deadline = 1 minutes;
+    uint16 public slippage = 1;
 
     constructor(
         IERC20Extented _usdcToken,
@@ -86,6 +87,12 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         deadline = _deadline;
     }
 
+    function updateSlippage(uint16 _slippage) external onlyOwner {
+        require(_slippage > 0 && _slippage <= 1000, "Administrator: invalid slippage");
+        slippage = _slippage;
+    }
+
+
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
@@ -104,8 +111,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
 
     function deposit(
         uint256 _amount,
-        DepositType _depositType,
-        uint16 _slippage
+        DepositType _depositType
     ) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
@@ -115,7 +121,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         else usdcAmount = (_amount * (settlementDistribution.gasless + settlementDistribution.maintainer)) / 100;
 
         uint256 oddzAmount = _amount - usdcAmount;
-        convertToOddz(oddzAmount, _slippage);
+        convertToOddz(oddzAmount);
 
         if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzAmount);
         else distrbuteSettlement(usdcAmount, oddzAmount);
@@ -123,12 +129,12 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount, uint16 _slippage) private {
+    function convertToOddz(uint256 _amount) private {
         address exchange = dexManager.getExchange("ODDZ", "USDC");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, _slippage);
+        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
     }
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {

@@ -16,7 +16,6 @@ interface IOddzAdministrator {
 
     function deposit(
         uint256 _amount,
-        DepositType _depositType,
-        uint16 _slippage
+        DepositType _depositType
     ) external;
 }

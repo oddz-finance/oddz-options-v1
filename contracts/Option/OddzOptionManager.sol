@@ -489,28 +489,24 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     /**
      * @notice transfer transaction fee to beneficiary
-     * @param _slippage Slippage percentage
-
      */
-    function transferTxnFeeToBeneficiary(uint16 _slippage) external {
+    function transferTxnFeeToBeneficiary() external {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction, _slippage);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
     }
 
     /**
      * @notice transfer settlement fee to beneficiary
-     * @param _slippage Slippage percentage
-
      */
-    function transferSettlementFeeToBeneficiary(uint16 _slippage) external {
+    function transferSettlementFeeToBeneficiary() external {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement, _slippage);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
     }
 
     /**
