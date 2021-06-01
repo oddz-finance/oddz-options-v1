@@ -742,8 +742,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("1000")),
     );
-    const slippage = 1;
-    await oddzOptionManager.transferSettlementFeeToBeneficiary(slippage);
+    await oddzOptionManager.transferSettlementFeeToBeneficiary();
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
@@ -785,10 +784,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(utils.parseEther("1271.409331")),
     );
 
-    const slippage = 1;
     // for having oddz balance
     await this.oddzToken.transfer(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000")));
-    await oddzOptionManager.transferTxnFeeToBeneficiary(slippage);
+    await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
 
