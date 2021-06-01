@@ -18,6 +18,6 @@ interface ISwapUnderlyingAsset {
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) external returns (uint256[] memory swapResult);
 }

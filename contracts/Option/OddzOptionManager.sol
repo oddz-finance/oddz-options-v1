@@ -365,7 +365,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function exerciseUA(
         uint256 _optionId,
         uint32 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
         Option storage option = options[_optionId];
@@ -480,7 +480,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _slippage Slippage percentage
 
      */
-    function transferTxnFeeToBeneficiary(uint8 _slippage) external {
+    function transferTxnFeeToBeneficiary(uint16 _slippage) external {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
@@ -493,7 +493,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _slippage Slippage percentage
 
      */
-    function transferSettlementFeeToBeneficiary(uint8 _slippage) external {
+    function transferSettlementFeeToBeneficiary(uint16 _slippage) external {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 

@@ -91,7 +91,7 @@ interface IOddzOption {
     function exerciseUA(
         uint256 _optionId,
         uint32 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) external;
 
     /**

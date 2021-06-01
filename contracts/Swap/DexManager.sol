@@ -147,7 +147,7 @@ contract DexManager is AccessControl, IDexManager {
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) external override onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");

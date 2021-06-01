@@ -91,7 +91,7 @@ interface IOddzLiquidityPoolManager {
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) external;
 
     /**

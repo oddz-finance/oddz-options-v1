@@ -32,7 +32,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
-        uint8 _slippage
+        uint16 _slippage
     ) public override onlyOwner returns (uint256[] memory result) {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
@@ -41,7 +41,7 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         // gets amount of output tokens for input tokens
         uint256[] memory amounts = pancakeSwap.getAmountsOut(_amountIn, path);
         // /1000 --> slippage decimals restricted to 2 (0.09)
-        uint256 amountOutMin = (amounts[amounts.length - 1] * _slippage) / 1000;
+        uint256 amountOutMin = amounts[amounts.length - 1] - (amounts[amounts.length - 1] * _slippage) / 1000;
         result = pancakeSwap.swapExactTokensForTokens(_amountIn, amountOutMin, path, address(this), _deadline);
         // converting address to address payable
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);

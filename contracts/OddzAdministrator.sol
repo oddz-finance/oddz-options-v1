@@ -105,7 +105,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     function deposit(
         uint256 _amount,
         DepositType _depositType,
-        uint8 _slippage
+        uint16 _slippage
     ) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
@@ -123,7 +123,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount, uint8 _slippage) private {
+    function convertToOddz(uint256 _amount, uint16 _slippage) private {
         address exchange = dexManager.getExchange("ODDZ", "USDC");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
