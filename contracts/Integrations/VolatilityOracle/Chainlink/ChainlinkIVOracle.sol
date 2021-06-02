@@ -18,6 +18,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     //bytes(underlying, strike, expiry) => volPerc => val
     mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
     uint256 public volatilityPrecision = 2;
+    uint256 public minVolatilityBound = 1000;
+    uint256 public maxVolatilityBound = 20000;
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "Chainlink IV: caller has no access to the method");
@@ -93,6 +95,14 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
      */
     function addAllowedPeriods(uint8 _ivAgg) public onlyOwner(msg.sender) {
         allowedPeriods[_ivAgg] = true;
+    }
+
+    function setMinVolatilityBound(uint256 _minVolatility) public onlyOwner(msg.sender) {
+        minVolatilityBound = _minVolatility;
+    }
+
+    function setMaxVolatilityBound(uint256 _maxVolatility) public onlyOwner(msg.sender) {
+        maxVolatilityBound = _maxVolatility;
     }
 
     function setManager(address _address) public {
@@ -211,7 +221,23 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint8 _volPercentage,
         uint256 _volatility // 96.68 => 9668
     ) public onlyOwner(msg.sender) allowedPeriod(_expiration) {
-        volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
+        require(
+            _volatility >= minVolatilityBound && _volatility <= maxVolatilityBound,
+            "Chainlink IV: Volatility out of bound"
+        );
+        if (_volPercentage == 0) {
+            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
+        } else {
+            if (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0] > _volatility) {
+                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
+                    volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0] -
+                    _volatility;
+            } else {
+                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
+                    _volatility -
+                    volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0];
+            }
+        }
     }
 
     function _getIv(
@@ -229,7 +255,9 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
             volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
         else if (_strikePrice < _currentPrice)
             volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
+
         return
+            _chainlinkVol +
             (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] * (10**_ivDecimal)) /
             (10**volatilityPrecision);
     }

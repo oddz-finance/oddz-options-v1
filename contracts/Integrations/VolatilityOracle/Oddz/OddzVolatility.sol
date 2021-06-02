@@ -16,6 +16,8 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
     mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
     mapping(bytes32 => uint256) public defaultIvMap;
     uint8 public volatilityPrecision = 2;
+    uint256 public minVolatilityBound = 1000;
+    uint256 public maxVolatilityBound = 20000;
 
     modifier allowedPeriod(uint256 _aggregatorPeriod) {
         require(allowedPeriods[_aggregatorPeriod] == true, "Chainlink IV: Invalid aggregator period");
@@ -80,6 +82,14 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
      */
     function addAllowedPeriods(uint8 _ivAgg) public onlyOwner {
         allowedPeriods[_ivAgg] = true;
+    }
+
+    function setMinVolatilityBound(uint256 _minVolatility) public onlyOwner {
+        minVolatilityBound = _minVolatility;
+    }
+
+    function setMaxVolatilityBound(uint256 _maxVolatility) public onlyOwner {
+        maxVolatilityBound = _maxVolatility;
     }
 
     function getIv(
@@ -169,6 +179,10 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
         uint8 _volPercentage,
         uint256 _volatility // 96.68 => 9668
     ) public onlyOwner allowedPeriod(_expiration) {
+        require(
+            _volatility >= minVolatilityBound && _volatility <= maxVolatilityBound,
+            "Oddz IV: Volatility out of bound"
+        );
         volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
         lastUpdatedAt = block.timestamp;
     }
