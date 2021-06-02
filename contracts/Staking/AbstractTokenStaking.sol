@@ -90,7 +90,9 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
         uint256 totalReward;
         uint256 count = (_date - startDate) / 1 days;
         for (uint256 i = 0; i < count; i++) {
-            totalStake += dayStakeMap[startDate + (i * 1 days)]._totalActiveStake;
+            uint256 dActiveStake = dayStakeMap[startDate + (i * 1 days)]._totalActiveStake;
+            require(dActiveStake > 0, "Stake Error: invalid daily total active stake");
+            totalStake += dActiveStake;
             totalReward += dayStakeMap[startDate + (i * 1 days)]._allocatedRewards;
         }
         if (totalStake == 0) return 0;
