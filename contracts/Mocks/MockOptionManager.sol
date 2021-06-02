@@ -24,6 +24,17 @@ contract MockOptionManager {
         token.transfer(address(pool), 10000000000);
     }
 
+    function lockWithParams(
+        uint256 _id,
+        address _assetPair,
+        IOddzOption.OptionType _type
+    ) public {
+        IOddzLiquidityPoolManager.LiquidityParams memory liquidityParams =
+            IOddzLiquidityPoolManager.LiquidityParams(1000000000000, 86400, _assetPair, "B_S", _type);
+        pool.lockLiquidity(_id, liquidityParams, 10000000000);
+        token.transfer(address(pool), 10000000000);
+    }
+
     function unlock(uint256 _id) public {
         pool.unlockLiquidity(_id);
     }
