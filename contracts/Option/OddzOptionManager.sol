@@ -471,6 +471,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _slippage maximum slippage
      */
     function setMaxSlippage(uint16 _slippage) external onlyOwner {
+        require(_slippage > 0 && _slippage <= 1000, "invalid slippage");
         maxSlippage = _slippage;
     }
 

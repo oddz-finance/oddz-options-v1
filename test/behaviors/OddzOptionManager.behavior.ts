@@ -816,6 +816,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await expect(oddzOptionManager.setMaxSlippage(100)).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
+  it("should revert set max slippage for out of bound", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    await expect(oddzOptionManager.setMaxSlippage(1001)).to.be.revertedWith("invalid slippage");
+  });
+
   it("should revert buy for less than purchase limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
