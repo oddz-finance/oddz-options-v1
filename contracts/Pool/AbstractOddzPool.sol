@@ -80,7 +80,8 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         _updateLiquidity(_amount, TransactionType.REMOVE);
         _allocatePremium(_provider);
         _forfeitPremium(_provider, _amount, _lockDuration);
-        _updateProviderBalance(TransactionType.REMOVE, _amount, _provider);
+        // oUSD should be the balance of the user
+        _updateProviderBalance(TransactionType.REMOVE, _oUSD, _provider);
         oUsdSupply -= _oUSD;
 
         emit RemoveLiquidity(_provider, _amount, _oUSD);
