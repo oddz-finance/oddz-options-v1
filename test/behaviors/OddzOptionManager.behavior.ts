@@ -1134,6 +1134,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.setSdk(this.accounts.admin)).to.be.revertedWith("invalid SDK contract address");
   });
+
   it("should set sdk with contract address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
@@ -1450,5 +1451,25 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       oddzOptionManager,
       "Buy",
     );
+  });
+
+  it("should revert set administrator for non contract address", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    await expect(oddzOptionManager.setAdministrator(this.accounts.admin)).to.be.revertedWith(
+      "invalid administrator contract address",
+    );
+  });
+
+  it("should set administrator with contract address", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    oddzOptionManager.setAdministrator(this.oddzLiquidityPoolManager.address);
+    expect(await oddzOptionManager.administrator()).to.equal(this.oddzLiquidityPoolManager.address);
+    expect(
+      await this.usdcToken
+        .connect(this.signers.admin)
+        .allowance(oddzOptionManager.address, this.mockAdministrator.address),
+    ).to.equal(0);
   });
 }

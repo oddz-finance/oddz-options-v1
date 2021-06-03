@@ -489,7 +489,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _administrator Oddz administrator address
      */
     function setAdministrator(IOddzAdministrator _administrator) external onlyOwner {
-        require(address(_administrator).isContract(), "invalid SDK contract address");
+        require(address(_administrator).isContract(), "invalid administrator contract address");
+        // Set token allowance of previous administrator to 0
+        if (address(administrator) != address(0)) token.approve(address(administrator), 0);
+
         administrator = _administrator;
 
         // Approve token transfer to administrator contract
