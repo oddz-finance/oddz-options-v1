@@ -19,7 +19,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     mapping(bytes32 => mapping(uint8 => int256)) public volatility;
     uint256 public volatilityPrecision = 2;
     uint256 public minVolatilityBound = 1000;
-    uint256 public maxVolatilityBound = 20000;
+    uint256 public maxVolatilityBound = 50000;
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "Chainlink IV: caller has no access to the method");

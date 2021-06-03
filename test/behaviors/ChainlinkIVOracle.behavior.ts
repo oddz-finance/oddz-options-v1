@@ -315,7 +315,7 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
         utils.formatBytes32String("USD"),
         1,
         10,
-        20001, //96.68
+        50001, //96.68
       ),
     ).to.be.revertedWith("Volatility out of bound");
   });
