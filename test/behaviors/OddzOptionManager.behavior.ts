@@ -711,16 +711,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
 
-    await this.oddzAssetManager.addAsset(utils.formatBytes32String("ODDZ"), this.oddzToken.address, 8);
-    await this.oddzAssetManager.addAsset(utils.formatBytes32String("USDC"), this.usdcToken.address, 8);
-
-    await this.oddzAssetManager.addAssetPair(
-      utils.formatBytes32String("ODDZ"),
-      utils.formatBytes32String("USDC"),
-      BigNumber.from(utils.parseEther("0.01")),
-      2592000,
-      86400,
-    );
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
@@ -758,16 +748,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.ethToken,
     );
 
-    await this.oddzAssetManager.addAsset(utils.formatBytes32String("ODDZ"), this.oddzToken.address, 8);
-    await this.oddzAssetManager.addAsset(utils.formatBytes32String("USDC"), this.usdcToken.address, 8);
-
-    await this.oddzAssetManager.addAssetPair(
-      utils.formatBytes32String("ODDZ"),
-      utils.formatBytes32String("USDC"),
-      BigNumber.from(utils.parseEther("0.01")),
-      2592000,
-      86400,
-    );
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
     const optionDetails = getOptionDetailsStruct(
@@ -784,8 +764,6 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(utils.parseEther("1271.409331")),
     );
 
-    // for having oddz balance
-    await this.oddzToken.transfer(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000")));
     await oddzOptionManager.transferTxnFeeToBeneficiary();
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
