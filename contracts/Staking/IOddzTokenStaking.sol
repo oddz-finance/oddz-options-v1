@@ -10,25 +10,15 @@ interface IOddzTokenStaking {
      * @notice Stake tokens
      * @param _staker Address of the staker
      * @param _amount Amount to stake
-     * @param _date  Date on which tokens are staked
      */
-    function stake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) external;
+    function stake(address _staker, uint256 _amount) external;
 
     /**
      * @notice unstake tokens of the staker
      * @param _staker Address of the staker
      * @param _amount Amount to burn and transfer
-     * @param _date  Date on which tokens are staked
      */
-    function unstake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) external;
+    function unstake(address _staker, uint256 _amount) external;
 
     /**
      * @notice balane of tokens for the staker

@@ -213,11 +213,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     function stake(address _token, uint256 _amount) external override validToken(_token) {
         require(_amount > 0, "Staking: invalid amount");
-        IOddzTokenStaking(tokens[_token]._stakingContract).stake(
-            msg.sender,
-            _amount,
-            DateTimeLibrary.getPresentDayTimestamp()
-        );
+        IOddzTokenStaking(tokens[_token]._stakingContract).stake(msg.sender, _amount);
 
         emit Stake(msg.sender, _token, _amount);
     }
@@ -240,7 +236,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             "Staking: cannot withdraw within lockup period"
         );
         _transferRewards(msg.sender, _token, date);
-        IOddzTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount, date);
+        IOddzTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _token, _amount);
     }

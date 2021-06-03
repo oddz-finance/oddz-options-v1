@@ -2,7 +2,6 @@
 pragma solidity 0.8.3;
 
 import "../Staking/OddzTokenStaking.sol";
-import "../Libs/DateTimeLibrary.sol";
 
 contract MockTokenStaking {
     OddzTokenStaking staking;
@@ -12,11 +11,11 @@ contract MockTokenStaking {
     }
 
     function stake() public {
-        staking.stake(msg.sender, 1000, DateTimeLibrary.getPresentDayTimestamp());
+        staking.stake(msg.sender, 1000);
     }
 
     function burn() public {
-        staking.unstake(msg.sender, 1000, DateTimeLibrary.getPresentDayTimestamp());
+        staking.unstake(msg.sender, 1000);
     }
 
     function setToken(address _token) public {
