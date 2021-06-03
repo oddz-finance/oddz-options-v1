@@ -220,14 +220,23 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         uint256 _amount,
         bytes32 _underlying,
         bytes32 _strike,
-        uint32 _deadline
-    ) external override onlyManager(msg.sender) validLiquidty(_id) {
+        uint32 _deadline,
+        uint16 _slippage
+    ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (, uint256 transferAmount) = _updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
         // Transfer Funds
         token.safeTransfer(exchange, transferAmount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap(_strike, _underlying, exchange, _account, transferAmount, block.timestamp + _deadline);
+        dexManager.swap(
+            _strike,
+            _underlying,
+            exchange,
+            _account,
+            transferAmount,
+            block.timestamp + _deadline,
+            _slippage
+        );
     }
 
     function totalBalance() public view override returns (uint256 balance) {

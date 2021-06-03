@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IOddzTokenStaking.sol";
+import "../Libs/DateTimeLibrary.sol";
 
 abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     using Address for address;
@@ -45,14 +46,6 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @dev Staking token address
      */
     address public token;
-
-    /**
-     * @notice Sets staking token address
-     * @param _token Address of the token
-     */
-    function setToken(address _token) external override onlyOwner {
-        token = _token;
-    }
 
     /**
      * @notice Allocates rewards to staker
@@ -126,6 +119,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @return dayStake stake for the date
      */
     function getAndUpdateDaysActiveStake(uint256 _date) public override returns (uint256 dayStake) {
+        require(_date <= DateTimeLibrary.getPresentDayTimestamp(), "Stake Error: invalid date");
         if (dayStakeMap[_date]._totalActiveStake > 0) return dayStakeMap[_date]._totalActiveStake;
         if (lastStaked == 0) return 0;
         for (uint256 i = 1; i <= (_date - lastStaked) / 1 days; i++) {
@@ -140,37 +134,30 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @notice Updates user stake
      * @param _staker Address of the staker
      * @param _amount Amount to stake
-     * @param _date  Date on which tokens are staked
      */
-    function _stake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) internal onlyOwner {
-        _allocateStakerRewards(_staker, _date);
+    function _stake(address _staker, uint256 _amount) internal onlyOwner {
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
+        _allocateStakerRewards(_staker, date);
         // update to stake to hold existing stake
-        staker[_staker] = UserStake(staker[_staker]._amount + _amount, _date, 0, 0);
+        staker[_staker] = UserStake(staker[_staker]._amount + _amount, date, 0, 0);
 
-        dayStakeMap[_date]._totalActiveStake = getAndUpdateDaysActiveStake(_date) + _amount;
-        lastStaked = _date;
+        dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) + _amount;
+        lastStaked = date;
     }
 
     /**
      * @notice updates user unstake tokens
+     * @param _staker Address of the staker
      * @param _amount Amount to burn and transfer
-     * @param _date  Date on which tokens are unstaked
      */
-    function _unstake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) internal {
-        _allocateStakerRewards(_staker, _date);
+    function _unstake(address _staker, uint256 _amount) internal {
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
+        _allocateStakerRewards(_staker, date);
         // update to stake to hold existing stake
-        staker[_staker] = UserStake(staker[_staker]._amount - _amount, _date, 0, 0);
+        staker[_staker] = UserStake(staker[_staker]._amount - _amount, date, 0, 0);
 
-        dayStakeMap[_date]._totalActiveStake = getAndUpdateDaysActiveStake(_date) - _amount;
-        lastStaked = _date;
+        dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) - _amount;
+        lastStaked = date;
     }
 
     /**

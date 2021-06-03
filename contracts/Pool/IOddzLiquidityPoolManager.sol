@@ -81,6 +81,7 @@ interface IOddzLiquidityPoolManager {
      * @param _underlying underlying asset name
      * @param _strike strike asset name
      * @param _deadline deadline until which txn does not revert
+     * @param _slippage Slippage percentage
      */
     function sendUA(
         uint256 _id,
@@ -88,7 +89,8 @@ interface IOddzLiquidityPoolManager {
         uint256 _amount,
         bytes32 _underlying,
         bytes32 _strike,
-        uint32 _deadline
+        uint32 _deadline,
+        uint16 _slippage
     ) external;
 
     /**

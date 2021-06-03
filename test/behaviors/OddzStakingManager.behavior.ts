@@ -447,28 +447,10 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     await oddzToken.approve(this.oddzTokenStaking1.address, BigNumber.from(utils.parseEther("100")));
 
     await oddzTokenStaking.transferOwnership(this.mockTokenStaking.address);
-    await mockTokenStaking.setToken(this.oddzToken.address);
     await mockTokenStaking.stake();
     expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(1000);
     await expect(mockTokenStaking.burn()).to.be.ok;
 
     expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(0);
-  });
-
-  it("Should revert set token for non owner", async function () {
-    const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
-    await expect(mockTokenStaking.setToken(this.oddzToken.address)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
-    );
-  });
-
-  it("Should set token", async function () {
-    const oddzTokenStaking = await this.oddzTokenStaking1.connect(this.signers.admin);
-    const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
-    await oddzTokenStaking.transferOwnership(this.mockTokenStaking.address);
-
-    await mockTokenStaking.setToken(this.oddzToken.address);
-
-    expect(await oddzTokenStaking.token()).to.equal(this.oddzToken.address);
   });
 }

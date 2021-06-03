@@ -710,6 +710,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
     const oddzPriceOracle = await this.oddzPriceOracle.connect(this.signers.admin);
@@ -746,6 +747,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       this.usdcToken,
       this.ethToken,
     );
+
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
 
     const optionDetails = getOptionDetailsStruct(
@@ -776,7 +778,26 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert set max deadline by non owner", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
 
-    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller");
+    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("should set max slippage by owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const slippage = 100;
+    await oddzOptionManager.setMaxSlippage(slippage);
+    expect(await oddzOptionManager.maxSlippage()).to.equal(slippage);
+  });
+
+  it("should revert set max slippage by non owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
+
+    await expect(oddzOptionManager.setMaxSlippage(100)).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("should revert set max slippage for out of bound", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    await expect(oddzOptionManager.setMaxSlippage(1001)).to.be.revertedWith("invalid slippage");
   });
 
   it("should revert buy for less than purchase limit", async function () {
@@ -1113,6 +1134,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.setSdk(this.accounts.admin)).to.be.revertedWith("invalid SDK contract address");
   });
+
   it("should set sdk with contract address", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
 
@@ -1128,8 +1150,18 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert exercise UA with more than deadline limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const deadline = 101;
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.be.revertedWith(
+    const slippage = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
       "Deadline input is more than maximum limit allowed",
+    );
+  });
+
+  it("should revert exercise UA with more than slippage limit", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    const deadline = 15;
+    const slippage = 101;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
+      "Slippage input is more than maximum limit allowed",
     );
   });
 
@@ -1168,7 +1200,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // execution day + 3
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     const deadline = 15;
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.be.revertedWith("Option has expired");
+    const slippage = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith("Option has expired");
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -1203,7 +1236,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
     const deadline = 15;
-    await expect(oddzOptionManager.connect(this.signers.admin1).exerciseUA(0, deadline)).to.be.revertedWith(
+    const slippage = 1;
+    await expect(oddzOptionManager.connect(this.signers.admin1).exerciseUA(0, deadline, slippage)).to.be.revertedWith(
       "Wrong msg.sender",
     );
   });
@@ -1236,9 +1270,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
+    const slippage = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
 
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.be.revertedWith("Wrong state");
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith("Wrong state");
   });
 
   it("should exercise UA", async function () {
@@ -1270,7 +1305,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
     const deadline = 15;
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
+    const slippage = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
   });
 
   it("should revert expire for options not expired yet", async function () {
@@ -1332,7 +1368,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
-    await expect(oddzOptionManager.exerciseUA(0, deadline)).to.emit(oddzOptionManager, "Exercise");
+    const slippage = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
     await provider.send("evm_snapshot", []);
     // execution day + 3
     await provider.send("evm_increaseTime", [getExpiry(3)]);
@@ -1414,5 +1451,25 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       oddzOptionManager,
       "Buy",
     );
+  });
+
+  it("should revert set administrator for non contract address", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    await expect(oddzOptionManager.setAdministrator(this.accounts.admin)).to.be.revertedWith(
+      "invalid administrator contract address",
+    );
+  });
+
+  it("should set administrator with contract address", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+
+    oddzOptionManager.setAdministrator(this.oddzLiquidityPoolManager.address);
+    expect(await oddzOptionManager.administrator()).to.equal(this.oddzLiquidityPoolManager.address);
+    expect(
+      await this.usdcToken
+        .connect(this.signers.admin)
+        .allowance(oddzOptionManager.address, this.mockAdministrator.address),
+    ).to.equal(0);
   });
 }
