@@ -57,7 +57,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         gaslessFacilitator = _gaslessFacilitator;
         maintenanceFacilitator = _maintenanceFacilitator;
         txnDistribution = DistributionPercentage({ gasless: 40, maintainer: 0, developer: 20, staker: 40 });
-        settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 40, developer: 0, staker: 60 });
+        settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 10, developer: 10, staker: 80 });
 
         dexManager = _dexManager;
         minimumAmount = 1000 * 10**usdcToken.decimals();
