@@ -16,7 +16,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
     mapping(bytes32 => address) public addressMap;
 
     //bytes(underlying, strike, expiry) => volPerc => val
-    mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
+    mapping(bytes32 => mapping(uint8 => int256)) public volatility;
     uint256 public volatilityPrecision = 2;
     uint256 public minVolatilityBound = 1000;
     uint256 public maxVolatilityBound = 20000;
@@ -135,10 +135,11 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         require(updatedAt > (block.timestamp - delayInSeconds), "Chainlink IV: Out Of Sync");
         iv = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
-        uint256 _iv =
+        int256 _iv =
             _getIv(_underlying, _strike, ivPeriodMap[_expirationDay], _currentPrice, _strikePrice, iv, decimals);
         // _iv can be 0 when there are no entries to mapping
-        if (_iv > 0) iv = _iv;
+
+        if (_iv > 0) iv = uint256(_iv);
 
         // converting iv from percentage to value
         iv = iv / 100;
@@ -226,17 +227,11 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
             "Chainlink IV: Volatility out of bound"
         );
         if (_volPercentage == 0) {
-            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
+            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = int256(_volatility);
         } else {
-            if (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0] > _volatility) {
-                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
-                    volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0] -
-                    _volatility;
-            } else {
-                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
-                    _volatility -
-                    volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0];
-            }
+            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
+                int256(_volatility) -
+                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0];
         }
     }
 
@@ -248,8 +243,8 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 _strikePrice,
         uint256 _chainlinkVol,
         uint256 _ivDecimal
-    ) private view returns (uint256) {
-        if (_currentPrice == _strikePrice) return _chainlinkVol;
+    ) private view returns (int256) {
+        if (_currentPrice == _strikePrice) return int256(_chainlinkVol);
         uint8 volPercentage;
         if (_strikePrice > _currentPrice)
             volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
@@ -257,8 +252,9 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
             volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
 
         return
-            _chainlinkVol +
-            (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] * (10**_ivDecimal)) /
-            (10**volatilityPrecision);
+            int256(_chainlinkVol) +
+            (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] *
+                int256(10**_ivDecimal)) /
+            int256(10**volatilityPrecision);
     }
 }
