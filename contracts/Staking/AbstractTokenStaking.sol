@@ -48,14 +48,6 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     address public token;
 
     /**
-     * @notice Sets staking token address
-     * @param _token Address of the token
-     */
-    function setToken(address _token) external override onlyOwner {
-        token = _token;
-    }
-
-    /**
      * @notice Allocates rewards to staker
      * @param _date Date on which tokens are staked
      * @param _amount Amount of ODDZ token allocated

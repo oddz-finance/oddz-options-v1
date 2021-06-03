@@ -28,12 +28,6 @@ interface IOddzTokenStaking {
     function balance(address _staker) external view returns (uint256 bal);
 
     /**
-     * @notice Sets staking token address
-     * @param _token Address of the token
-     */
-    function setToken(address _token) external;
-
-    /**
      * @notice Allocates rewards to staker
      * @param _date Date on which tokens are staked
      * @param _amount Amount of ODDZ token allocated

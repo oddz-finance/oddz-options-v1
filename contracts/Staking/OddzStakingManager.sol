@@ -205,7 +205,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             _allotedReward,
             true
         );
-        IOddzTokenStaking(_stakingContract).setToken(_address);
         tokensList.push(tokens[_address]);
 
         emit TokenAdded(_address, _name, _stakingContract, _lockupDuration);
