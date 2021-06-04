@@ -44,6 +44,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     uint32 public maxDeadline;
 
     /**
+     * @dev Max Slippage
+     */
+    uint16 public maxSlippage = 100;
+
+    /**
      * @dev SDK contract address
      */
     IOddzSDK public sdk;
@@ -366,9 +371,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice Used for physical settlement excerise for an active option
      * @param _optionId Option id
      * @param _deadline Deadline until which txn does not revert
+     * @param _slippage Slippage percentage
      */
-    function exerciseUA(uint256 _optionId, uint32 _deadline) external override {
+    function exerciseUA(
+        uint256 _optionId,
+        uint32 _deadline,
+        uint16 _slippage
+    ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
+        require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Wrong msg.sender");
@@ -377,7 +388,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pair);
-        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline);
+        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _slippage);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -456,6 +467,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     /**
+     * @notice sets maximum slippage for DEX swap
+     * @param _slippage maximum slippage
+     */
+    function setMaxSlippage(uint16 _slippage) external onlyOwner {
+        require(_slippage > 0 && _slippage <= 1000, "invalid slippage");
+        maxSlippage = _slippage;
+    }
+
+    /**
      * @notice sets SDK address
      * @param _sdk Oddz SDK address
      */
@@ -469,7 +489,10 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _administrator Oddz administrator address
      */
     function setAdministrator(IOddzAdministrator _administrator) external onlyOwner {
-        require(address(_administrator).isContract(), "invalid SDK contract address");
+        require(address(_administrator).isContract(), "invalid administrator contract address");
+        // Set token allowance of previous administrator to 0
+        if (address(administrator) != address(0)) token.approve(address(administrator), 0);
+
         administrator = _administrator;
 
         // Approve token transfer to administrator contract

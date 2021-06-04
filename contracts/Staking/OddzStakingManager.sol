@@ -166,7 +166,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
         oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
-
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         uint8 totalPerc;
         for (uint256 i = 0; i < tokensList.length; i++) {
@@ -206,7 +205,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             _allotedReward,
             true
         );
-        IOddzTokenStaking(_stakingContract).setToken(_address);
         tokensList.push(tokens[_address]);
 
         emit TokenAdded(_address, _name, _stakingContract, _lockupDuration);
@@ -214,11 +212,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     function stake(address _token, uint256 _amount) external override validToken(_token) {
         require(_amount > 0, "Staking: invalid amount");
-        IOddzTokenStaking(tokens[_token]._stakingContract).stake(
-            msg.sender,
-            _amount,
-            DateTimeLibrary.getPresentDayTimestamp()
-        );
+        IOddzTokenStaking(tokens[_token]._stakingContract).stake(msg.sender, _amount);
 
         emit Stake(msg.sender, _token, _amount);
     }
@@ -241,7 +235,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             "Staking: cannot withdraw within lockup period"
         );
         _transferRewards(msg.sender, _token, date);
-        IOddzTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount, date);
+        IOddzTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _token, _amount);
     }

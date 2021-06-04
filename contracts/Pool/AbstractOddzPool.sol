@@ -80,7 +80,8 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         _updateLiquidity(_amount, TransactionType.REMOVE);
         _allocatePremium(_provider);
         _forfeitPremium(_provider, _amount, _lockDuration);
-        _updateProviderBalance(TransactionType.REMOVE, _amount, _provider);
+        // oUSD should be the balance of the user
+        _updateProviderBalance(TransactionType.REMOVE, _oUSD, _provider);
         oUsdSupply -= _oUSD;
 
         emit RemoveLiquidity(_provider, _amount, _oUSD);
@@ -283,7 +284,9 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         PremiumPool memory pd;
         for (uint256 i = 0; i < count; i++) {
             // (startDate + (i * 1 days), daysActiveLiquidity[startDate + (i * 1 days)]);
-            tLiquidty += daysActiveLiquidity[startDate + (i * 1 days)];
+            uint256 dActiveLiquidity = daysActiveLiquidity[startDate + (i * 1 days)];
+            require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
+            tLiquidty += dActiveLiquidity;
             pd = premiumDayPool[startDate + (i * 1 days)];
             tReward += pd._collected + pd._surplus;
             tExercised += pd._exercised;

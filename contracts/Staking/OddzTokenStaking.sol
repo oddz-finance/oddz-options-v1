@@ -8,23 +8,19 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract OddzTokenStaking is AbstractTokenStaking, ERC20("Oddz Staking Token", "sOddz") {
     using SafeERC20 for IERC20;
 
-    function stake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) external override onlyOwner {
-        _stake(_staker, _amount, _date);
+    constructor(address _token) {
+        token = _token;
+    }
+
+    function stake(address _staker, uint256 _amount) external override onlyOwner {
+        _stake(_staker, _amount);
         _mint(_staker, _amount);
 
         IERC20(token).safeTransferFrom(_staker, address(this), _amount);
     }
 
-    function unstake(
-        address _staker,
-        uint256 _amount,
-        uint256 _date
-    ) external override onlyOwner {
-        _unstake(_staker, _amount, _date);
+    function unstake(address _staker, uint256 _amount) external override onlyOwner {
+        _unstake(_staker, _amount);
         _burn(_staker, _amount);
 
         // Transfer source staking tokens

@@ -49,26 +49,20 @@ describe("Oddz Staking Manager Unit tests", function () {
         this.oddzToken.address,
       ])) as OddzStakingManager;
 
-      this.oddzTokenStaking = (await deployContract(
-        this.signers.admin,
-        OddzTokenStakingArtifact,
-        [],
-      )) as OddzTokenStaking;
+      this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
+        this.oddzToken.address,
+      ])) as OddzTokenStaking;
 
-      this.oUsdTokenStaking = (await deployContract(
-        this.signers.admin,
-        OUsdTokenStakingArtifact,
-        [],
-      )) as OUsdTokenStaking;
+      this.oUsdTokenStaking = (await deployContract(this.signers.admin, OUsdTokenStakingArtifact, [
+        this.oUsdToken.address,
+      ])) as OUsdTokenStaking;
 
       await this.oddzTokenStaking.transferOwnership(this.oddzStakingManager.address);
       await this.oUsdTokenStaking.transferOwnership(this.oddzStakingManager.address);
 
-      this.oddzTokenStaking1 = (await deployContract(
-        this.signers.admin,
-        OddzTokenStakingArtifact,
-        [],
-      )) as OddzTokenStaking;
+      this.oddzTokenStaking1 = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
+        this.oddzToken.address,
+      ])) as OddzTokenStaking;
 
       this.mockTokenStaking = (await deployContract(this.signers.admin, MockTokenStakingArtifact, [
         this.oddzTokenStaking1.address,
