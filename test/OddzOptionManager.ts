@@ -4,7 +4,7 @@ import OddzOptionManagerArtifact from "../artifacts/contracts/Option/OddzOptionM
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
 import OddzIVOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzIVOracleManager.sol/OddzIVOracleManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
+import MockDexManagerArtifact from "../artifacts/contracts/Mocks/Swap/MockDexManager.sol/MockDexManager.json";
 import OddzOptionPremiumManagerArtifact from "../artifacts/contracts/Option/OddzOptionPremiumManager.sol/OddzOptionPremiumManager.json";
 import OddzPremiumBlackScholesArtifact from "../artifacts/contracts/Option/OddzPremiumBlackScholes.sol/OddzPremiumBlackScholes.json";
 import OddzLiquidityPoolArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
@@ -13,7 +13,7 @@ import OddzEthUsdCallBS30PoolArtifact from "../artifacts/contracts/Pool/OddzPool
 import OddzFeeManagerArtifact from "../artifacts/contracts/Option/OddzFeeManager.sol/OddzFeeManager.json";
 import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
-import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
+import MockSwapArtifact from "../artifacts/contracts/Mocks/Swap/MockSwap.sol/MockSwap.json";
 import MockAdministratorArtifact from "../artifacts/contracts/Mocks/MockAdministrator.sol/MockAdministrator.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import MockOddzVolatilityArtifact from "../artifacts/contracts/Mocks/MockOddzVolatility.sol/MockOddzVolatility.json";
@@ -31,12 +31,12 @@ import {
   OddzEthUsdCallBS30Pool,
   OddzPriceOracleManager,
   OddzAssetManager,
-  DexManager,
+  MockDexManager,
   OddzIVOracleManager,
   OddzOptionPremiumManager,
   OddzPremiumBlackScholes,
   OddzFeeManager,
-  MockOddzDex,
+  MockSwap,
   OddzSDK,
   MockAdministrator,
 } from "../typechain";
@@ -69,22 +69,22 @@ describe("Oddz Option Manager Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+      this.dexManager = (await deployContract(this.signers.admin, MockDexManagerArtifact, [
         this.oddzAssetManager.address,
-      ])) as DexManager;
+      ])) as MockDexManager;
 
-      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
-        mockOddzDex.address,
+        this.mockOddzDex.address,
       );
 
       const dexHash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), mockOddzDex.address],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
         ),
       );
 

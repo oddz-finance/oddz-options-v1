@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./MockIDexManager.sol";
-import "./MockIMockSwapUnderlyingAsset.sol";
+import "./IMockDexManager.sol";
+import "./IMockSwapUnderlyingAsset.sol";
 import "../../Option/OddzAssetManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -148,14 +148,14 @@ contract MockDexManager is AccessControl, IMockDexManager {
         uint256 _amountIn,
         uint256 _deadline,
         uint16 _slippage
-    ) external override onlySwapper(msg.sender) returns (uint256){
+    ) external override onlySwapper(msg.sender) returns (uint256) {
         IMockSwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
         require(address(exchange) == _exchange, "Invalid exchange");
 
         uint256[] memory swapResult =
             exchange.swapTokensForUA(
-                _fromToken,
+                _toToken,
                 assetManager.getAssetAddressByName(_fromToken),
                 assetManager.getAssetAddressByName(_toToken),
                 _account,
@@ -163,10 +163,9 @@ contract MockDexManager is AccessControl, IMockDexManager {
                 _deadline,
                 _slippage
             );
-            
+
         emit Swapped(_fromToken, _toToken, swapResult[0], swapResult[1]);
 
-        return swapResult[1];    
-
+        return swapResult[1];
     }
 }

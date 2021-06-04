@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 
 contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
     using Address for address;
@@ -109,8 +108,6 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
 
     function allocateOddzReward(uint256 _amount) public override {
         totalOddzAllocated[DateTimeLibrary.getMonth(block.timestamp)] += _amount;
-        console.log("transferring oddz");
-        console.log("_amount: ",_amount);
         oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
     }
 

@@ -8,17 +8,24 @@ import "./IMockSwapUnderlyingAsset.sol";
 contract MockSwap is IMockSwapUnderlyingAsset, Ownable {
     using SafeERC20 for ERC20;
 
-    uint8 public oddzPrice = 2;
-    uint8 public ethPrice = 2620;
-    
-    
+    uint32 public oddzPrice = 2;
+    uint32 public ethPrice = 2620;
+    uint32 public btcPrice = 36800;
 
-    function setOddzPrice (uint8 _price) public onlyOwner{
+    function setOddzPrice(uint32 _price) public onlyOwner {
         oddzPrice = _price;
     }
 
+    function setEthPrice(uint32 _price) public onlyOwner {
+        ethPrice = _price;
+    }
+
+    function setBtcPrice(uint32 _price) public onlyOwner {
+        btcPrice = _price;
+    }
 
     function swapTokensForUA(
+        bytes32 _toTokenName,
         address _fromToken,
         address _toToken,
         address _account,
@@ -29,8 +36,25 @@ contract MockSwap is IMockSwapUnderlyingAsset, Ownable {
         result = new uint256[](2);
 
         result[0] = _amountIn;
-        result[1] = _amountIn / oddzPrice;
+        if (_toTokenName == stringToBytes32("ODDZ")) {
+            result[1] = _amountIn / oddzPrice;
+        } else if (_toTokenName == stringToBytes32("ETH")) {
+            result[1] = _amountIn / ethPrice;
+        } else {
+            result[1] = _amountIn / btcPrice;
+        }
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
         return result;
+    }
+
+    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
     }
 }

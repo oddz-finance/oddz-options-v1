@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 interface IMockSwapUnderlyingAsset {
     /**
      * @notice Function to swap Tokens
-     * @param _fromTokenName name of the asset to swap from
+     * @param _toTokenName name of the asset to swap to
      * @param _fromToken address of the asset to swap from
      * @param _toToken address of the asset to swap to
      * @param _account account to send the swapped tokens to
@@ -14,7 +14,7 @@ interface IMockSwapUnderlyingAsset {
 
      */
     function swapTokensForUA(
-        bytes32 _fromTokenName,
+        bytes32 _toTokenName,
         address _fromToken,
         address _toToken,
         address _account,

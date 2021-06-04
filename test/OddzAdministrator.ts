@@ -5,9 +5,9 @@ import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
-import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
+import DexManagerArtifact from "../artifacts/contracts/Mocks/Swap/MockDexManager.sol/MockDexManager.json";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
-import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
+import MockSwapArtifact from "../artifacts/contracts/Mocks/Swap/MockSwap.sol/MockSwap.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
 
 import { Accounts, Signers } from "../types";
@@ -15,14 +15,14 @@ import { Accounts, Signers } from "../types";
 import {
   MockERC20,
   OddzStakingManager,
-  DexManager,
+  MockDexManager,
   OddzAssetManager,
   OddzLiquidityPoolManager,
   OddzSDK,
   OddzAdministrator,
   OddzOptionManager,
   MockSwap,
-  OddzTokenStaking
+  OddzTokenStaking,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -70,7 +70,7 @@ describe("Oddz Administrator Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-      ])) as DexManager;
+      ])) as MockDexManager;
 
       this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
 
@@ -126,7 +126,6 @@ describe("Oddz Administrator Unit tests", function () {
       ])) as OddzTokenStaking;
 
       await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
-
 
       await this.oddzStaking.addToken(
         utils.formatBytes32String("ODDZ"),
