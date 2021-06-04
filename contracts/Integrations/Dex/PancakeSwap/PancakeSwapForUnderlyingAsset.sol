@@ -6,17 +6,14 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPancakeSwap.sol";
 import "../../../Swap/ISwapUnderlyingAsset.sol";
-import "../../../Option/IOddzAsset.sol";
 
 contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
     IPancakeSwap pancakeSwap;
-    IOddzAsset assetManager;
 
-    constructor(address _router, IOddzAsset _assetManager) {
+    constructor(address _router) {
         pancakeSwap = IPancakeSwap(_router);
-        assetManager = _assetManager;
     }
 
     /**
