@@ -117,20 +117,29 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         else usdcAmount = (_amount * (settlementDistribution.gasless + settlementDistribution.maintainer)) / 100;
 
         uint256 oddzAmount = _amount - usdcAmount;
-        convertToOddz(oddzAmount);
+        uint256 oddzTokens = convertToOddz(oddzAmount);
 
-        if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzAmount);
-        else distrbuteSettlement(usdcAmount, oddzAmount);
+        if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzTokens);
+        else distrbuteSettlement(usdcAmount, oddzTokens);
 
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount) private {
+    function convertToOddz(uint256 _amount) private returns (uint256 oddzTokens){
         address exchange = dexManager.getExchange("ODDZ", "USDC");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
+        oddzTokens = dexManager.swap(
+            "USDC", 
+            "ODDZ", 
+            exchange, 
+            address(this), 
+            _amount, 
+            block.timestamp + deadline, 
+            slippage
+            );
+
     }
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {

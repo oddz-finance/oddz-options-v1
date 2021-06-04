@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "./IDexManager.sol";
-import "./ISwapUnderlyingAsset.sol";
-import "../Option/OddzAssetManager.sol";
+import "./MockIDexManager.sol";
+import "./MockIMockSwapUnderlyingAsset.sol";
+import "../../Option/OddzAssetManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DexManager is AccessControl, IDexManager {
+contract MockDexManager is AccessControl, IMockDexManager {
     using Address for address;
     OddzAssetManager public assetManager;
 
@@ -17,10 +17,10 @@ contract DexManager is AccessControl, IDexManager {
     struct ExchangeData {
         bytes32 _underlying;
         bytes32 _strikeAsset;
-        ISwapUnderlyingAsset _exchange;
+        IMockSwapUnderlyingAsset _exchange;
     }
 
-    mapping(bytes32 => mapping(bytes32 => ISwapUnderlyingAsset)) public activeExchange;
+    mapping(bytes32 => mapping(bytes32 => IMockSwapUnderlyingAsset)) public activeExchange;
     mapping(bytes32 => ExchangeData) public exchangeMap;
 
     /**
@@ -29,7 +29,7 @@ contract DexManager is AccessControl, IDexManager {
      * @param _strikeAsset Address of the strike asset.
      * @param _exchange Address of the exchange.
      */
-    event NewExchange(bytes32 indexed _underlying, bytes32 indexed _strikeAsset, ISwapUnderlyingAsset _exchange);
+    event NewExchange(bytes32 indexed _underlying, bytes32 indexed _strikeAsset, IMockSwapUnderlyingAsset _exchange);
 
     /**
      * @dev Emitted when the exchange data has been changed.
@@ -41,8 +41,8 @@ contract DexManager is AccessControl, IDexManager {
     event SetExchange(
         bytes32 indexed _underlying,
         bytes32 indexed _strikeAsset,
-        ISwapUnderlyingAsset _previousExchange,
-        ISwapUnderlyingAsset _newExchange
+        IMockSwapUnderlyingAsset _previousExchange,
+        IMockSwapUnderlyingAsset _newExchange
     );
 
     /**
@@ -92,7 +92,7 @@ contract DexManager is AccessControl, IDexManager {
     function addExchange(
         bytes32 _underlying,
         bytes32 _strike,
-        ISwapUnderlyingAsset _exchange
+        IMockSwapUnderlyingAsset _exchange
     ) external onlyOwner(msg.sender) returns (bytes32 exHash) {
         require(_underlying != _strike, "Invalid assets");
         require(address(_exchange).isContract(), "Invalid exchange");
@@ -112,7 +112,7 @@ contract DexManager is AccessControl, IDexManager {
         ExchangeData storage data = exchangeMap[_exHash];
         require(address(data._exchange) != address(0), "Invalid exchange");
 
-        ISwapUnderlyingAsset oldEx = activeExchange[data._underlying][data._strikeAsset];
+        IMockSwapUnderlyingAsset oldEx = activeExchange[data._underlying][data._strikeAsset];
         activeExchange[data._underlying][data._strikeAsset] = data._exchange;
 
         emit SetExchange(data._underlying, data._strikeAsset, oldEx, data._exchange);
@@ -149,12 +149,13 @@ contract DexManager is AccessControl, IDexManager {
         uint256 _deadline,
         uint16 _slippage
     ) external override onlySwapper(msg.sender) returns (uint256){
-        ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
+        IMockSwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
         require(address(exchange) == _exchange, "Invalid exchange");
 
         uint256[] memory swapResult =
             exchange.swapTokensForUA(
+                _fromToken,
                 assetManager.getAssetAddressByName(_fromToken),
                 assetManager.getAssetAddressByName(_toToken),
                 _account,

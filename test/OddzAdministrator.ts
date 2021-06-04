@@ -8,6 +8,7 @@ import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
 import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
+import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -21,6 +22,7 @@ import {
   OddzAdministrator,
   OddzOptionManager,
   MockSwap,
+  OddzTokenStaking
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -70,25 +72,25 @@ describe("Oddz Administrator Unit tests", function () {
         this.oddzAssetManager.address,
       ])) as DexManager;
 
-      const mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
+      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ODDZ"),
         utils.formatBytes32String("USDC"),
-        mockOddzDex.address,
+        this.mockOddzDex.address,
       );
 
       const dexHash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), mockOddzDex.address],
+          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), this.mockOddzDex.address],
         ),
       );
 
       await this.dexManager.setActiveExchange(dexHash);
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
-        this.usdcToken.address,
+        this.oddzToken.address,
       ])) as OddzStakingManager;
 
       this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolManagerArtifact, [
@@ -118,6 +120,23 @@ describe("Oddz Administrator Unit tests", function () {
         this.accounts.admin1,
         this.dexManager.address,
       ])) as OddzAdministrator;
+
+      this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
+        this.oddzToken.address,
+      ])) as OddzTokenStaking;
+
+      await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
+
+
+      await this.oddzStaking.addToken(
+        utils.formatBytes32String("ODDZ"),
+        this.oddzToken.address,
+        this.oddzTokenStaking.address,
+        86400,
+        100,
+        100,
+        100,
+      );
 
       await this.dexManager.setSwapper(this.oddzAdministrator.address);
     });

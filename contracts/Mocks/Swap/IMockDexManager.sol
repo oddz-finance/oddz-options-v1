@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-interface IDexManager {
+interface IMockDexManager {
     function getExchange(bytes32 _underlying, bytes32 _strike) external view returns (address exchangeAddress);
 
     /**
