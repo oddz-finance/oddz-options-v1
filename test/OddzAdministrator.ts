@@ -7,7 +7,7 @@ import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLi
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
-import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/MockOddzDex.json";
+import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -20,7 +20,7 @@ import {
   OddzSDK,
   OddzAdministrator,
   OddzOptionManager,
-  MockOddzDex,
+  MockSwap,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -70,7 +70,7 @@ describe("Oddz Administrator Unit tests", function () {
         this.oddzAssetManager.address,
       ])) as DexManager;
 
-      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+      const mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ODDZ"),
