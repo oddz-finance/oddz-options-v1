@@ -3,14 +3,21 @@ pragma solidity 0.8.3;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IMockSwapUnderlyingAsset.sol";
+import "../Swap/ISwapUnderlyingAsset.sol";
+import "../Option/IOddzAsset.sol";
 
-contract MockSwap is IMockSwapUnderlyingAsset, Ownable {
+contract MockSwap is ISwapUnderlyingAsset, Ownable {
     using SafeERC20 for ERC20;
+
+    IOddzAsset assetManager;
 
     uint32 public oddzPrice = 2;
     uint32 public ethPrice = 2620;
     uint32 public btcPrice = 36800;
+
+    constructor(IOddzAsset _assetManager) {
+        assetManager = _assetManager;
+    }
 
     function setOddzPrice(uint32 _price) public onlyOwner {
         oddzPrice = _price;
@@ -25,9 +32,8 @@ contract MockSwap is IMockSwapUnderlyingAsset, Ownable {
     }
 
     function swapTokensForUA(
-        bytes32 _toTokenName,
-        address _fromToken,
-        address _toToken,
+        bytes32 _fromToken,
+        bytes32 _toToken,
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
@@ -36,14 +42,14 @@ contract MockSwap is IMockSwapUnderlyingAsset, Ownable {
         result = new uint256[](2);
 
         result[0] = _amountIn;
-        if (_toTokenName == stringToBytes32("ODDZ")) {
+        if (_toToken == stringToBytes32("ODDZ")) {
             result[1] = _amountIn / oddzPrice;
-        } else if (_toTokenName == stringToBytes32("ETH")) {
+        } else if (_toToken == stringToBytes32("ETH")) {
             result[1] = _amountIn / ethPrice;
         } else {
             result[1] = _amountIn / btcPrice;
         }
-        ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
+        ERC20(address(uint160(assetManager.getAssetAddressByName(_toToken)))).safeTransfer(_account, result[1]);
         return result;
     }
 

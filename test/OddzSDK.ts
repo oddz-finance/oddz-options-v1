@@ -65,9 +65,7 @@ describe("Oddz Option Sdk Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
-        this.oddzAssetManager.address,
-      ])) as DexManager;
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
 
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),

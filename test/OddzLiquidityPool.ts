@@ -65,11 +65,11 @@ describe("Oddz Liquidity Pool Unit tests", function () {
       await this.oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
       await this.oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
 
-      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
-
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+      const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [
         this.oddzAssetManager.address,
-      ])) as DexManager;
+      ])) as MockOddzDex;
+
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ETH"),

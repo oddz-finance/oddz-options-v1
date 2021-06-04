@@ -5,9 +5,9 @@ import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
-import DexManagerArtifact from "../artifacts/contracts/Mocks/Swap/MockDexManager.sol/MockDexManager.json";
+import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
-import MockSwapArtifact from "../artifacts/contracts/Mocks/Swap/MockSwap.sol/MockSwap.json";
+import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
 
 import { Accounts, Signers } from "../types";
@@ -15,7 +15,7 @@ import { Accounts, Signers } from "../types";
 import {
   MockERC20,
   OddzStakingManager,
-  MockDexManager,
+  DexManager,
   OddzAssetManager,
   OddzLiquidityPoolManager,
   OddzSDK,
@@ -68,11 +68,11 @@ describe("Oddz Administrator Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
-        this.oddzAssetManager.address,
-      ])) as MockDexManager;
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
 
-      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [])) as MockSwap;
+      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
+        this.oddzAssetManager.address,
+      ])) as MockSwap;
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ODDZ"),
