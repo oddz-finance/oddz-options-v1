@@ -185,6 +185,7 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
             );
             volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage[i]] = _volatility[i];
         }
+        lastUpdatedAt = block.timestamp;
     }
 
     /**

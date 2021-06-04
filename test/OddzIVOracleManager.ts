@@ -58,8 +58,8 @@ describe("Oddz IV Oracle Manager Unit tests", function () {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         1,
-        110,
-        9668, //96.68
+        [110],
+        [9668], //96.68
       );
     });
 
