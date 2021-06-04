@@ -491,12 +491,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function setAdministrator(IOddzAdministrator _administrator) external onlyOwner {
         require(address(_administrator).isContract(), "invalid administrator contract address");
         // Set token allowance of previous administrator to 0
-        if (address(administrator) != address(0)) token.approve(address(administrator), 0);
+        if (address(administrator) != address(0)) token.safeApprove(address(administrator), 0);
 
         administrator = _administrator;
 
         // Approve token transfer to administrator contract
-        token.approve(address(administrator), type(uint256).max);
+        token.safeApprove(address(administrator), type(uint256).max);
     }
 
     function setMinimumPremium(uint256 _amount) external onlyOwner {
