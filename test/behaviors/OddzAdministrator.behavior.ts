@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, utils, constants } from "ethers";
 import { OddzAssetManager, MockERC20 } from "../../typechain";
 import { DistributionPercentage, DepositType } from "../../test-utils";
 
@@ -195,6 +195,27 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     await expect(
       oddzAdministrator.deposit(BigNumber.from(utils.parseEther("999")), DepositType.Transaction),
     ).to.be.revertedWith("Administrator: amount is low for deposit");
+  });
+
+  it("should revert add token  for non owner", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin1);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+  });
+
+  it("should revert add token  for invalid name", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String(""), this.oddzToken.address)).to.be.revertedWith(
+      "invalid asset name",
+    );
+  });
+
+  it("should revert add token  for invalid address", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), constants.AddressZero)).to.be.revertedWith(
+      "invalid address",
+    );
   });
 
   it("should revert if asset not added for swap", async function () {

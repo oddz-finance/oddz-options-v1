@@ -33,6 +33,8 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
     }
 
     function addToken(bytes32 _name, address _address) public onlyOwner {
+        require(_name != "", "invalid asset name");
+        require(_address != address(0), "invalid address");
         assets[_address] = _name;
     }
 
@@ -45,7 +47,7 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
         uint16 _slippage
     ) public override returns (uint256[] memory result) {
         result = new uint256[](2);
-        require(assets[_toToken] != 0, "Swap: asset not added for swap");
+        require(assets[_toToken] != "", "Swap: asset not added for swap");
         result[0] = _amountIn;
         if (assets[_toToken] == stringToBytes32("ODDZ")) {
             result[1] = _amountIn / oddzPrice;
