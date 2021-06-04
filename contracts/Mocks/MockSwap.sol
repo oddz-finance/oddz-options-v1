@@ -4,19 +4,20 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Swap/ISwapUnderlyingAsset.sol";
-import "../Option/IOddzAsset.sol";
 
 contract MockSwap is ISwapUnderlyingAsset, Ownable {
     using SafeERC20 for ERC20;
 
-    IOddzAsset assetManager;
+    mapping(address => bytes32) assets;
 
     uint32 public oddzPrice = 2;
     uint32 public ethPrice = 2620;
     uint32 public btcPrice = 36800;
 
-    constructor(IOddzAsset _assetManager) {
-        assetManager = _assetManager;
+    constructor(bytes32[] memory _names, address[] memory _addresses) {
+        for (uint8 i = 0; i < _names.length; i++) {
+            assets[_addresses[i]] = _names[i];
+        }
     }
 
     function setOddzPrice(uint32 _price) public onlyOwner {
@@ -31,25 +32,29 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
         btcPrice = _price;
     }
 
+    function addToken(bytes32 _name, address _address) public onlyOwner {
+        assets[_address] = _name;
+    }
+
     function swapTokensForUA(
-        bytes32 _fromToken,
-        bytes32 _toToken,
+        address _fromToken,
+        address _toToken,
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
         uint16 _slippage
     ) public override returns (uint256[] memory result) {
         result = new uint256[](2);
-
+        require(assets[_toToken] != 0, "Swap: asset not added for swap");
         result[0] = _amountIn;
-        if (_toToken == stringToBytes32("ODDZ")) {
+        if (assets[_toToken] == stringToBytes32("ODDZ")) {
             result[1] = _amountIn / oddzPrice;
-        } else if (_toToken == stringToBytes32("ETH")) {
+        } else if (assets[_toToken] == stringToBytes32("ETH")) {
             result[1] = _amountIn / ethPrice;
         } else {
             result[1] = _amountIn / btcPrice;
         }
-        ERC20(address(uint160(assetManager.getAssetAddressByName(_toToken)))).safeTransfer(_account, result[1]);
+        ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
         return result;
     }
 

@@ -37,11 +37,11 @@ describe("Oddz Dex Manager Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
-
-      this.mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-      ])) as MockOddzDex;
+      ])) as DexManager;
+
+      this.mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
 
       this.mockLiquidityPool = (await deployContract(this.signers.admin, MockLiquidityPoolArtifact, [
         this.dexManager.address,

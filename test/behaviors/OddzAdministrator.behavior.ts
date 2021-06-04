@@ -197,12 +197,29 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     ).to.be.revertedWith("Administrator: amount is low for deposit");
   });
 
+  it("should revert if asset not added for swap", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+
+    await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+
+    await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+    // ideally should deposit from optionManager
+    await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
+    await expect(
+      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction),
+    ).to.be.revertedWith("Swap: asset not added for swap");
+  });
+
   it("should deposit amount of transaction type", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
     await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+
+    await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
 
     await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
     // ideally should deposit from optionManager
@@ -218,6 +235,8 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
     await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+    await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
+
     await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
 
     // ideally should deposit from optionManager

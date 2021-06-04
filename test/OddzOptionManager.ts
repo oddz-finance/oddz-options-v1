@@ -68,27 +68,9 @@ describe("Oddz Option Manager Unit tests", function () {
         OddzAssetManagerArtifact,
         [],
       )) as OddzAssetManager;
-
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
-
-      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-      ])) as MockSwap;
-
-      await this.dexManager.addExchange(
-        utils.formatBytes32String("ETH"),
-        utils.formatBytes32String("USD"),
-        this.mockOddzDex.address,
-      );
-
-      const dexHash = utils.keccak256(
-        utils.defaultAbiCoder.encode(
-          ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
-        ),
-      );
-
-      await this.dexManager.setActiveExchange(dexHash);
+      ])) as DexManager;
 
       this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
         BigNumber.from(161200000000),
@@ -141,6 +123,25 @@ describe("Oddz Option Manager Unit tests", function () {
         "ETH",
         totalSupply,
       ])) as MockERC20;
+      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
+        [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("ETH"), utils.formatBytes32String("BTC")],
+        [this.usdcToken.address, this.ethToken.address, this.usdcToken.address],
+      ])) as MockSwap;
+
+      await this.dexManager.addExchange(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        this.mockOddzDex.address,
+      );
+
+      const dexHash = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
+        ),
+      );
+
+      await this.dexManager.setActiveExchange(dexHash);
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
       this.oddzEthUsdCallBS30Pool = (await deployContract(

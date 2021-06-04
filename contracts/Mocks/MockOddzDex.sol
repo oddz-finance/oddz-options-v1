@@ -1,18 +1,11 @@
 pragma solidity 0.8.3;
 
 import "../Swap/ISwapUnderlyingAsset.sol";
-import "../Option/IOddzAsset.sol";
 
 contract MockOddzDex is ISwapUnderlyingAsset {
-    IOddzAsset assetManager;
-
-    constructor(IOddzAsset _assetManager) {
-        assetManager = _assetManager;
-    }
-
     function swapTokensForUA(
-        bytes32 _fromToken,
-        bytes32 _toToken,
+        address _fromToken,
+        address _toToken,
         address _account,
         uint256 _amountIn,
         uint256 _deadline,

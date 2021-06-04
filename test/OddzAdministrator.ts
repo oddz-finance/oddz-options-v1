@@ -68,10 +68,13 @@ describe("Oddz Administrator Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [])) as DexManager;
+      this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
+        this.oddzAssetManager.address,
+      ])) as DexManager;
 
       this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
-        this.oddzAssetManager.address,
+        [utils.formatBytes32String("ETH"), utils.formatBytes32String("BTC")],
+        [this.usdcToken.address, this.usdcToken.address],
       ])) as MockSwap;
 
       await this.dexManager.addExchange(
