@@ -260,6 +260,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
         for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
+            require(validPools[_poolTransfer._destination[i]], "LP Error: Invalid pool");
             _poolTransfer._destination[i].addLiquidity(_poolTransfer._dAmount[i], msg.sender);
             totalTransfer -= int256(_poolTransfer._dAmount[i]);
         }
