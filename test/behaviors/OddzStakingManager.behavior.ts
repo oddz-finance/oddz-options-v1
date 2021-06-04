@@ -453,4 +453,59 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
     expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(0);
   });
+
+  it("Should be able to successfully stake oddz token multiple times without loosing rewards", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+
+    await oddzToken.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther("1000")));
+
+    const oddzStakingManager1 = await this.oddzStakingManager.connect(this.signers.admin1);
+    const oddzToken1 = await this.oddzToken.connect(this.signers.admin1);
+
+    await oddzToken.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("2000")));
+    await expect(oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("1000")))).to.emit(
+      oddzStakingManager,
+      "Stake",
+    );
+
+    await oddzToken1.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(oddzStakingManager1.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("1000")))).to.emit(
+      oddzStakingManager,
+      "Stake",
+    );
+
+    await oddzToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("2000")));
+    await oddzStakingManager.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction);
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzTokenStaking.connect(this.signers.admin).getAndUpdateDaysActiveStake(addDaysAndGetSeconds(2));
+
+    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("250"));
+    await oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("1000")));
+    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("250"));
+
+    const { _amount, _date, _rewards, _lastClaimed } = await this.oddzTokenStaking.staker(this.accounts.admin);
+    expect(_amount).to.equal(BigNumber.from(utils.parseEther("2000")));
+    expect(_date).to.equal(addDaysAndGetSeconds(2));
+    expect(_rewards).to.equal(BigNumber.from(utils.parseEther("250")));
+    expect(_lastClaimed).to.equal(0);
+
+    await oddzStakingManager.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction);
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 2
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzTokenStaking.connect(this.signers.admin).getAndUpdateDaysActiveStake(addDaysAndGetSeconds(4));
+
+    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(
+      utils.parseEther("583.333333333333333333"),
+    );
+    expect(await oddzStakingManager1.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("400"));
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
 }
