@@ -88,7 +88,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
             totalStake += dActiveStake;
             totalReward += dayStakeMap[startDate + (i * 1 days)]._allocatedRewards;
         }
-        if (totalStake == 0) return 0;
+        if (totalStake == 0) return staker[_staker]._rewards;
         rewards = ((staker[_staker]._amount * count * totalReward) / totalStake) + staker[_staker]._rewards;
     }
 
