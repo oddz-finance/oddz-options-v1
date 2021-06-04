@@ -49,25 +49,15 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
         result = new uint256[](2);
         require(assets[_toToken] != "", "Swap: asset not added for swap");
         result[0] = _amountIn;
-        if (assets[_toToken] == stringToBytes32("ODDZ")) {
+        // 0x4f44445a00000000000000000000000000000000000000000000000000000000 - ODDZ
+        // 0x4554480000000000000000000000000000000000000000000000000000000000 - ETH
+        if (assets[_toToken] == 0x4f44445a00000000000000000000000000000000000000000000000000000000)
             result[1] = _amountIn / oddzPrice;
-        } else if (assets[_toToken] == stringToBytes32("ETH")) {
+        else if (assets[_toToken] == 0x4554480000000000000000000000000000000000000000000000000000000000)
             result[1] = _amountIn / ethPrice;
-        } else {
-            result[1] = _amountIn / btcPrice;
-        }
+        else result[1] = _amountIn / btcPrice;
+
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
         return result;
-    }
-
-    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
-        bytes memory tempEmptyStringTest = bytes(source);
-        if (tempEmptyStringTest.length == 0) {
-            return 0x0;
-        }
-
-        assembly {
-            result := mload(add(source, 32))
-        }
     }
 }

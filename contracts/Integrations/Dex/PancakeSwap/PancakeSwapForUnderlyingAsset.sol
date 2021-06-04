@@ -10,7 +10,7 @@ import "../../../Swap/ISwapUnderlyingAsset.sol";
 contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
-    IPancakeSwap pancakeSwap;
+    IPancakeSwap public pancakeSwap;
 
     constructor(address _router) {
         pancakeSwap = IPancakeSwap(_router);
