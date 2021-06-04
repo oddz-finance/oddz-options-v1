@@ -33,9 +33,18 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     mapping(uint256 => bool) public allowedMaxExpiration;
     mapping(uint256 => uint256) public periodMapper;
-    mapping(IOddzLiquidityPool => bool) public validPools;
     mapping(bytes32 => IOddzLiquidityPool[]) public poolMapper;
     mapping(bytes32 => bool) public uniquePoolMapper;
+
+    /**
+     * @dev Active pool count
+     */
+    mapping(IOddzLiquidityPool => uint256) public poolExposure;
+
+    /**
+     * @dev Disabled pools
+     */
+    mapping(IOddzLiquidityPool => bool) public disabledPools;
 
     /**
      * @dev Pool transfer
@@ -133,7 +142,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 mint) {
-        require(validPools[_pool], "LP Error: Invalid pool");
+        require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
 
@@ -147,7 +156,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
-        require(validPools[_pool], "LP Error: Invalid pool");
+        require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
         uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
         token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount) + eligiblePremium);
 
@@ -155,10 +164,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     function _removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) private returns (uint256 transferAmount) {
-        require(
-            _amount * 10 <= _pool.availableBalance() * reqBalance,
-            "LP Error: Not enough funds in the pool. Please lower the amount."
-        );
+        uint256 validateBalance;
+        if (disabledPools[_pool]) validateBalance = _pool.availableBalance() * 10;
+        else validateBalance = _pool.availableBalance() * reqBalance;
+
+        require(_amount * 10 <= validateBalance, "LP Error: Not enough funds in the pool. Please lower the amount.");
         require(_amount <= balanceOf(msg.sender), "LP Error: Amount is too large");
         require(_amount > 0, "LP Error: Amount is too small");
 
@@ -255,12 +265,15 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         lastPoolTransfer[msg.sender] = block.timestamp;
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
-            require(validPools[_poolTransfer._source[i]], "LP Error: Invalid pool");
+            require(
+                (poolExposure[_poolTransfer._source[i]] > 0) || disabledPools[_poolTransfer._source[i]],
+                "LP Error: Invalid pool"
+            );
             _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i]);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
         for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
-            require(validPools[_poolTransfer._destination[i]], "LP Error: Invalid pool");
+            require(poolExposure[_poolTransfer._destination[i]] > 0, "LP Error: Invalid pool");
             _poolTransfer._destination[i].addLiquidity(_poolTransfer._dAmount[i], msg.sender);
             totalTransfer -= int256(_poolTransfer._dAmount[i]);
         }
@@ -464,11 +477,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     ) public onlyOwner(msg.sender) {
         require(_pools.length <= 10, "LP Error: pools length should be <= 10");
         // delete all the existing pool mapping
-        delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
-        for (uint256 i = 0; i < _pools.length; i++) {
-            delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, _pools[i]))];
-            validPools[_pools[i]] = false;
+        IOddzLiquidityPool[] storage aPools = poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
+        for (uint256 i = 0; i < aPools.length; i++) {
+            delete uniquePoolMapper[keccak256(abi.encode(_pair, _type, _model, _period, aPools[i]))];
+            poolExposure[aPools[i]] -= 1;
+            if (poolExposure[aPools[i]] == 0) disabledPools[aPools[i]] = true;
         }
+        delete poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
 
         // add unique pool mapping
         bytes32 uPool;
@@ -477,7 +492,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             if (!uniquePoolMapper[uPool]) {
                 poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))].push(_pools[i]);
                 uniquePoolMapper[uPool] = true;
-                validPools[_pools[i]] = true;
+                poolExposure[_pools[i]] += 1;
+                disabledPools[_pools[i]] = false;
             }
         }
     }

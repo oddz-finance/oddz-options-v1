@@ -138,7 +138,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     function _stake(address _staker, uint256 _amount) internal onlyOwner {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         _allocateStakerRewards(_staker, date);
-        // update stake to hold existing stake
+        // add new stake to existing stake and reset date and last claimed
         staker[_staker] = UserStake(staker[_staker]._amount + _amount, date, staker[_staker]._rewards, 0);
 
         dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) + _amount;
@@ -153,7 +153,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     function _unstake(address _staker, uint256 _amount) internal {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         _allocateStakerRewards(_staker, date);
-        // update to stake to hold existing stake
+        // subtract amount from existing stake and reset date and last claimed
         staker[_staker] = UserStake(staker[_staker]._amount - _amount, date, staker[_staker]._rewards, 0);
 
         dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) - _amount;
