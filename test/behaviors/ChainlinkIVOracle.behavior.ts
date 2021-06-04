@@ -314,8 +314,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         1,
-        10,
-        50001, //96.68
+        50001,
+        [10],
+        [50001],
       ),
     ).to.be.revertedWith("Volatility out of bound");
   });
@@ -327,8 +328,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         1,
-        10,
-        9668, //96.68
+        9668,
+        [10],
+        [9668], //96.68
       ),
     ).to.be.revertedWith("caller has no access to the method");
   });
@@ -339,8 +341,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      10,
-      9668,
+      0,
+      [10],
+      [9668],
     );
 
     const hash = utils.keccak256(
@@ -376,16 +379,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      110,
-      9668,
+      [0, 110],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
@@ -402,16 +398,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      110,
-      8000,
+      [0, 110],
+      [9000, 8000],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
@@ -428,16 +417,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       10000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      110,
-      1000,
+      [0, 110],
+      [10000, 1000],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
@@ -454,16 +436,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      105,
-      9668,
+      [0, 105],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 163200000000);
@@ -480,16 +455,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      5,
-      9668,
+      [0, 5],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 156800000000);
@@ -506,16 +474,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      190,
-      9668,
+      [0, 190],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 304000000000);
@@ -532,16 +493,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      0,
       9000,
-    );
-
-    await chainlinkIVOracle.addVolatilityMapping(
-      utils.formatBytes32String("ETH"),
-      utils.formatBytes32String("USD"),
-      1,
-      90,
-      9668,
+      [90],
+      [9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 16000000000);

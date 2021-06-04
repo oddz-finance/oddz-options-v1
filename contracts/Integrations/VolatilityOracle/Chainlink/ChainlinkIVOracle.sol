@@ -133,13 +133,16 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         (, int256 answer, , uint256 updatedAt, ) = AggregatorV3Interface(aggregator).latestRoundData();
 
         require(updatedAt > (block.timestamp - delayInSeconds), "Chainlink IV: Out Of Sync");
-        iv = uint256(answer);
         decimals = AggregatorV3Interface(aggregator).decimals();
-        int256 _iv =
-            _getIv(_underlying, _strike, ivPeriodMap[_expirationDay], _currentPrice, _strikePrice, iv, decimals);
-        // _iv can be 0 when there are no entries to mapping
-
-        if (_iv > 0) iv = uint256(_iv);
+        iv = _getIv(
+            _underlying,
+            _strike,
+            ivPeriodMap[_expirationDay],
+            _currentPrice,
+            _strikePrice,
+            uint256(answer),
+            decimals
+        );
 
         // converting iv from percentage to value
         iv = iv / 100;
@@ -212,6 +215,7 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
      * @param _underlying Underlying asset name
      * @param _strike Strike aseet name
      * @param _expiration expiration of option
+     * @param _atmVolatility At the money volatility
      * @param _volPercentage Volatility percentage difference (90, 40, 20, 10)
      * @param _volatility Volatility value
      */
@@ -219,19 +223,20 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         bytes32 _underlying,
         bytes32 _strike,
         uint256 _expiration,
-        uint8 _volPercentage,
-        uint256 _volatility // 96.68 => 9668
+        uint256 _atmVolatility,
+        uint8[] memory _volPercentage,
+        uint256[] memory _volatility // 96.68 => 9668
     ) public onlyOwner(msg.sender) allowedPeriod(_expiration) {
-        require(
-            _volatility >= minVolatilityBound && _volatility <= maxVolatilityBound,
-            "Chainlink IV: Volatility out of bound"
-        );
-        if (_volPercentage == 0) {
-            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = int256(_volatility);
-        } else {
-            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] =
-                int256(_volatility) -
-                volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][0];
+        for (uint256 i = 0; i < _volPercentage.length; i++) {
+            // skip 0 volPercentage if exists
+            if (_volPercentage[i] == 0) continue;
+            require(
+                _volatility[i] >= minVolatilityBound && _volatility[i] <= maxVolatilityBound,
+                "Chainlink IV: Volatility out of bound"
+            );
+            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage[i]] =
+                int256(_volatility[i]) -
+                int256(_atmVolatility);
         }
     }
 
@@ -243,18 +248,18 @@ contract ChainlinkIVOracle is AccessControl, IOddzVolatilityOracle {
         uint256 _strikePrice,
         uint256 _chainlinkVol,
         uint256 _ivDecimal
-    ) private view returns (int256) {
-        if (_currentPrice == _strikePrice) return int256(_chainlinkVol);
+    ) private view returns (uint256) {
+        if (_currentPrice == _strikePrice) return _chainlinkVol;
         uint8 volPercentage;
         if (_strikePrice > _currentPrice)
             volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
         else if (_strikePrice < _currentPrice)
             volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
 
-        return
-            int256(_chainlinkVol) +
-            (volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage] *
-                int256(10**_ivDecimal)) /
-            int256(10**volatilityPrecision);
+        int256 _iv = volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage];
+        _iv = int256(_chainlinkVol) + (_iv * int256(10**_ivDecimal)) / int256(10**volatilityPrecision);
+
+        if (_iv > 0) return uint256(_iv);
+        return _chainlinkVol;
     }
 }
