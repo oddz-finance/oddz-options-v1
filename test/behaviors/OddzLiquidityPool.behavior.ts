@@ -2,9 +2,446 @@ import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
 import { OptionType, getExpiry, addDaysAndGetSeconds, addSnapshotCount, PoolTransfer } from "../../test-utils";
 import { waffle } from "hardhat";
-const provider = waffle.provider;
+import OddzEthUsdCallBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS1Pool.json";
+import OddzEthUsdCallBS2PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS2Pool.json";
+import OddzEthUsdCallBS7PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS7Pool.json";
+import OddzEthUsdCallBS14PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS14Pool.json";
+import OddzEthUsdCallBS30PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS30Pool.json";
+import OddzEthUsdPutBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS1Pool.json";
+import OddzEthUsdPutBS2PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS2Pool.json";
+import OddzEthUsdPutBS7PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS7Pool.json";
+import OddzEthUsdPutBS14PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS14Pool.json";
+import OddzEthUsdPutBS30PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdPutBS30Pool.json";
+import OddzBtcUsdCallBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS1Pool.json";
+import OddzBtcUsdCallBS2PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS2Pool.json";
+import OddzBtcUsdCallBS7PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS7Pool.json";
+import OddzBtcUsdCallBS14PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS14Pool.json";
+import OddzBtcUsdCallBS30PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdCallBS30Pool.json";
+import OddzBtcUsdPutBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS1Pool.json";
+import OddzBtcUsdPutBS2PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS2Pool.json";
+import OddzBtcUsdPutBS7PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS7Pool.json";
+import OddzBtcUsdPutBS14PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS14Pool.json";
+import OddzBtcUsdPutBS30PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzBtcUsdPutBS30Pool.json";
+
+import {
+  OddzEthUsdCallBS1Pool,
+  OddzEthUsdCallBS2Pool,
+  OddzEthUsdCallBS7Pool,
+  OddzEthUsdCallBS14Pool,
+  OddzEthUsdCallBS30Pool,
+  OddzEthUsdPutBS1Pool,
+  OddzEthUsdPutBS2Pool,
+  OddzEthUsdPutBS7Pool,
+  OddzEthUsdPutBS14Pool,
+  OddzEthUsdPutBS30Pool,
+  OddzBtcUsdCallBS1Pool,
+  OddzBtcUsdCallBS2Pool,
+  OddzBtcUsdCallBS7Pool,
+  OddzBtcUsdCallBS14Pool,
+  OddzBtcUsdCallBS30Pool,
+  OddzBtcUsdPutBS1Pool,
+  OddzBtcUsdPutBS2Pool,
+  OddzBtcUsdPutBS7Pool,
+  OddzBtcUsdPutBS14Pool,
+  OddzBtcUsdPutBS30Pool,
+} from "../../typechain";
+
+const { deployContract, provider } = waffle;
 
 const date = Date.parse(new Date().toISOString().slice(0, 10)) / 1000;
+
+const addAllPoolsWithLiquidity = async (
+  admin: any,
+  poolManager: any,
+  oddzDefaultPoolAddress: any,
+  amount: BigNumber,
+) => {
+  // ETHUSD Call
+  const oddzEthUsdCallBS1Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS1PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS1Pool;
+  const oddzEthUsdCallBS2Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS2PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS2Pool;
+  const oddzEthUsdCallBS7Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS7PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS7Pool;
+  const oddzEthUsdCallBS14Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS14PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS14Pool;
+  const oddzEthUsdCallBS30Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS30PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS30Pool;
+
+  // ETHUSD Put
+  const oddzEthUsdPutBS1Pool = (await deployContract(admin, OddzEthUsdPutBS1PoolArtifact, [])) as OddzEthUsdPutBS1Pool;
+  const oddzEthUsdPutBS2Pool = (await deployContract(admin, OddzEthUsdPutBS2PoolArtifact, [])) as OddzEthUsdPutBS2Pool;
+  const oddzEthUsdPutBS7Pool = (await deployContract(admin, OddzEthUsdPutBS7PoolArtifact, [])) as OddzEthUsdPutBS7Pool;
+  const oddzEthUsdPutBS14Pool = (await deployContract(
+    admin,
+    OddzEthUsdPutBS14PoolArtifact,
+    [],
+  )) as OddzEthUsdPutBS14Pool;
+  const oddzEthUsdPutBS30Pool = (await deployContract(
+    admin,
+    OddzEthUsdPutBS30PoolArtifact,
+    [],
+  )) as OddzEthUsdPutBS30Pool;
+
+  // BTCUSD Call
+  const oddzBtcUsdCallBS1Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS1PoolArtifact,
+    [],
+  )) as OddzBtcUsdCallBS1Pool;
+  const oddzBtcUsdCallBS2Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS2PoolArtifact,
+    [],
+  )) as OddzBtcUsdCallBS2Pool;
+  const oddzBtcUsdCallBS7Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS7PoolArtifact,
+    [],
+  )) as OddzBtcUsdCallBS7Pool;
+  const oddzBtcUsdCallBS14Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS14PoolArtifact,
+    [],
+  )) as OddzBtcUsdCallBS14Pool;
+  const oddzBtcUsdCallBS30Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS30PoolArtifact,
+    [],
+  )) as OddzBtcUsdCallBS30Pool;
+
+  // BTCUSD Put
+  const oddzBtcUsdPutBS1Pool = (await deployContract(admin, OddzBtcUsdPutBS1PoolArtifact, [])) as OddzBtcUsdPutBS1Pool;
+  const oddzBtcUsdPutBS2Pool = (await deployContract(admin, OddzBtcUsdPutBS2PoolArtifact, [])) as OddzBtcUsdPutBS2Pool;
+  const oddzBtcUsdPutBS7Pool = (await deployContract(admin, OddzBtcUsdPutBS7PoolArtifact, [])) as OddzBtcUsdPutBS7Pool;
+  const oddzBtcUsdPutBS14Pool = (await deployContract(
+    admin,
+    OddzBtcUsdPutBS14PoolArtifact,
+    [],
+  )) as OddzBtcUsdPutBS14Pool;
+  const oddzBtcUsdPutBS30Pool = (await deployContract(
+    admin,
+    OddzBtcUsdPutBS30PoolArtifact,
+    [],
+  )) as OddzBtcUsdPutBS30Pool;
+
+  await oddzEthUsdCallBS1Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdCallBS2Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdCallBS7Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdCallBS14Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdCallBS30Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdPutBS1Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdPutBS2Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdPutBS7Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdPutBS14Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdPutBS30Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdCallBS1Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdCallBS2Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdCallBS7Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdCallBS14Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdCallBS30Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdPutBS1Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdPutBS2Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdPutBS7Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdPutBS14Pool.transferOwnership(poolManager.address);
+  await oddzBtcUsdPutBS30Pool.transferOwnership(poolManager.address);
+
+  // ETH Call
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS1Pool.address,
+      oddzEthUsdCallBS2Pool.address,
+      oddzEthUsdCallBS7Pool.address,
+      oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS2Pool.address,
+      oddzEthUsdCallBS7Pool.address,
+      oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS7Pool.address,
+      oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+
+  // ETH Put
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdPutBS1Pool.address,
+      oddzEthUsdPutBS2Pool.address,
+      oddzEthUsdPutBS7Pool.address,
+      oddzEthUsdPutBS14Pool.address,
+      oddzEthUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdPutBS2Pool.address,
+      oddzEthUsdPutBS7Pool.address,
+      oddzEthUsdPutBS14Pool.address,
+      oddzEthUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdPutBS7Pool.address,
+      oddzEthUsdPutBS14Pool.address,
+      oddzEthUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdPutBS14Pool.address,
+      oddzEthUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdPutBS30Pool.address,
+    ]);
+
+  // BTC Call
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS1Pool.address,
+      oddzBtcUsdCallBS2Pool.address,
+      oddzBtcUsdCallBS7Pool.address,
+      oddzBtcUsdCallBS14Pool.address,
+      oddzBtcUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS2Pool.address,
+      oddzBtcUsdCallBS7Pool.address,
+      oddzBtcUsdCallBS14Pool.address,
+      oddzBtcUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS7Pool.address,
+      oddzBtcUsdCallBS14Pool.address,
+      oddzBtcUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS14Pool.address,
+      oddzBtcUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS30Pool.address,
+    ]);
+
+  // BTC Put
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdPutBS1Pool.address,
+      oddzBtcUsdPutBS2Pool.address,
+      oddzBtcUsdPutBS7Pool.address,
+      oddzBtcUsdPutBS14Pool.address,
+      oddzBtcUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdPutBS2Pool.address,
+      oddzBtcUsdPutBS7Pool.address,
+      oddzBtcUsdPutBS14Pool.address,
+      oddzBtcUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdPutBS7Pool.address,
+      oddzBtcUsdPutBS14Pool.address,
+      oddzBtcUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdPutBS14Pool.address,
+      oddzBtcUsdPutBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdPutBS30Pool.address,
+    ]);
+
+  await poolManager.addLiquidity(oddzEthUsdCallBS1Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdCallBS2Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdCallBS7Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdCallBS14Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdCallBS30Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdPutBS1Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdPutBS2Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdPutBS7Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdPutBS14Pool.address, amount);
+  await poolManager.addLiquidity(oddzEthUsdPutBS30Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdCallBS1Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdCallBS2Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdCallBS7Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdCallBS14Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdCallBS30Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdPutBS1Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdPutBS2Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdPutBS7Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdPutBS14Pool.address, amount);
+  await poolManager.addLiquidity(oddzBtcUsdPutBS30Pool.address, amount);
+
+  return {
+    oddzEthUsdCallBS1Pool: oddzEthUsdCallBS1Pool,
+    oddzEthUsdCallBS2Pool: oddzEthUsdCallBS2Pool,
+    oddzEthUsdCallBS7Pool: oddzEthUsdCallBS7Pool,
+    oddzEthUsdCallBS14Pool: oddzEthUsdCallBS14Pool,
+    oddzEthUsdCallBS30Pool: oddzEthUsdCallBS30Pool,
+    oddzEthUsdPutBS1Pool: oddzEthUsdPutBS1Pool,
+    oddzEthUsdPutBS2Pool: oddzEthUsdPutBS2Pool,
+    oddzEthUsdPutBS7Pool: oddzEthUsdPutBS7Pool,
+    oddzEthUsdPutBS14Pool: oddzEthUsdPutBS14Pool,
+    oddzEthUsdPutBS30Pool: oddzEthUsdPutBS30Pool,
+    oddzBtcUsdCallBS1Pool: oddzBtcUsdCallBS1Pool,
+    oddzBtcUsdCallBS2Pool: oddzBtcUsdCallBS2Pool,
+    oddzBtcUsdCallBS7Pool: oddzBtcUsdCallBS7Pool,
+    oddzBtcUsdCallBS14Pool: oddzBtcUsdCallBS14Pool,
+    oddzBtcUsdCallBS30Pool: oddzBtcUsdCallBS30Pool,
+    oddzBtcUsdPutBS1Pool: oddzBtcUsdPutBS1Pool,
+    oddzBtcUsdPutBS2Pool: oddzBtcUsdPutBS2Pool,
+    oddzBtcUsdPutBS7Pool: oddzBtcUsdPutBS7Pool,
+    oddzBtcUsdPutBS14Pool: oddzBtcUsdPutBS14Pool,
+    oddzBtcUsdPutBS30Pool: oddzBtcUsdPutBS30Pool,
+  };
+};
+
+const addMultiLiquidityPools = async (admin: any, poolManager: any, oddzDefaultPoolAddress: any) => {
+  const oddzEthUsdCallBS1Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS1PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS1Pool;
+  const oddzEthUsdCallBS30Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS30PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS30Pool;
+
+  await oddzEthUsdCallBS1Pool.transferOwnership(poolManager.address);
+  await oddzEthUsdCallBS30Pool.transferOwnership(poolManager.address);
+
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS1Pool.address,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+  await poolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPoolAddress,
+      oddzEthUsdCallBS30Pool.address,
+    ]);
+
+  return { oddzEthUsdCallBS1Pool: oddzEthUsdCallBS1Pool, oddzEthUsdCallBS30Pool: oddzEthUsdCallBS30Pool };
+};
+
+const addBTCLiquidityPool = async (admin: any, poolManager: any, oddzDefaultPoolAddress: any) => {
+  const oddzBtcUsdCallBS1Pool = (await deployContract(
+    admin,
+    OddzBtcUsdCallBS1PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS1Pool;
+
+  await oddzBtcUsdCallBS1Pool.transferOwnership(poolManager.address);
+
+  await poolManager
+    .connect(admin)
+    .mapPool("0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPoolAddress,
+      oddzBtcUsdCallBS1Pool.address,
+    ]);
+
+  return { oddzBtcUsdCallBS1Pool: oddzBtcUsdCallBS1Pool };
+};
 
 const getPoolTransferStruct = (source: any[], destination: any[], sAmount: BigNumber[], dAmount: BigNumber[]) => {
   const poolTransfer: PoolTransfer = {
@@ -377,25 +814,36 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
     const oddzLiquidityPoolManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     expect(await oddzLiquidityPoolManager.poolMapper(hash, 0)).to.equal(this.oddzDefaultPool.address);
+    const { oddzEthUsdCallBS30Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
+
     await oddzLiquidityPoolManager.mapPool(
       "0xfcb06d25357ef01726861b30b0b83e51482db417",
       OptionType.Call,
       utils.formatBytes32String("B_S"),
       7,
-      [this.oddzDefaultPool.address, this.oddzEthUsdCallBS30Pool.address, this.oddzDefaultPool.address],
+      [this.oddzDefaultPool.address, oddzEthUsdCallBS30Pool.address, this.oddzDefaultPool.address],
     );
     expect(await oddzLiquidityPoolManager.poolMapper(hash, 0)).to.equal(this.oddzDefaultPool.address);
-    expect(await oddzLiquidityPoolManager.poolMapper(hash, 1)).to.equal(this.oddzEthUsdCallBS30Pool.address);
+    expect(await oddzLiquidityPoolManager.poolMapper(hash, 1)).to.equal(oddzEthUsdCallBS30Pool.address);
     await expect(oddzLiquidityPoolManager.poolMapper(hash, 2)).to.be.reverted;
   });
 
   it("should revert pools length should be <= 10 while map pools", async function () {
+    const { oddzEthUsdCallBS30Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
     await expect(
       this.oddzLiquidityPoolManager
         .connect(this.signers.admin)
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
           this.oddzDefaultPool.address,
-          this.oddzEthUsdCallBS30Pool.address,
+          oddzEthUsdCallBS30Pool.address,
           this.oddzDefaultPool.address,
           this.oddzDefaultPool.address,
           this.oddzDefaultPool.address,
@@ -415,12 +863,17 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.oddzDefaultPool.address,
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
+    const { oddzEthUsdCallBS1Pool, oddzEthUsdCallBS30Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
     await liquidityManager.addLiquidity(
-      this.oddzEthUsdCallBS1Pool.address,
+      oddzEthUsdCallBS1Pool.address,
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
     await liquidityManager.addLiquidity(
-      this.oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
     await liquidityManager.setManager(this.mockOptionManager.address);
@@ -433,18 +886,18 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     //execution day +(2 +15)
     await provider.send("evm_increaseTime", [getExpiry(15)]);
     await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(17));
-    await this.oddzEthUsdCallBS1Pool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(17));
-    await this.oddzEthUsdCallBS14Pool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(17));
+    await oddzEthUsdCallBS1Pool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(17));
+    await oddzEthUsdCallBS30Pool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(17));
 
     expect((await this.oddzDefaultPool.connect(this.signers.admin).getPremium(this.accounts.admin)).rewards).to.equal(
       "3333333333",
     );
-    expect(
-      (await this.oddzEthUsdCallBS1Pool.connect(this.signers.admin).getPremium(this.accounts.admin)).rewards,
-    ).to.equal("3333333333");
-    expect(
-      (await this.oddzEthUsdCallBS14Pool.connect(this.signers.admin).getPremium(this.accounts.admin)).rewards,
-    ).to.equal("3333333333");
+    expect((await oddzEthUsdCallBS1Pool.connect(this.signers.admin).getPremium(this.accounts.admin)).rewards).to.equal(
+      "3333333333",
+    );
+    expect((await oddzEthUsdCallBS30Pool.connect(this.signers.admin).getPremium(this.accounts.admin)).rewards).to.equal(
+      "3333333333",
+    );
 
     await liquidityManager.setReqBalance(10);
 
@@ -454,12 +907,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       .to.emit(this.oddzDefaultPool, "RemoveLiquidity")
       .withArgs(this.accounts.admin, "10000000000000000000000000", "10000000000000000000000000");
 
-    await expect(liquidityManager.removeLiquidity(this.oddzEthUsdCallBS1Pool.address, removeAmount))
-      .to.emit(this.oddzEthUsdCallBS1Pool, "RemoveLiquidity")
+    await expect(liquidityManager.removeLiquidity(oddzEthUsdCallBS1Pool.address, removeAmount))
+      .to.emit(oddzEthUsdCallBS1Pool, "RemoveLiquidity")
       .withArgs(this.accounts.admin, "10000000000000000000000000", "10000000000000000000000000");
 
-    await expect(liquidityManager.removeLiquidity(this.oddzEthUsdCallBS14Pool.address, removeAmount))
-      .to.emit(this.oddzEthUsdCallBS14Pool, "RemoveLiquidity")
+    await expect(liquidityManager.removeLiquidity(oddzEthUsdCallBS30Pool.address, removeAmount))
+      .to.emit(oddzEthUsdCallBS30Pool, "RemoveLiquidity")
       .withArgs(this.accounts.admin, "10000000000000000000000000", "10000000000000000000000000");
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -473,15 +926,24 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       this.oddzDefaultPool.address,
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
-
+    const { oddzEthUsdCallBS1Pool, oddzEthUsdCallBS30Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
+    const { oddzBtcUsdCallBS1Pool } = await addBTCLiquidityPool(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
     await liquidityManager.addLiquidity(
-      this.oddzEthUsdCallBS14Pool.address,
+      oddzEthUsdCallBS30Pool.address,
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
 
     const poolTransfer = await getPoolTransferStruct(
-      [this.oddzDefaultPool.address, this.oddzEthUsdCallBS14Pool.address],
-      [this.oddzEthUsdCallBS1Pool.address, this.oddzEthUsdCallBS30Pool.address, this.oddzBtcUsdCallBS1Pool.address],
+      [this.oddzDefaultPool.address, oddzEthUsdCallBS30Pool.address],
+      [oddzEthUsdCallBS1Pool.address, oddzEthUsdCallBS30Pool.address, oddzBtcUsdCallBS1Pool.address],
       [BigNumber.from(utils.parseEther("8000000")), BigNumber.from(utils.parseEther("5000000"))],
       [
         BigNumber.from(utils.parseEther("5000000")),
@@ -492,20 +954,17 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
     await liquidityManager.move(poolTransfer);
 
-    expect(await this.oddzEthUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+    expect(await oddzEthUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
       BigNumber.from(utils.parseEther("5000000")),
     );
-    expect(await this.oddzEthUsdCallBS30Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
-      BigNumber.from(utils.parseEther("6000000")),
-    );
-    expect(await this.oddzBtcUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+    expect(await oddzBtcUsdCallBS1Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
       BigNumber.from(utils.parseEther("2000000")),
     );
     expect(await this.oddzDefaultPool.connect(this.signers.admin).totalBalance()).to.be.equal(
       BigNumber.from(utils.parseEther("2000000")),
     );
-    expect(await this.oddzEthUsdCallBS14Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
-      BigNumber.from(utils.parseEther("5000000")),
+    expect(await oddzEthUsdCallBS30Pool.connect(this.signers.admin).totalBalance()).to.be.equal(
+      BigNumber.from(utils.parseEther("11000000")),
     );
   });
 
@@ -516,9 +975,15 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
 
+    const { oddzEthUsdCallBS1Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
+
     const poolTransfer = await getPoolTransferStruct(
       [this.oddzDefaultPool.address],
-      [this.oddzEthUsdCallBS1Pool.address],
+      [oddzEthUsdCallBS1Pool.address],
       [BigNumber.from(utils.parseEther("1000000"))],
       [BigNumber.from(utils.parseEther("1000000"))],
     );
@@ -550,9 +1015,15 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
 
+    const { oddzEthUsdCallBS1Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
+
     const poolTransfer = await getPoolTransferStruct(
       [this.oddzDefaultPool.address],
-      [this.oddzEthUsdCallBS1Pool.address],
+      [oddzEthUsdCallBS1Pool.address],
       [BigNumber.from(utils.parseEther(this.transferTokenAmout))],
       [BigNumber.from(utils.parseEther(this.transferTokenAmout))],
     );
@@ -718,5 +1189,74 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should add liquidity & buy option with lock liquidity across all 21 pools successfully", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const amount = BigNumber.from(utils.parseEther("10000"));
+    await liquidityManager.addLiquidity(this.oddzDefaultPool.address, amount);
+    await liquidityManager.setManager(this.mockOptionManager.address);
+
+    const {
+      oddzEthUsdCallBS1Pool,
+      oddzEthUsdCallBS2Pool,
+      oddzEthUsdCallBS7Pool,
+      oddzEthUsdCallBS14Pool,
+      oddzEthUsdCallBS30Pool,
+      oddzEthUsdPutBS1Pool,
+      oddzEthUsdPutBS2Pool,
+      oddzEthUsdPutBS7Pool,
+      oddzEthUsdPutBS14Pool,
+      oddzEthUsdPutBS30Pool,
+      oddzBtcUsdCallBS1Pool,
+      oddzBtcUsdCallBS2Pool,
+      oddzBtcUsdCallBS7Pool,
+      oddzBtcUsdCallBS14Pool,
+      oddzBtcUsdCallBS30Pool,
+      oddzBtcUsdPutBS1Pool,
+      oddzBtcUsdPutBS2Pool,
+      oddzBtcUsdPutBS7Pool,
+      oddzBtcUsdPutBS14Pool,
+      oddzBtcUsdPutBS30Pool,
+    } = await addAllPoolsWithLiquidity(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+      amount,
+    );
+    await this.mockOptionManager
+      .connect(this.signers.admin1)
+      .lockWithParams(0, "0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call);
+    await this.mockOptionManager
+      .connect(this.signers.admin1)
+      .lockWithParams(1, "0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Put);
+    await this.mockOptionManager
+      .connect(this.signers.admin1)
+      .lockWithParams(2, "0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Call);
+    await this.mockOptionManager
+      .connect(this.signers.admin1)
+      .lockWithParams(3, "0x8c461e897bBE3E4DDf8FD25be25f91Aac161a2f0", OptionType.Put);
+
+    expect(await this.oddzDefaultPool.connect(this.signers.admin).lockedAmount()).to.be.equal(666666666664);
+    expect(await oddzEthUsdCallBS1Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666666);
+    expect(await oddzEthUsdCallBS2Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdCallBS7Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdCallBS14Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdCallBS30Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdPutBS1Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666666);
+    expect(await oddzEthUsdPutBS2Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdPutBS7Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdPutBS14Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzEthUsdPutBS30Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdCallBS1Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666666);
+    expect(await oddzBtcUsdCallBS2Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdCallBS7Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdCallBS14Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdCallBS30Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdPutBS1Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666666);
+    expect(await oddzBtcUsdPutBS2Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdPutBS7Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdPutBS14Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
+    expect(await oddzBtcUsdPutBS30Pool.connect(this.signers.admin).lockedAmount()).to.be.equal(166666666667);
   });
 }

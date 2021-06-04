@@ -97,7 +97,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
     /**
      * @notice Gets settlement fee for an option holder
      * @param _holder Address of buyer
-     * @return settlementFee Transaction fee percentage for the buyer
+     * @return settlementFee Settlement fee percentage for the buyer
      */
     function getSettlementFee(address _holder) public view override returns (uint256 settlementFee) {
         uint256 maxDiscount;

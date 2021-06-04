@@ -39,6 +39,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
      */
     IDexManager public dexManager;
     uint256 public deadline = 1 minutes;
+    uint16 public slippage = 1;
 
     constructor(
         IERC20Extented _usdcToken,
@@ -56,7 +57,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         gaslessFacilitator = _gaslessFacilitator;
         maintenanceFacilitator = _maintenanceFacilitator;
         txnDistribution = DistributionPercentage({ gasless: 40, maintainer: 0, developer: 20, staker: 40 });
-        settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 40, developer: 0, staker: 60 });
+        settlementDistribution = DistributionPercentage({ gasless: 0, maintainer: 10, developer: 10, staker: 80 });
 
         dexManager = _dexManager;
         minimumAmount = 1000 * 10**usdcToken.decimals();
@@ -84,6 +85,11 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     function updateDeadline(uint256 _deadline) external onlyOwner {
         require(_deadline >= 1 minutes && _deadline <= 30 minutes, "Administrator: invalid deadline");
         deadline = _deadline;
+    }
+
+    function updateSlippage(uint16 _slippage) external onlyOwner {
+        require(_slippage > 0 && _slippage <= 1000, "Administrator: invalid slippage");
+        slippage = _slippage;
     }
 
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyOwner {
@@ -124,7 +130,7 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline);
+        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
     }
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {
