@@ -166,7 +166,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
         oddzToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         uint8 totalPerc;
         for (uint256 i = 0; i < tokensList.length; i++) {
             if (!tokensList[i]._active) continue;
@@ -176,7 +175,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             else feePerc = tokensList[i]._allotedReward;
             totalPerc += feePerc;
 
-            IOddzTokenStaking(tokensList[i]._stakingContract).allocateRewards(date, (_amount * feePerc) / 100);
+            IOddzTokenStaking(tokensList[i]._stakingContract).allocateRewards((_amount * feePerc) / 100);
         }
         require(totalPerc == 100, "Staking: invalid fee allocation for tokens");
 
@@ -255,7 +254,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             _date - IOddzTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(_staker) >=
             tokens[_token]._lockupDuration
         ) {
-            reward = IOddzTokenStaking(tokens[_token]._stakingContract).withdrawRewards(_staker, _date);
+            reward = IOddzTokenStaking(tokens[_token]._stakingContract).withdrawRewards(_staker);
             oddzToken.safeTransfer(_staker, reward);
 
             emit TransferReward(_staker, _token, reward);
@@ -281,9 +280,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @param _token Address of the staked token
      */
     function getProfitInfo(address _token) external view validToken(_token) returns (uint256 profit) {
-        profit = IOddzTokenStaking(tokens[_token]._stakingContract).getRewards(
-            msg.sender,
-            DateTimeLibrary.getPresentDayTimestamp()
-        );
+        profit = IOddzTokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender);
     }
 }
