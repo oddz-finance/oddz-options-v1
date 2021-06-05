@@ -16,6 +16,8 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
     mapping(bytes32 => mapping(uint8 => uint256)) public volatility;
     mapping(bytes32 => uint256) public defaultIvMap;
     uint8 public volatilityPrecision = 2;
+    uint256 public minVolatilityBound = 1000;
+    uint256 public maxVolatilityBound = 50000;
 
     modifier allowedPeriod(uint256 _aggregatorPeriod) {
         require(allowedPeriods[_aggregatorPeriod] == true, "Chainlink IV: Invalid aggregator period");
@@ -82,6 +84,14 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
         allowedPeriods[_ivAgg] = true;
     }
 
+    function setMinVolatilityBound(uint256 _minVolatility) public onlyOwner {
+        minVolatilityBound = _minVolatility;
+    }
+
+    function setMaxVolatilityBound(uint256 _maxVolatility) public onlyOwner {
+        maxVolatilityBound = _maxVolatility;
+    }
+
     function getIv(
         bytes32 _underlying,
         bytes32 _strike,
@@ -93,7 +103,6 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
         // update _expiration to next day if spillover seconds in a day
         if ((_expiration % 1 days) > 0) _expiration = _expiration + 1 days;
         iv = _getIv(_underlying, _strike, ivPeriodMap[_expiration / 1 days], _currentPrice, _strikePrice);
-        if (iv == 0) iv = defaultIvMap[keccak256(abi.encode(_underlying, _strike))];
         require(iv > 0, "Oddz IV: invalid");
         decimals = volatilityPrecision;
     }
@@ -158,18 +167,24 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
      * @notice Function to add volatility for an option based on volatility percentage
      * @param _underlying Underlying asset name
      * @param _strike Strike aseet name
-     * @param _expiration expiration period in days
-     * @param _volPercentage Volatility percentage difference (90, 40, 20, 10)
+     * @param _expiration expiration of option
+     * @param _volPercentage Volatility percentage difference (90, 40, 20, 10, 0)
      * @param _volatility Volatility value
      */
     function addVolatilityMapping(
         bytes32 _underlying,
         bytes32 _strike,
         uint256 _expiration,
-        uint8 _volPercentage,
-        uint256 _volatility // 96.68 => 9668
+        uint8[] memory _volPercentage,
+        uint256[] memory _volatility // 96.68 => 9668
     ) public onlyOwner allowedPeriod(_expiration) {
-        volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage] = _volatility;
+        for (uint256 i = 0; i < _volPercentage.length; i++) {
+            require(
+                _volatility[i] >= minVolatilityBound && _volatility[i] <= maxVolatilityBound,
+                "Chainlink IV: Volatility out of bound"
+            );
+            volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][_volPercentage[i]] = _volatility[i];
+        }
         lastUpdatedAt = block.timestamp;
     }
 
@@ -194,12 +209,14 @@ contract OddzVolatility is Ownable, IOddzVolatilityOracle {
         uint256 _expiration,
         uint256 _currentPrice,
         uint256 _strikePrice
-    ) private view returns (uint256) {
+    ) private view returns (uint256 iv) {
         uint8 volPercentage;
         if (_strikePrice >= _currentPrice)
             volPercentage = _getVolPercentage(((_strikePrice - _currentPrice) * 100) / _currentPrice, false);
         else volPercentage = _getVolPercentage(((_currentPrice - _strikePrice) * 100) / _strikePrice, true);
 
-        return volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage];
+        iv = volatility[keccak256(abi.encode(_underlying, _strike, _expiration))][volPercentage];
+        // set default value if iv is zero
+        if (iv == 0) iv = defaultIvMap[keccak256(abi.encode(_underlying, _strike))];
     }
 }

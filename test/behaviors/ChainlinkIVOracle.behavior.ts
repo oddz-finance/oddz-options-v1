@@ -283,6 +283,44 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
     expect(await chainlinkIVOracle.volatilityPrecision()).to.equal(3);
   });
 
+  it("should revert set min volatility bound for non owner", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin1);
+    await expect(chainlinkIVOracle.setMinVolatilityBound(100)).to.be.revertedWith("caller has no access to the method");
+  });
+
+  it("should set min volatility bound", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    await chainlinkIVOracle.setMinVolatilityBound(100);
+    expect(await chainlinkIVOracle.minVolatilityBound()).to.equal(100);
+  });
+
+  it("should revert set max volatility bound for non owner", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin1);
+    await expect(chainlinkIVOracle.setMaxVolatilityBound(30000)).to.be.revertedWith(
+      "caller has no access to the method",
+    );
+  });
+
+  it("should set max volatility bound", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    await chainlinkIVOracle.setMinVolatilityBound(30000);
+    expect(await chainlinkIVOracle.minVolatilityBound()).to.equal(30000);
+  });
+
+  it("should revert adding volatility mapping for out of bound value", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    await expect(
+      chainlinkIVOracle.addVolatilityMapping(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        1,
+        50001,
+        [10],
+        [50001],
+      ),
+    ).to.be.revertedWith("Volatility out of bound");
+  });
+
   it("should revert adding volatility mapping for non owner", async function () {
     const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin1);
     await expect(
@@ -290,8 +328,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
         utils.formatBytes32String("ETH"),
         utils.formatBytes32String("USD"),
         1,
-        10,
-        9668, //96.68
+        9668,
+        [10],
+        [9668], //96.68
       ),
     ).to.be.revertedWith("caller has no access to the method");
   });
@@ -302,8 +341,9 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      10,
-      9668,
+      0,
+      [10],
+      [9668],
     );
 
     const hash = utils.keccak256(
@@ -339,13 +379,52 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      110,
-      9668,
+      9000,
+      [0, 110],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
 
-    expect(iv).to.equal(96680000);
+    expect(iv).to.equal(90470000);
+    expect(decimals).to.equal(8);
+  });
+
+  it("should get volatility for 10 % with less than atm iv", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    await chainlinkIVOracle.addVolatilityMapping(
+      utils.formatBytes32String("ETH"),
+      utils.formatBytes32String("USD"),
+      1,
+      9000,
+      [0, 110],
+      [9000, 8000],
+    );
+
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
+
+    expect(iv).to.equal(73790000);
+    expect(decimals).to.equal(8);
+  });
+
+  it("should get volatility for oracle iv if it returns negative iv", async function () {
+    const chainlinkIVOracle = await this.chainlinkIVOracle.connect(this.signers.admin);
+    const mockIVManager = await this.mockIVManager.connect(this.signers.admin);
+
+    await chainlinkIVOracle.addVolatilityMapping(
+      utils.formatBytes32String("ETH"),
+      utils.formatBytes32String("USD"),
+      1,
+      10000,
+      [0, 110],
+      [10000, 1000],
+    );
+
+    const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 176000000000);
+
+    expect(iv).to.equal(83790000);
     expect(decimals).to.equal(8);
   });
 
@@ -357,13 +436,14 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      105,
-      9668,
+      9000,
+      [0, 105],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 163200000000);
 
-    expect(iv).to.equal(96680000);
+    expect(iv).to.equal(90470000);
     expect(decimals).to.equal(8);
   });
 
@@ -375,13 +455,14 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      5,
-      9668,
+      9000,
+      [0, 5],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 156800000000);
 
-    expect(iv).to.equal(96680000);
+    expect(iv).to.equal(90470000);
     expect(decimals).to.equal(8);
   });
 
@@ -393,13 +474,14 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      190,
-      9668,
+      9000,
+      [0, 190],
+      [9000, 9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 304000000000);
 
-    expect(iv).to.equal(96680000);
+    expect(iv).to.equal(90470000);
     expect(decimals).to.equal(8);
   });
 
@@ -411,13 +493,14 @@ export function shouldBehaveLikeChainlinkIVOracle(): void {
       utils.formatBytes32String("ETH"),
       utils.formatBytes32String("USD"),
       1,
-      90,
-      9668,
+      9000,
+      [90],
+      [9668],
     );
 
     const { iv, decimals } = await mockIVManager.calculateIv(getExpiry(1), 160000000000, 16000000000);
 
-    expect(iv).to.equal(96680000);
+    expect(iv).to.equal(90470000);
     expect(decimals).to.equal(8);
   });
 }
