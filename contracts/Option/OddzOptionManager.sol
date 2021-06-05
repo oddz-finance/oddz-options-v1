@@ -501,7 +501,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
     function setMinimumPremium(uint256 _amount) external onlyOwner {
         uint256 amount = _amount / token.decimals();
-        require(amount > 5 && amount < 50, "invalid minimum premium");
+        require(amount >= 1 && amount < 50, "invalid minimum premium");
         minimumPremium = _amount;
     }
 
