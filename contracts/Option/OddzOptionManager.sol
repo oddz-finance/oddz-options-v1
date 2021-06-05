@@ -78,7 +78,6 @@ contract OddzOptionManager is IOddzOption, Ownable {
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
-        require(_amount > minimumPremium, "amount is lower than minimum premium");
         require(_amount >= assetManager.getPurchaseLimit(_pair), "amount less than purchase limit");
         _;
     }
@@ -121,7 +120,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _value user paid amount
      * @param _premium option premium
      */
-    function _validateOptionAmount(uint256 _value, uint256 _premium) private pure {
+    function _validateOptionAmount(uint256 _value, uint256 _premium) private view {
+        require(_premium >= minimumPremium, "amount is lower than minimum premium");
         require(_value >= _premium, "Premium is low");
     }
 
