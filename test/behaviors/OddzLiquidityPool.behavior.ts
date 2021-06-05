@@ -1033,6 +1033,72 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
   });
 
+  it("should throw exceptions while moving liquidity to invalid pool address", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+
+    const fakePool = (await deployContract(
+      this.signers.admin,
+      OddzBtcUsdCallBS1PoolArtifact,
+      [],
+    )) as OddzEthUsdCallBS1Pool;
+
+    await fakePool.transferOwnership(this.oddzLiquidityPoolManager.address);
+
+    const poolTransfer = await getPoolTransferStruct(
+      [this.oddzDefaultPool.address],
+      [fakePool.address],
+      [BigNumber.from(utils.parseEther("10000"))],
+      [BigNumber.from(utils.parseEther("10000"))],
+    );
+
+    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith("LP Error: Invalid pool");
+  });
+
+  it("should allow move liquidity from disable pool", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+
+    const { oddzEthUsdCallBS1Pool, oddzEthUsdCallBS30Pool } = await addMultiLiquidityPools(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+    );
+
+    expect(await liquidityManager.poolExposure(oddzEthUsdCallBS1Pool.address)).to.equal(1);
+    expect(await liquidityManager.poolExposure(oddzEthUsdCallBS30Pool.address)).to.equal(5);
+    expect(await liquidityManager.poolExposure(this.oddzDefaultPool.address)).to.equal(5);
+    expect(await liquidityManager.disabledPools(oddzEthUsdCallBS1Pool.address)).to.equal(false);
+
+    await liquidityManager.addLiquidity(oddzEthUsdCallBS1Pool.address, BigNumber.from(utils.parseEther("10000")));
+
+    await liquidityManager.addLiquidity(oddzEthUsdCallBS30Pool.address, BigNumber.from(utils.parseEther("10000")));
+
+    await liquidityManager.mapPool(
+      "0xfcb06d25357ef01726861b30b0b83e51482db417",
+      OptionType.Call,
+      utils.formatBytes32String("B_S"),
+      1,
+      [this.oddzDefaultPool.address, oddzEthUsdCallBS30Pool.address],
+    );
+
+    expect(await liquidityManager.poolExposure(oddzEthUsdCallBS1Pool.address)).to.equal(0);
+    expect(await liquidityManager.poolExposure(oddzEthUsdCallBS30Pool.address)).to.equal(5);
+    expect(await liquidityManager.poolExposure(this.oddzDefaultPool.address)).to.equal(5);
+    expect(await liquidityManager.disabledPools(oddzEthUsdCallBS1Pool.address)).to.equal(true);
+
+    const poolTransfer = await getPoolTransferStruct(
+      [oddzEthUsdCallBS1Pool.address],
+      [this.oddzDefaultPool.address],
+      [BigNumber.from(utils.parseEther("10000"))],
+      [BigNumber.from(utils.parseEther("10000"))],
+    );
+
+    await expect(liquidityManager.move(poolTransfer)).to.be.ok;
+  });
+
   it("should distribute negative premium to LPs", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);

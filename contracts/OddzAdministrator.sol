@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract OddzAdministrator is IOddzAdministrator, Ownable {
     using SafeERC20 for IERC20Extented;
+    using SafeERC20 for IERC20;
     IERC20Extented public usdcToken;
     IERC20 public oddzToken;
 
@@ -62,8 +63,8 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         dexManager = _dexManager;
         minimumAmount = 1000 * 10**usdcToken.decimals();
         // Approve token transfer to staking contract
-        oddzToken.approve(address(sdk), type(uint256).max);
-        oddzToken.approve(address(staking), type(uint256).max);
+        oddzToken.safeApprove(address(sdk), type(uint256).max);
+        oddzToken.safeApprove(address(staking), type(uint256).max);
     }
 
     function changeGaslessFacilitator(address _gaslessFacilitator) external onlyOwner {

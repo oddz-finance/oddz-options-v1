@@ -29,10 +29,9 @@ interface IOddzTokenStaking {
 
     /**
      * @notice Allocates rewards to staker
-     * @param _date Date on which tokens are staked
      * @param _amount Amount of ODDZ token allocated
      */
-    function allocateRewards(uint256 _date, uint256 _amount) external;
+    function allocateRewards(uint256 _amount) external;
 
     /**
      * @notice Get last staked date for the staker
@@ -44,18 +43,16 @@ interface IOddzTokenStaking {
     /**
      * @notice Get staker rewards
      * @param _staker Address of the staker
-     * @param _date current date
      * @return rewards staker rewards
      */
-    function getRewards(address _staker, uint256 _date) external view returns (uint256 rewards);
+    function getRewards(address _staker) external view returns (uint256 rewards);
 
     /**
      * @notice Remove staker rewards
      * @param _staker Address of the staker
-     * @param _date withdrawal date
      * @return rewards staker rewards
      */
-    function withdrawRewards(address _staker, uint256 _date) external returns (uint256 rewards);
+    function withdrawRewards(address _staker) external returns (uint256 rewards);
 
     /**
      * @notice Return if the staker is valid

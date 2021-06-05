@@ -49,13 +49,13 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
 
     /**
      * @notice Allocates rewards to staker
-     * @param _date Date on which tokens are staked
      * @param _amount Amount of ODDZ token allocated
      */
-    function allocateRewards(uint256 _date, uint256 _amount) external override onlyOwner {
+    function allocateRewards(uint256 _amount) external override onlyOwner {
         // create the Stake data structure if not present
-        getAndUpdateDaysActiveStake(_date);
-        dayStakeMap[_date]._allocatedRewards += _amount;
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
+        getAndUpdateDaysActiveStake(date);
+        dayStakeMap[date]._allocatedRewards += _amount;
     }
 
     /**
@@ -73,7 +73,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @param _staker Address of the staker
      * @return rewards staker rewards
      */
-    function getRewards(address _staker, uint256 _date) public view override returns (uint256 rewards) {
+    function getRewards(address _staker) public view override returns (uint256 rewards) {
         if (staker[_staker]._amount == 0) return 0;
         uint256 startDate;
         if (staker[_staker]._lastClaimed > 0) startDate = staker[_staker]._lastClaimed;
@@ -81,14 +81,14 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
 
         uint256 totalStake;
         uint256 totalReward;
-        uint256 count = (_date - startDate) / 1 days;
+        uint256 count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
         for (uint256 i = 0; i < count; i++) {
             uint256 dActiveStake = dayStakeMap[startDate + (i * 1 days)]._totalActiveStake;
             require(dActiveStake > 0, "Stake Error: invalid daily total active stake");
             totalStake += dActiveStake;
             totalReward += dayStakeMap[startDate + (i * 1 days)]._allocatedRewards;
         }
-        if (totalStake == 0) return 0;
+        if (totalStake == 0) return staker[_staker]._rewards;
         rewards = ((staker[_staker]._amount * count * totalReward) / totalStake) + staker[_staker]._rewards;
     }
 
@@ -97,9 +97,9 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @param _staker Address of the staker
      * @return rewards staker rewards
      */
-    function withdrawRewards(address _staker, uint256 _date) external override onlyOwner returns (uint256 rewards) {
-        rewards = getRewards(_staker, _date);
-        staker[_staker]._lastClaimed = _date;
+    function withdrawRewards(address _staker) external override onlyOwner returns (uint256 rewards) {
+        rewards = getRewards(_staker);
+        staker[_staker]._lastClaimed = DateTimeLibrary.getPresentDayTimestamp();
         staker[_staker]._rewards = 0;
     }
 
@@ -138,8 +138,8 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     function _stake(address _staker, uint256 _amount) internal onlyOwner {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         _allocateStakerRewards(_staker, date);
-        // update to stake to hold existing stake
-        staker[_staker] = UserStake(staker[_staker]._amount + _amount, date, 0, 0);
+        // add new stake to existing stake and reset date and last claimed
+        staker[_staker] = UserStake(staker[_staker]._amount + _amount, date, staker[_staker]._rewards, 0);
 
         dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) + _amount;
         lastStaked = date;
@@ -153,8 +153,8 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     function _unstake(address _staker, uint256 _amount) internal {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         _allocateStakerRewards(_staker, date);
-        // update to stake to hold existing stake
-        staker[_staker] = UserStake(staker[_staker]._amount - _amount, date, 0, 0);
+        // subtract amount from existing stake and reset date and last claimed
+        staker[_staker] = UserStake(staker[_staker]._amount - _amount, date, staker[_staker]._rewards, 0);
 
         dayStakeMap[date]._totalActiveStake = getAndUpdateDaysActiveStake(date) - _amount;
         lastStaked = date;
@@ -166,7 +166,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @param _date  Date on which tokens are staked
      */
     function _allocateStakerRewards(address _staker, uint256 _date) private {
-        staker[_staker]._rewards = getRewards(_staker, _date);
+        staker[_staker]._rewards = getRewards(_staker);
         staker[_staker]._lastClaimed = _date;
     }
 }
