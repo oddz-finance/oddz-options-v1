@@ -10,7 +10,7 @@ import "../../../Swap/ISwapUnderlyingAsset.sol";
 contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
     using SafeERC20 for ERC20;
 
-    IPancakeSwap pancakeSwap;
+    IPancakeSwap public pancakeSwap;
 
     constructor(address _router) {
         pancakeSwap = IPancakeSwap(_router);
@@ -18,8 +18,8 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
 
     /**
      * @notice Function to swap Tokens
-     * @param _fromToken name of the asset to swap from
-     * @param _toToken name of the asset to swap to
+     * @param _fromToken address of the asset to swap from
+     * @param _toToken address of the asset to swap to
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid

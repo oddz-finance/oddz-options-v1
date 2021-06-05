@@ -42,6 +42,7 @@ describe("Oddz Dex Manager Unit tests", function () {
       ])) as DexManager;
 
       this.mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
+
       this.mockLiquidityPool = (await deployContract(this.signers.admin, MockLiquidityPoolArtifact, [
         this.dexManager.address,
       ])) as MockLiquidityPool;

@@ -119,8 +119,8 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         uint256 oddzAmount = _amount - usdcAmount;
         convertToOddz(oddzAmount);
 
-        if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzAmount);
-        else distrbuteSettlement(usdcAmount, oddzAmount);
+        if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzToken.balanceOf(address(this)));
+        else distrbuteSettlement(usdcAmount, oddzToken.balanceOf(address(this)));
 
         emit Deposit(msg.sender, _depositType, _amount);
     }

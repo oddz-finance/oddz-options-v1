@@ -1271,6 +1271,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
     const slippage = 1;
+    await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+
     await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
 
     await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith("Wrong state");
@@ -1306,7 +1308,16 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
     const deadline = 15;
     const slippage = 1;
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
+    await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage))
+      .to.emit(oddzOptionManager, "Exercise")
+      .to.emit(this.dexManager, "Swapped")
+      .withArgs(
+        utils.formatBytes32String("USD"),
+        utils.formatBytes32String("ETH"),
+        BigNumber.from(utils.parseEther("6480")),
+        BigNumber.from(utils.parseEther("2.473282442748091603")),
+      );
   });
 
   it("should revert expire for options not expired yet", async function () {
@@ -1369,6 +1380,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
     const slippage = 1;
+    await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+
     await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
     await provider.send("evm_snapshot", []);
     // execution day + 3

@@ -3,14 +3,14 @@ pragma solidity 0.8.3;
 
 import "./IDexManager.sol";
 import "./ISwapUnderlyingAsset.sol";
-import "../Option/OddzAssetManager.sol";
+import "../Option/IOddzAsset.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DexManager is AccessControl, IDexManager {
     using Address for address;
-    OddzAssetManager public assetManager;
+    IOddzAsset public assetManager;
 
     bytes32 public constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
 
@@ -69,7 +69,7 @@ contract DexManager is AccessControl, IDexManager {
         _;
     }
 
-    constructor(OddzAssetManager _assetManger) {
+    constructor(IOddzAsset _assetManger) {
         assetManager = _assetManger;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -162,6 +162,7 @@ contract DexManager is AccessControl, IDexManager {
                 _deadline,
                 _slippage
             );
+
         emit Swapped(_fromToken, _toToken, swapResult[0], swapResult[1]);
     }
 }

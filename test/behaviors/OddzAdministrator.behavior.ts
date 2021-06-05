@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, utils, constants } from "ethers";
 import { OddzAssetManager, MockERC20 } from "../../typechain";
 import { DistributionPercentage, DepositType } from "../../test-utils";
 
@@ -197,41 +197,73 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     ).to.be.revertedWith("Administrator: amount is low for deposit");
   });
 
+  it("should revert add token  for non owner", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin1);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+  });
+
+  it("should revert add token  for invalid name", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String(""), this.oddzToken.address)).to.be.revertedWith(
+      "invalid asset name",
+    );
+  });
+
+  it("should revert add token  for invalid address", async function () {
+    const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin);
+    await expect(mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), constants.AddressZero)).to.be.revertedWith(
+      "invalid address",
+    );
+  });
+
+  it("should revert if asset not added for swap", async function () {
+    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
+    const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+
+    await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+
+    await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+    // ideally should deposit from optionManager
+    await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
+    await expect(
+      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction),
+    ).to.be.revertedWith("Swap: asset not added for swap");
+  });
+
   it("should deposit amount of transaction type", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
     await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
-    const distribution: DistributionPercentage = {
-      gasless: 50,
-      maintainer: 50,
-      developer: 0,
-      staker: 0,
-    };
-    await oddzAdministrator.updateTxnDistribution(distribution);
+
+    await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
+
+    await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
     // ideally should deposit from optionManager
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
     await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction);
     // check balance of maintenance facilitator
-    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(2));
+    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(0);
   });
 
   it("should deposit amount of settlement type", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
     await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
-    const distribution: DistributionPercentage = {
-      gasless: 50,
-      maintainer: 50,
-      developer: 0,
-      staker: 0,
-    };
-    await oddzAdministrator.updateSettlementDistribution(distribution);
+    await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
+
+    await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
+
     // ideally should deposit from optionManager
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
     await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Settlement);
     // check balance of maintenance facilitator
-    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(2));
+    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(100));
   });
 }
