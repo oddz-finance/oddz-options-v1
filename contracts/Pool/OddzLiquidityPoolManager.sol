@@ -508,4 +508,16 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         (uint256 year, uint256 month, uint256 day) = DateTimeLibrary.timestampToDate(_timestamp);
         activationDate = DateTimeLibrary.timestampFromDate(year, month, day);
     }
+
+    /**
+     * @notice updates premium lockup duration
+     * @param _premiumLockupDuration premium lockup duration
+     */
+    function updatePremiumLockupDuration(uint256 _premiumLockupDuration) public onlyOwner(msg.sender) {
+        require(
+            _premiumLockupDuration >= 1 days && _premiumLockupDuration <= 30 days,
+            "LP Error: invalid premium lockup duration"
+        );
+        premiumLockupDuration = _premiumLockupDuration;
+    }
 }
