@@ -56,7 +56,7 @@ describe("Oddz Administrator Unit tests", function () {
 
       this.usdcToken = (await deployContract(this.signers.admin, MockERC20Artifact, [
         "USD coin",
-        "USDC",
+        "USD",
         totalSupply,
       ])) as MockERC20;
 
