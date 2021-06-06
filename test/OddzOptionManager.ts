@@ -143,6 +143,7 @@ describe("Oddz Option Manager Unit tests", function () {
       );
 
       await this.dexManager.setActiveExchange(dexHash);
+      await this.mockOddzDex.setManager(this.dexManager.address);
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
       this.oddzEthUsdCallBS30Pool = (await deployContract(

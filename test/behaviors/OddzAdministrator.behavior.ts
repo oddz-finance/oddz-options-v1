@@ -218,7 +218,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
   it("should revert add token  for non owner", async function () {
     const mockOddzDex = await this.mockOddzDex.connect(this.signers.admin1);
     await expect(mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "Swap Error: caller has no access to the method",
     );
   });
 
@@ -255,7 +255,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
     await expect(
       oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction),
-    ).to.be.revertedWith("Swap: asset not added for swap");
+    ).to.be.revertedWith("Swap Error: asset not added for swap");
   });
 
   it("should deposit amount of transaction type", async function () {

@@ -107,6 +107,7 @@ describe("Oddz Administrator Unit tests", function () {
       );
 
       await this.dexManager.setActiveExchange(dexHash);
+      await this.mockOddzDex.setManager(this.dexManager.address);
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
         this.oddzToken.address,
