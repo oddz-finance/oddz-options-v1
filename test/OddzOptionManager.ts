@@ -124,6 +124,7 @@ describe("Oddz Option Manager Unit tests", function () {
         totalSupply,
       ])) as MockERC20;
       this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
+        this.oddzPriceOracleManager.address,
         [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("ETH"), utils.formatBytes32String("BTC")],
         [this.usdcToken.address, this.ethToken.address, this.usdcToken.address],
       ])) as MockSwap;

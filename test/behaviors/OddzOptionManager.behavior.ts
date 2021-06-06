@@ -1316,7 +1316,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         utils.formatBytes32String("USD"),
         utils.formatBytes32String("ETH"),
         BigNumber.from(utils.parseEther("6480")),
-        BigNumber.from(utils.parseEther("2.473282442748091603")),
+        BigNumber.from(utils.parseEther("2.124590163934426229")),
       );
   });
 

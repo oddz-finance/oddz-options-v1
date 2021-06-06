@@ -4,17 +4,24 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Swap/ISwapUnderlyingAsset.sol";
+import "../Oracle/IOddzPriceOracleManager.sol";
+import "hardhat/console.sol";
 
 contract MockSwap is ISwapUnderlyingAsset, Ownable {
     using SafeERC20 for ERC20;
 
-    mapping(address => bytes32) assets;
+    IOddzPriceOracleManager public oracle;
+
+    mapping(address => bytes32) public assets;
 
     uint32 public oddzPrice = 2;
-    uint32 public ethPrice = 2620;
-    uint32 public btcPrice = 36800;
 
-    constructor(bytes32[] memory _names, address[] memory _addresses) {
+    constructor(
+        IOddzPriceOracleManager _oracle,
+        bytes32[] memory _names,
+        address[] memory _addresses
+    ) {
+        oracle = _oracle;
         for (uint8 i = 0; i < _names.length; i++) {
             assets[_addresses[i]] = _names[i];
         }
@@ -22,14 +29,6 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
 
     function setOddzPrice(uint32 _price) public onlyOwner {
         oddzPrice = _price;
-    }
-
-    function setEthPrice(uint32 _price) public onlyOwner {
-        ethPrice = _price;
-    }
-
-    function setBtcPrice(uint32 _price) public onlyOwner {
-        btcPrice = _price;
     }
 
     function addToken(bytes32 _name, address _address) public onlyOwner {
@@ -51,11 +50,18 @@ contract MockSwap is ISwapUnderlyingAsset, Ownable {
         result[0] = _amountIn;
         // 0x4f44445a00000000000000000000000000000000000000000000000000000000 - ODDZ
         // 0x4554480000000000000000000000000000000000000000000000000000000000 - ETH
+        // 0x5553440000000000000000000000000000000000000000000000000000000000 - USD
+
         if (assets[_toToken] == 0x4f44445a00000000000000000000000000000000000000000000000000000000)
             result[1] = _amountIn / oddzPrice;
-        else if (assets[_toToken] == 0x4554480000000000000000000000000000000000000000000000000000000000)
-            result[1] = _amountIn / ethPrice;
-        else result[1] = _amountIn / btcPrice;
+        else {
+            (uint256 cp, uint8 decimal) =
+                oracle.getUnderlyingPrice(
+                    assets[_toToken],
+                    0x5553440000000000000000000000000000000000000000000000000000000000
+                );
+            result[1] = _amountIn / (cp / 10**decimal);
+        }
 
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
         return result;

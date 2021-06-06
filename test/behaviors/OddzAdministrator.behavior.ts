@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, utils, constants } from "ethers";
-import { OddzAssetManager, MockERC20 } from "../../typechain";
+import { OddzAssetManager, MockERC20, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
 import { DistributionPercentage, DepositType } from "../../test-utils";
 
 import { Signer } from "@ethersproject/abstract-signer";
@@ -10,6 +10,8 @@ const addAssetPair = async (
   admin: Signer,
   usdcToken: MockERC20,
   oddzToken: MockERC20,
+  oddzPriceOracleManager: OddzPriceOracleManager,
+  oracleAddress: MockOddzPriceOracle,
 ) => {
   const oam = await oddzAssetManager.connect(admin);
   await oam.addAsset(utils.formatBytes32String("USDC"), usdcToken.address, 8);
@@ -21,6 +23,22 @@ const addAssetPair = async (
     2592000,
     86400,
   );
+  await oddzPriceOracleManager
+    .connect(admin)
+    .addAggregator(
+      utils.formatBytes32String("ODDZ"),
+      utils.formatBytes32String("USDC"),
+      oracleAddress.address,
+      oracleAddress.address,
+    );
+  const hash = utils.keccak256(
+    utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32", "address"],
+      [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), oracleAddress.address],
+    ),
+  );
+
+  await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
 };
 
 export function shouldBehaveLikeOddzAdministrator(): void {
@@ -223,7 +241,14 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
-    await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+    await addAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.usdcToken,
+      this.oddzToken,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+    );
 
     await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
     // ideally should deposit from optionManager
@@ -238,7 +263,14 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
-    await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+    await addAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.usdcToken,
+      this.oddzToken,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+    );
 
     await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
 
@@ -255,7 +287,14 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const usdcToken = await this.usdcToken.connect(this.signers.admin);
     const oddzToken = await this.oddzToken.connect(this.signers.admin);
 
-    await addAssetPair(this.oddzAssetManager, this.signers.admin, this.usdcToken, this.oddzToken);
+    await addAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.usdcToken,
+      this.oddzToken,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+    );
     await this.mockOddzDex.addToken(utils.formatBytes32String("ODDZ"), this.oddzToken.address);
 
     await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));

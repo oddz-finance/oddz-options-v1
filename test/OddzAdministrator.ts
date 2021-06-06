@@ -9,6 +9,8 @@ import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexMa
 import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
 import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
+import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -23,6 +25,8 @@ import {
   OddzOptionManager,
   MockSwap,
   OddzTokenStaking,
+  MockOddzPriceOracle,
+  OddzPriceOracleManager,
 } from "../typechain";
 import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -68,11 +72,23 @@ describe("Oddz Administrator Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
+      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(161200000000),
+      ])) as MockOddzPriceOracle;
+
+      this.oddzPriceOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzPriceOracleManagerArtifact,
+        [],
+      )) as OddzPriceOracleManager;
+      await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
+
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
 
       this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
+        this.oddzPriceOracleManager.address,
         [utils.formatBytes32String("ETH"), utils.formatBytes32String("BTC")],
         [this.usdcToken.address, this.usdcToken.address],
       ])) as MockSwap;
