@@ -120,53 +120,55 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
         uint256 oddzAmount = _amount - usdcAmount;
         convertToOddz(oddzAmount);
 
-        if (_depositType == DepositType.Transaction) distrbuteTxn(usdcAmount, oddzToken.balanceOf(address(this)));
-        else distrbuteSettlement(usdcAmount, oddzToken.balanceOf(address(this)));
+        if (_depositType == DepositType.Transaction) distrbuteTxn(_amount, oddzAmount);
+        else distrbuteSettlement(_amount, oddzAmount);
 
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
     function convertToOddz(uint256 _amount) private {
-        address exchange = dexManager.getExchange("ODDZ", "USDC");
+        address exchange = dexManager.getExchange("ODDZ", "USD");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
+        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
     }
 
-    function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {
+    function distrbuteTxn(uint256 _totalAmount, uint256 _oddzShare) private {
+        uint256 oddzTransfer = (_totalAmount * oddzToken.balanceOf(address(this))) / _oddzShare;
         if (txnDistribution.staker > 0)
-            staking.deposit((_oddzAmount * txnDistribution.staker) / 100, IOddzStakingManager.DepositType.Transaction);
-        if (txnDistribution.developer > 0) sdk.allocateOddzReward((_oddzAmount * txnDistribution.developer) / 100);
+            staking.deposit((oddzTransfer * txnDistribution.staker) / 100, IOddzStakingManager.DepositType.Transaction);
+        if (txnDistribution.developer > 0) sdk.allocateOddzReward((oddzTransfer * txnDistribution.developer) / 100);
         if (txnDistribution.gasless > 0)
-            usdcToken.safeTransferFrom(msg.sender, gaslessFacilitator, (_usdcAmount * txnDistribution.gasless) / 100);
+            usdcToken.safeTransferFrom(msg.sender, gaslessFacilitator, (_totalAmount * txnDistribution.gasless) / 100);
         if (txnDistribution.maintainer > 0)
             usdcToken.safeTransferFrom(
                 msg.sender,
                 maintenanceFacilitator,
-                (_usdcAmount * txnDistribution.maintainer) / 100
+                (_totalAmount * txnDistribution.maintainer) / 100
             );
     }
 
-    function distrbuteSettlement(uint256 _usdcAmount, uint256 _oddzAmount) private {
-        if (settlementDistribution.staker > 0 && oddzToken.balanceOf(address(this)) > 0)
+    function distrbuteSettlement(uint256 _totalAmount, uint256 _oddzShare) private {
+        uint256 oddzTransfer = (_totalAmount * oddzToken.balanceOf(address(this))) / _oddzShare;
+        if (settlementDistribution.staker > 0)
             staking.deposit(
-                (_oddzAmount * settlementDistribution.staker) / 100,
+                (oddzTransfer * settlementDistribution.staker) / 100,
                 IOddzStakingManager.DepositType.Settlement
             );
         if (settlementDistribution.developer > 0)
-            sdk.allocateOddzReward((_oddzAmount * settlementDistribution.developer) / 100);
+            sdk.allocateOddzReward((oddzTransfer * settlementDistribution.developer) / 100);
         if (settlementDistribution.gasless > 0)
             usdcToken.safeTransferFrom(
                 msg.sender,
                 gaslessFacilitator,
-                (_usdcAmount * settlementDistribution.gasless) / 100
+                (_totalAmount * settlementDistribution.gasless) / 100
             );
         if (settlementDistribution.maintainer > 0)
             usdcToken.safeTransferFrom(
                 msg.sender,
                 maintenanceFacilitator,
-                (_usdcAmount * settlementDistribution.maintainer) / 100
+                (_totalAmount * settlementDistribution.maintainer) / 100
             );
     }
 }

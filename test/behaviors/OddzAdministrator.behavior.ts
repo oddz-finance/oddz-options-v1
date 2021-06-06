@@ -14,11 +14,11 @@ const addAssetPair = async (
   oracleAddress: MockOddzPriceOracle,
 ) => {
   const oam = await oddzAssetManager.connect(admin);
-  await oam.addAsset(utils.formatBytes32String("USDC"), usdcToken.address, 8);
+  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
   await oam.addAsset(utils.formatBytes32String("ODDZ"), oddzToken.address, 8);
   await oam.addAssetPair(
     utils.formatBytes32String("ODDZ"),
-    utils.formatBytes32String("USDC"),
+    utils.formatBytes32String("USD"),
     BigNumber.from(utils.parseEther("0.01")),
     2592000,
     86400,
@@ -27,14 +27,14 @@ const addAssetPair = async (
     .connect(admin)
     .addAggregator(
       utils.formatBytes32String("ODDZ"),
-      utils.formatBytes32String("USDC"),
+      utils.formatBytes32String("USD"),
       oracleAddress.address,
       oracleAddress.address,
     );
   const hash = utils.keccak256(
     utils.defaultAbiCoder.encode(
       ["bytes32", "bytes32", "address"],
-      [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), oracleAddress.address],
+      [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USD"), oracleAddress.address],
     ),
   );
 
@@ -303,6 +303,8 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
     await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Settlement);
     // check balance of maintenance facilitator
-    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("1000")).div(100));
+    expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("100")));
+    expect(await oddzToken.balanceOf(this.oddzSDK.address)).to.equal(BigNumber.from(utils.parseEther("50")));
+    expect(await oddzToken.balanceOf(this.oddzStaking.address)).to.equal(BigNumber.from(utils.parseEther("400")));
   });
 }
