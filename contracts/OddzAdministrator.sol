@@ -127,11 +127,11 @@ contract OddzAdministrator is IOddzAdministrator, Ownable {
     }
 
     function convertToOddz(uint256 _amount) private {
-        address exchange = dexManager.getExchange("ODDZ", "USDC");
+        address exchange = dexManager.getExchange("ODDZ", "USD");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USDC", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
+        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
     }
 
     function distrbuteTxn(uint256 _usdcAmount, uint256 _oddzAmount) private {

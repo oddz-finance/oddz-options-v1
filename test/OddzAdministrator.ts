@@ -95,14 +95,14 @@ describe("Oddz Administrator Unit tests", function () {
 
       await this.dexManager.addExchange(
         utils.formatBytes32String("ODDZ"),
-        utils.formatBytes32String("USDC"),
+        utils.formatBytes32String("USD"),
         this.mockOddzDex.address,
       );
 
       const dexHash = utils.keccak256(
         utils.defaultAbiCoder.encode(
           ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USDC"), this.mockOddzDex.address],
+          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
         ),
       );
 
