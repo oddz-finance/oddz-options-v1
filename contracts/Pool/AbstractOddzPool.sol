@@ -157,7 +157,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) return 0;
 
         _allocatePremium(_provider);
-        require(!liquidityProvider[_provider]._isNegativePremium, "LP Error: Premium is negative");
+        if (liquidityProvider[_provider]._isNegativePremium) return 0;
         premium = liquidityProvider[_provider]._premiumAllocated;
         liquidityProvider[_provider]._premiumAllocated = 0;
 
