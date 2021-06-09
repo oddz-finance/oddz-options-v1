@@ -152,6 +152,7 @@ describe("Oddz Administrator Unit tests", function () {
         this.oddzToken.address,
         this.oddzTokenStaking.address,
         86400,
+        86400,
         100,
         100,
         100,

@@ -430,7 +430,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         settlementFee = ((profit * oddzFeeManager.getSettlementFee(msg.sender)) /
             (100 * 10**oddzFeeManager.decimals()));
         settlementFeeAggregate += settlementFee;
-        profit -= settlementFee;
+
+        token.safeTransferFrom(msg.sender, address(this), settlementFee);
     }
 
     /**
