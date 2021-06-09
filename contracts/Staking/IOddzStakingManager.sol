@@ -2,7 +2,7 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title Oddz Staking
@@ -19,14 +19,14 @@ interface IOddzStakingManager {
      * @param _token Address of the staked token
      * @param _amount Amount to withdraw
      */
-    function withdraw(address _token, uint256 _amount) external;
+    function withdraw(IERC20 _token, uint256 _amount) external;
 
     /**
      * @notice Stake tokens
      * @param _token Address of the staked token
      * @param _amount Amount to stake
      */
-    function stake(address _token, uint256 _amount) external;
+    function stake(IERC20 _token, uint256 _amount) external;
 
     /**
      * @notice Deposit txn fee  and settlement fee in usdc
