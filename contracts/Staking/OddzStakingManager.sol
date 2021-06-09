@@ -6,7 +6,6 @@ import "./IOddzTokenStaking.sol";
 import "../Libs/DateTimeLibrary.sol";
 
 contract OddzStakingManager is Ownable, IOddzStakingManager {
-    using Address for address;
     using SafeERC20 for IERC20;
 
     /**
