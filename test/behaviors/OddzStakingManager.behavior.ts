@@ -60,11 +60,60 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     );
   });
 
+  it("Should revert setting lockup duration for invalid low duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.setLockupDuration(this.oddzToken.address, 86399)).to.be.revertedWith(
+      "Staking: invalid staking duration",
+    );
+  });
+
+  it("Should revert setting lockup duration for invalid high duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.setLockupDuration(this.oddzToken.address, getExpiry(31))).to.be.revertedWith(
+      "Staking: invalid staking duration",
+    );
+  });
+
   it("Should successfully set lockup duration for the token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await oddzStakingManager.setLockupDuration(this.oddzToken.address, getExpiry(1));
     const token = await oddzStakingManager.tokens(this.oddzToken.address);
     expect(token._lockupDuration).to.equal(getExpiry(1));
+  });
+
+  it("Should revert setting rewards lockup duration for the token by non owner", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
+    await expect(oddzStakingManager.setRewardLockupDuration(this.oddzToken.address, getExpiry(1))).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+  });
+
+  it("Should revert setting rewards lockup duration for invalid token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.setRewardLockupDuration(constants.AddressZero, getExpiry(1))).to.be.revertedWith(
+      "token not added",
+    );
+  });
+
+  it("Should revert setting rewards lockup duration for invalid low duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.setRewardLockupDuration(this.oddzToken.address, 86399)).to.be.revertedWith(
+      "Staking: invalid staking duration",
+    );
+  });
+
+  it("Should revert setting rewards lockup duration for invalid high duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(oddzStakingManager.setRewardLockupDuration(this.oddzToken.address, getExpiry(31))).to.be.revertedWith(
+      "Staking: invalid staking duration",
+    );
+  });
+
+  it("Should successfully set rewards lockup duration for the token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await oddzStakingManager.setRewardLockupDuration(this.oddzToken.address, getExpiry(10));
+    const token = await oddzStakingManager.tokens(this.oddzToken.address);
+    expect(token._rewardsLockupDuration).to.equal(getExpiry(10));
   });
 
   it("Should revert staking for zero token address", async function () {
@@ -466,5 +515,99 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("Should burn for owner", async function () {
+    const oddzTokenStaking = await this.oddzTokenStaking1.connect(this.signers.admin);
+    const mockTokenStaking = await this.mockTokenStaking.connect(this.signers.admin);
+    const oddzToken = await this.oddzToken.connect(this.signers.admin);
+    await oddzToken.approve(this.oddzTokenStaking1.address, BigNumber.from(utils.parseEther("100")));
+
+    await oddzTokenStaking.transferOwnership(this.mockTokenStaking.address);
+    await mockTokenStaking.stake();
+    expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(1000);
+    await expect(mockTokenStaking.burn()).to.be.ok;
+
+    expect(await oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(0);
+  });
+
+  it("Should revert setting reward percentages for the tokens by non owner", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [this.oddzToken.address, this.oUsdToken.address],
+        [70, 30],
+        [60, 40],
+        [20, 80],
+      ),
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert setting rewards reward percentages for invalid token", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [constants.AddressZero, this.oUsdToken.address],
+        [70, 30],
+        [60, 40],
+        [20, 80],
+      ),
+    ).to.be.revertedWith("Staking: token not added");
+  });
+
+  it("Should revert set reward percentages for invalid txnFee percentages", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [this.oddzToken.address, this.oUsdToken.address],
+        [70, 40],
+        [60, 40],
+        [20, 80],
+      ),
+    ).to.be.revertedWith("Staking: invalid reward percentages");
+  });
+
+  it("Should revert set reward percentages for invalid setllementFee percentages", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [this.oddzToken.address, this.oUsdToken.address],
+        [70, 30],
+        [40, 40],
+        [20, 80],
+      ),
+    ).to.be.revertedWith("Staking: invalid reward percentages");
+  });
+
+  it("Should revert set reward percentages for invalid alloted rewards percentages", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [this.oddzToken.address, this.oUsdToken.address],
+        [70, 30],
+        [40, 60],
+        [20, 10],
+      ),
+    ).to.be.revertedWith("Staking: invalid reward percentages");
+  });
+
+  it("Should successfully set reward percentages", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+
+    await oddzStakingManager.setRewardPercentages(
+      [this.oddzToken.address, this.oUsdToken.address],
+      [70, 30],
+      [60, 40],
+      [20, 80],
+    );
+    expect((await oddzStakingManager.tokens(this.oddzToken.address))._txnFeeReward).to.equal(70);
+    expect((await oddzStakingManager.tokens(this.oUsdToken.address))._txnFeeReward).to.equal(30);
+    expect((await oddzStakingManager.tokens(this.oddzToken.address))._settlementFeeReward).to.equal(60);
+    expect((await oddzStakingManager.tokens(this.oUsdToken.address))._settlementFeeReward).to.equal(40);
+    expect((await oddzStakingManager.tokens(this.oddzToken.address))._allotedReward).to.equal(20);
+    expect((await oddzStakingManager.tokens(this.oUsdToken.address))._allotedReward).to.equal(80);
   });
 }
