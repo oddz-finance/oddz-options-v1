@@ -391,7 +391,11 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     await oddzToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
     await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Transaction))
       .to.emit(oddzStakingManager, "Deposit")
-      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")));
+      .withArgs(this.accounts.admin, DepositType.Transaction, BigNumber.from(utils.parseEther("100000")))
+      .to.emit(this.oddzTokenStaking, "RewardAllocated")
+      .withArgs(addDaysAndGetSeconds(0), BigNumber.from(utils.parseEther("50000")))
+      .to.emit(this.oUsdTokenStaking, "RewardAllocated")
+      .withArgs(addDaysAndGetSeconds(0), BigNumber.from(utils.parseEther("50000")));
     await oddzToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("100000")));
     await expect(oddzStakingManager.deposit(BigNumber.from(utils.parseEther("100000")), DepositType.Settlement))
       .to.emit(oddzStakingManager, "Deposit")

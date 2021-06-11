@@ -10,6 +10,8 @@ import "../Libs/DateTimeLibrary.sol";
 abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
     using Address for address;
 
+    event RewardAllocated(uint256 indexed _date, uint256 _amount);
+
     /**
      * @dev Staker Details
      * @param _amount Amount to stake
@@ -56,6 +58,8 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         getAndUpdateDaysActiveStake(date);
         dayStakeMap[date]._allocatedRewards += _amount;
+
+        emit RewardAllocated(date, _amount);
     }
 
     /**
