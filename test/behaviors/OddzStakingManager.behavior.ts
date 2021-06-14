@@ -533,16 +533,14 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     const oddzToken1 = await this.oddzToken.connect(this.signers.admin1);
 
     await oddzToken.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("20000000")));
-    await expect(oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000")))).to.emit(
-      oddzStakingManager,
-      "Stake",
-    );
+    await expect(
+      oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000"))),
+    ).to.emit(oddzStakingManager, "Stake");
 
     await oddzToken1.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("10000000")));
-    await expect(oddzStakingManager1.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000")))).to.emit(
-      oddzStakingManager,
-      "Stake",
-    );
+    await expect(
+      oddzStakingManager1.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000"))),
+    ).to.emit(oddzStakingManager, "Stake");
 
     await oddzToken.approve(this.oddzStakingManager.address, BigNumber.from(utils.parseEther("2000")));
     await oddzStakingManager.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction);
@@ -590,10 +588,9 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     const oddzToken1 = await this.oddzToken.connect(this.signers.admin1);
 
     await oddzToken.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("20000000")));
-    await expect(oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000")))).to.emit(
-      oddzStakingManager,
-      "Stake",
-    );
+    await expect(
+      oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000"))),
+    ).to.emit(oddzStakingManager, "Stake");
 
     await oddzToken1.approve(this.oddzTokenStaking.address, BigNumber.from(utils.parseEther("10")));
     await expect(oddzStakingManager1.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10")))).to.emit(
@@ -609,9 +606,13 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     await provider.send("evm_increaseTime", [getExpiry(2)]);
     await this.oddzTokenStaking.connect(this.signers.admin).getAndUpdateDaysActiveStake(addDaysAndGetSeconds(2));
 
-    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("499.9995000004999995"));
+    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(
+      utils.parseEther("499.9995000004999995"),
+    );
     await oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10000000")));
-    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("499.9995000004999995"));
+    expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(
+      utils.parseEther("499.9995000004999995"),
+    );
 
     const { _amount, _date, _rewards, _lastClaimed } = await this.oddzTokenStaking.staker(this.accounts.admin);
     expect(_amount).to.equal(BigNumber.from(utils.parseEther("20000000")));
