@@ -515,7 +515,9 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     expect(await oddzStakingManager.getProfitInfo(this.oddzToken.address)).to.equal(
       utils.parseEther("583.333333333333333333"),
     );
-    expect(await oddzStakingManager1.getProfitInfo(this.oddzToken.address)).to.equal(utils.parseEther("400"));
+    expect(await oddzStakingManager1.getProfitInfo(this.oddzToken.address)).to.equal(
+      utils.parseEther("416.666666666666666666"),
+    );
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
