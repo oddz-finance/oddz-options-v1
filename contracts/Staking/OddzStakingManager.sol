@@ -11,7 +11,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     /**
      * @dev Token
-     * @param _name Name of the token
      * @param _address Address of the token
      * @param _stakingContract staking contract address for the token
      * @param _lockupDuration Lock up duration for the token withdrawal
@@ -22,7 +21,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @param _active Token is active or not
      */
     struct Token {
-        bytes32 _name;
         IERC20 _address;
         IOddzTokenStaking _stakingContract;
         uint256 _lockupDuration;
@@ -36,30 +34,22 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     /**
      * @dev Emitted when new token is added
      * @param _address Address of the token
-     * @param _name Name of the token
      * @param _stakingContract Stacking contract address
      * @param _lockupDuration Lock up duration for the token withdrawal
      */
-    event TokenAdded(
-        address indexed _address,
-        bytes32 indexed _name,
-        address indexed _stakingContract,
-        uint256 _lockupDuration
-    );
+    event TokenAdded(address indexed _address, address indexed _stakingContract, uint256 _lockupDuration);
 
     /**
      * @dev Emitted when token is deactivated
      * @param _address Address of the token
-     * @param _name Name of the token
      */
-    event TokenDeactivate(address indexed _address, bytes32 indexed _name);
+    event TokenDeactivate(address indexed _address);
 
     /**
      * @dev Emitted when token is activated
      * @param _address Address of the token
-     * @param _name Name of the token
      */
-    event TokenActivate(address indexed _address, bytes32 indexed _name);
+    event TokenActivate(address indexed _address);
 
     /**
      * @dev Emitted when txn fee and settlement fee is deposited
@@ -187,7 +177,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     function deactivateToken(IERC20 _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
-        emit TokenDeactivate(address(_token), tokens[_token]._name);
+        emit TokenDeactivate(address(_token));
     }
 
     /**
@@ -196,7 +186,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     function activateToken(IERC20 _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
-        emit TokenActivate(address(_token), tokens[_token]._name);
+        emit TokenActivate(address(_token));
     }
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
@@ -218,7 +208,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     }
 
     function addToken(
-        bytes32 _name,
         IERC20 _address,
         IOddzTokenStaking _stakingContract,
         uint256 _lockupDuration,
@@ -229,7 +218,6 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     ) external onlyOwner validDuration(_lockupDuration) {
         require(address(_address).isContract(), "Staking: invalid token address");
         tokens[_address] = Token(
-            _name,
             _address,
             _stakingContract,
             _lockupDuration,
@@ -241,7 +229,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         );
         tokensList.push(tokens[_address]);
 
-        emit TokenAdded(address(_address), _name, address(_stakingContract), _lockupDuration);
+        emit TokenAdded(address(_address), address(_stakingContract), _lockupDuration);
     }
 
     function stake(IERC20 _token, uint256 _amount) external override validToken(_token) {

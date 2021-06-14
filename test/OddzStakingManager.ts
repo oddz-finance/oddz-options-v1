@@ -69,7 +69,6 @@ describe("Oddz Staking Manager Unit tests", function () {
       ])) as MockTokenStaking;
 
       await this.oddzStakingManager.addToken(
-        utils.formatBytes32String("ODDZ"),
         this.oddzToken.address,
         this.oddzTokenStaking.address,
         getExpiry(1),
@@ -79,7 +78,6 @@ describe("Oddz Staking Manager Unit tests", function () {
         50,
       );
       await this.oddzStakingManager.addToken(
-        utils.formatBytes32String("oUSD"),
         this.oUsdToken.address,
         this.oUsdTokenStaking.address,
         getExpiry(1),
