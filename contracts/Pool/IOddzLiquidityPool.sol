@@ -8,6 +8,8 @@ pragma solidity 0.8.3;
 interface IOddzLiquidityPool {
     event AddLiquidity(address indexed _account, uint256 _amount);
     event RemoveLiquidity(address indexed _account, uint256 _amount, uint256 _burn);
+    event LockLiquidity(uint256 _amount);
+    event UnlockLiquidity(uint256 _amount);
     event PremiumCollected(address indexed _account, uint256 _amount);
     event PremiumForfeited(address indexed _account, uint256 _amount);
     event Profit(uint256 indexed _id, uint256 _amount);
