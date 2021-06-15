@@ -157,7 +157,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         if ((liquidityProvider[_provider]._date + _lockupDuration) > block.timestamp) return 0;
 
         _allocatePremium(_provider);
-        require(!liquidityProvider[_provider]._isNegativePremium, "LP Error: Premium is negative");
+        if (liquidityProvider[_provider]._isNegativePremium) return 0;
         premium = liquidityProvider[_provider]._premiumAllocated;
         liquidityProvider[_provider]._premiumAllocated = 0;
 
@@ -219,26 +219,40 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         if (liquidityProvider[_provider]._amount == 0)
             return (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium);
 
-        (uint256 tLiquidty, uint256 tReward, uint256 tExercised, uint256 count) = _getPremium(_provider);
+        uint256 startDate;
+        if (liquidityProvider[_provider]._lastPremiumCollected > 0)
+            startDate = liquidityProvider[_provider]._lastPremiumCollected;
+        else startDate = liquidityProvider[_provider]._date;
 
-        if (tLiquidty == 0)
-            return (liquidityProvider[_provider]._premiumAllocated, liquidityProvider[_provider]._isNegativePremium);
-
+        // premium calculation should not include current day
+        uint256 count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
         rewards = liquidityProvider[_provider]._premiumAllocated;
+        PremiumPool memory pd;
+        for (uint256 i = 0; i < count; i++) {
+            uint256 dActiveLiquidity = daysActiveLiquidity[startDate + (i * 1 days)];
+            require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
+            pd = premiumDayPool[startDate + (i * 1 days)];
+            uint256 tReward = pd._collected + pd._surplus;
 
-        if (liquidityProvider[_provider]._isNegativePremium) {
-            if (tExercised + rewards > tReward) rewards += tExercised - tReward;
-            else {
-                rewards = tReward - (tExercised + rewards);
-                isNegative = false;
+            if (liquidityProvider[_provider]._isNegativePremium) {
+                if (pd._exercised + rewards > tReward)
+                    rewards += (((pd._exercised - tReward) * liquidityProvider[_provider]._amount) / dActiveLiquidity);
+                else {
+                    rewards =
+                        (((tReward - pd._exercised) * liquidityProvider[_provider]._amount) / dActiveLiquidity) -
+                        rewards;
+                    isNegative = false;
+                }
+            } else {
+                if (pd._exercised > tReward + rewards) {
+                    rewards =
+                        (((pd._exercised - tReward) * liquidityProvider[_provider]._amount) / dActiveLiquidity) -
+                        rewards;
+                    isNegative = true;
+                } else
+                    rewards += (((tReward - pd._exercised) * liquidityProvider[_provider]._amount) / dActiveLiquidity);
             }
-        } else {
-            if (tExercised > tReward + rewards) {
-                rewards = tExercised - (tReward + rewards);
-                isNegative = true;
-            } else rewards += tReward - tExercised;
         }
-        rewards = ((liquidityProvider[_provider]._amount * count * rewards) / tLiquidty);
     }
 
     /**
@@ -261,35 +275,6 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
             premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()]._surplus += _amount;
 
             emit PremiumForfeited(_provider, _amount);
-        }
-    }
-
-    function _getPremium(address _provider)
-        private
-        view
-        returns (
-            uint256 tLiquidty,
-            uint256 tReward,
-            uint256 tExercised,
-            uint256 count
-        )
-    {
-        uint256 startDate;
-        if (liquidityProvider[_provider]._lastPremiumCollected > 0)
-            startDate = liquidityProvider[_provider]._lastPremiumCollected;
-        else startDate = liquidityProvider[_provider]._date;
-
-        // premium should always be calculated for one day less
-        count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
-        PremiumPool memory pd;
-        for (uint256 i = 0; i < count; i++) {
-            // (startDate + (i * 1 days), daysActiveLiquidity[startDate + (i * 1 days)]);
-            uint256 dActiveLiquidity = daysActiveLiquidity[startDate + (i * 1 days)];
-            require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
-            tLiquidty += dActiveLiquidity;
-            pd = premiumDayPool[startDate + (i * 1 days)];
-            tReward += pd._collected + pd._surplus;
-            tExercised += pd._exercised;
         }
     }
 

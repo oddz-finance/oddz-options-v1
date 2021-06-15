@@ -148,9 +148,9 @@ describe("Oddz Administrator Unit tests", function () {
       await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
 
       await this.oddzStaking.addToken(
-        utils.formatBytes32String("ODDZ"),
         this.oddzToken.address,
         this.oddzTokenStaking.address,
+        86400,
         86400,
         100,
         100,

@@ -4,8 +4,6 @@ pragma solidity 0.8.3;
 import "./IOddzStakingManager.sol";
 import "./IOddzTokenStaking.sol";
 import "../Libs/DateTimeLibrary.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract OddzStakingManager is Ownable, IOddzStakingManager {
     using Address for address;
@@ -13,22 +11,20 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
 
     /**
      * @dev Token
-     * @param _name Name of the token
      * @param _address Address of the token
      * @param _stakingContract staking contract address for the token
      * @param _lockupDuration Lock up duration for the token withdrawal
-     * @param _lastDistributed last distributeds date for the token
+     * @param _rewardsLockupDuration Lock up duration for the rewards withdrawal
      * @param _txnFeeReward Percentage txn fee reward
      * @param _settlementFeeReward Percentage settlement fee reward
      * @param _allotedReward Percentage oddz reward alloted
      * @param _active Token is active or not
      */
     struct Token {
-        bytes32 _name;
-        address _address;
-        address _stakingContract;
+        IERC20 _address;
+        IOddzTokenStaking _stakingContract;
         uint256 _lockupDuration;
-        uint256 _lastDistributed;
+        uint256 _rewardsLockupDuration;
         uint8 _txnFeeReward;
         uint8 _settlementFeeReward;
         uint8 _allotedReward;
@@ -38,30 +34,22 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     /**
      * @dev Emitted when new token is added
      * @param _address Address of the token
-     * @param _name Name of the token
      * @param _stakingContract Stacking contract address
      * @param _lockupDuration Lock up duration for the token withdrawal
      */
-    event TokenAdded(
-        address indexed _address,
-        bytes32 indexed _name,
-        address indexed _stakingContract,
-        uint256 _lockupDuration
-    );
+    event TokenAdded(address indexed _address, address indexed _stakingContract, uint256 _lockupDuration);
 
     /**
      * @dev Emitted when token is deactivated
      * @param _address Address of the token
-     * @param _name Name of the token
      */
-    event TokenDeactivate(address indexed _address, bytes32 indexed _name);
+    event TokenDeactivate(address indexed _address);
 
     /**
      * @dev Emitted when token is activated
      * @param _address Address of the token
-     * @param _name Name of the token
      */
-    event TokenActivate(address indexed _address, bytes32 indexed _name);
+    event TokenActivate(address indexed _address);
 
     /**
      * @dev Emitted when txn fee and settlement fee is deposited
@@ -104,27 +92,26 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     event TransferReward(address indexed _staker, address indexed _token, uint256 _reward);
 
     IERC20 public oddzToken;
-    mapping(address => Token) public tokens;
+    mapping(IERC20 => Token) public tokens;
     Token[] public tokensList;
 
-    modifier validToken(address _token) {
-        require(tokens[_token]._address != address(0), "Staking: token not added");
-        require(tokens[_token]._active == true, "Staking: token is not active");
+    modifier validToken(IERC20 _token) {
+        _validateToken(_token);
         _;
     }
 
-    modifier inactiveToken(address _token) {
+    modifier inactiveToken(IERC20 _token) {
         require(tokens[_token]._active == false, "Staking: token is already active");
         _;
     }
 
-    modifier validStaker(address _token, address _staker) {
-        require(IOddzTokenStaking(tokens[_token]._stakingContract).isValidStaker(_staker), "Staking: invalid staker");
+    modifier validStaker(IERC20 _token, address _staker) {
+        require(tokens[_token]._stakingContract.isValidStaker(_staker), "Staking: invalid staker");
         _;
     }
 
     modifier validDuration(uint256 _duration) {
-        require(_duration >= 1 days, "Staking: invalid staking duration");
+        require(_duration >= 1 days && _duration <= 30 days, "Staking: invalid staking duration");
         _;
     }
 
@@ -137,7 +124,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @param _token token address
      * @param _duration lockup duration
      */
-    function setLockupDuration(address _token, uint256 _duration)
+    function setLockupDuration(IERC20 _token, uint256 _duration)
         external
         onlyOwner
         validToken(_token)
@@ -147,21 +134,59 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     }
 
     /**
+     * @notice Set reward lockup duration for the token
+     * @param _token token address
+     * @param _duration lockup duration
+     */
+    function setRewardLockupDuration(IERC20 _token, uint256 _duration)
+        external
+        onlyOwner
+        validToken(_token)
+        validDuration(_duration)
+    {
+        tokens[_token]._rewardsLockupDuration = _duration;
+    }
+
+    function setRewardPercentages(
+        IERC20[] calldata _tokens,
+        uint8[] calldata _txnFeeRewards,
+        uint8[] calldata _settlementFeeRewards,
+        uint8[] calldata _allotedRewards
+    ) external onlyOwner {
+        uint8 totalTxnFee;
+        uint8 totalSettlementFee;
+        uint8 totalAllotedFee;
+        for (uint8 i = 0; i < _tokens.length; i++) {
+            _validateToken(_tokens[i]);
+            tokens[_tokens[i]]._txnFeeReward = _txnFeeRewards[i];
+            totalTxnFee += _txnFeeRewards[i];
+            tokens[_tokens[i]]._settlementFeeReward = _settlementFeeRewards[i];
+            totalSettlementFee += _settlementFeeRewards[i];
+            tokens[_tokens[i]]._allotedReward = _allotedRewards[i];
+            totalAllotedFee += _allotedRewards[i];
+        }
+        require(
+            totalTxnFee == 100 && totalSettlementFee == 100 && totalAllotedFee == 100,
+            "Staking: invalid reward percentages"
+        );
+    }
+
+    /**
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(address _token) external onlyOwner validToken(_token) {
+    function deactivateToken(IERC20 _token) external onlyOwner validToken(_token) {
         tokens[_token]._active = false;
-        emit TokenDeactivate(_token, tokens[_token]._name);
+        emit TokenDeactivate(address(_token));
     }
 
     /**
      * @notice Activate token
      * @param _token token address
      */
-    function activateToken(address _token) external onlyOwner inactiveToken(_token) {
+    function activateToken(IERC20 _token) external onlyOwner inactiveToken(_token) {
         tokens[_token]._active = true;
-        emit TokenActivate(_token, tokens[_token]._name);
+        emit TokenActivate(address(_token));
     }
 
     function deposit(uint256 _amount, DepositType _depositType) external override {
@@ -175,7 +200,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
             else feePerc = tokensList[i]._allotedReward;
             totalPerc += feePerc;
 
-            IOddzTokenStaking(tokensList[i]._stakingContract).allocateRewards((_amount * feePerc) / 100);
+            (tokensList[i]._stakingContract).allocateRewards((_amount * feePerc) / 100);
         }
         require(totalPerc == 100, "Staking: invalid fee allocation for tokens");
 
@@ -183,22 +208,20 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
     }
 
     function addToken(
-        bytes32 _name,
-        address _address,
-        address _stakingContract,
+        IERC20 _address,
+        IOddzTokenStaking _stakingContract,
         uint256 _lockupDuration,
+        uint256 _rewardsLockupDuration,
         uint8 _txnFeeReward,
         uint8 _settlementFeeReward,
         uint8 _allotedReward
     ) external onlyOwner validDuration(_lockupDuration) {
-        require(_address.isContract(), "Staking: invalid token address");
-        require(_stakingContract.isContract(), "Staking: invalid staking contract");
+        require(address(_address).isContract(), "Staking: invalid token address");
         tokens[_address] = Token(
-            _name,
             _address,
             _stakingContract,
             _lockupDuration,
-            0,
+            _rewardsLockupDuration,
             _txnFeeReward,
             _settlementFeeReward,
             _allotedReward,
@@ -206,37 +229,54 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         );
         tokensList.push(tokens[_address]);
 
-        emit TokenAdded(_address, _name, _stakingContract, _lockupDuration);
+        emit TokenAdded(address(_address), address(_stakingContract), _lockupDuration);
     }
 
-    function stake(address _token, uint256 _amount) external override validToken(_token) {
+    function stake(IERC20 _token, uint256 _amount) external override validToken(_token) {
         require(_amount > 0, "Staking: invalid amount");
-        IOddzTokenStaking(tokens[_token]._stakingContract).stake(msg.sender, _amount);
+        tokens[_token]._stakingContract.stake(msg.sender, _amount);
 
-        emit Stake(msg.sender, _token, _amount);
+        emit Stake(msg.sender, address(_token), _amount);
     }
 
-    function withdraw(address _token, uint256 _amount)
+    function withdraw(IERC20 _token, uint256 _amount)
         external
         override
         validToken(_token)
         validStaker(_token, msg.sender)
     {
-        require(
-            _amount <= IOddzTokenStaking(tokens[_token]._stakingContract).balance(msg.sender),
-            "Staking: Amount is too large"
-        );
+        require(_amount <= tokens[_token]._stakingContract.balance(msg.sender), "Staking: Amount is too large");
 
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         require(
-            date - IOddzTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >=
-                tokens[_token]._lockupDuration,
+            date - tokens[_token]._stakingContract.getLastStakedAt(msg.sender) >= tokens[_token]._lockupDuration,
             "Staking: cannot withdraw within lockup period"
         );
         _transferRewards(msg.sender, _token, date);
-        IOddzTokenStaking(tokens[_token]._stakingContract).unstake(msg.sender, _amount);
+        tokens[_token]._stakingContract.unstake(msg.sender, _amount);
 
-        emit Withdraw(msg.sender, _token, _amount);
+        emit Withdraw(msg.sender, address(_token), _amount);
+    }
+
+    /**
+     * @notice Claim rewards by the staker
+     * @param _token Address of the staked token
+     */
+    function claimRewards(IERC20 _token) external validToken(_token) validStaker(_token, msg.sender) {
+        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
+        require(
+            date - tokens[_token]._stakingContract.getLastStakedAt(msg.sender) >= tokens[_token]._rewardsLockupDuration,
+            "Staking: cannot claim rewards within lockup period"
+        );
+        _transferRewards(msg.sender, _token, date);
+    }
+
+    /**
+     * @notice Get profit info of the staker
+     * @param _token Address of the staked token
+     */
+    function getProfitInfo(IERC20 _token) external view validToken(_token) returns (uint256 profit) {
+        profit = tokens[_token]._stakingContract.getRewards(msg.sender);
     }
 
     /**
@@ -247,39 +287,23 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     function _transferRewards(
         address _staker,
-        address _token,
+        IERC20 _token,
         uint256 _date
     ) private returns (uint256 reward) {
-        if (
-            _date - IOddzTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(_staker) >=
-            tokens[_token]._lockupDuration
-        ) {
-            reward = IOddzTokenStaking(tokens[_token]._stakingContract).withdrawRewards(_staker);
+        if (_date - tokens[_token]._stakingContract.getLastStakedAt(_staker) >= tokens[_token]._rewardsLockupDuration) {
+            reward = tokens[_token]._stakingContract.withdrawRewards(_staker);
             oddzToken.safeTransfer(_staker, reward);
 
-            emit TransferReward(_staker, _token, reward);
+            emit TransferReward(_staker, address(_token), reward);
         }
     }
 
     /**
-     * @notice Claim rewards by the staker
-     * @param _token Address of the staked token
+     * @notice Validate token
+     * @param _token token address
      */
-    function claimRewards(address _token) external validToken(_token) validStaker(_token, msg.sender) {
-        uint256 date = DateTimeLibrary.getPresentDayTimestamp();
-        require(
-            date - IOddzTokenStaking(tokens[_token]._stakingContract).getLastStakedAt(msg.sender) >
-                tokens[_token]._lockupDuration,
-            "Staking: cannot claim rewards within lockup period"
-        );
-        _transferRewards(msg.sender, _token, date);
-    }
-
-    /**
-     * @notice Get profit info of the staker
-     * @param _token Address of the staked token
-     */
-    function getProfitInfo(address _token) external view validToken(_token) returns (uint256 profit) {
-        profit = IOddzTokenStaking(tokens[_token]._stakingContract).getRewards(msg.sender);
+    function _validateToken(IERC20 _token) private view {
+        require(address(tokens[_token]._address) != address(0), "Staking: token not added");
+        require(tokens[_token]._active == true, "Staking: token is not active");
     }
 }

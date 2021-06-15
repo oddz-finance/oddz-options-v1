@@ -440,13 +440,18 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    const settlmentFee = await oddzOptionManager.settlementFeeAggregate();
+    const optionManagerTokenBalance = await this.usdcToken.balanceOf(oddzOptionManager.address);
     await expect(oddzOptionManager.exercise(0))
       .to.emit(oddzOptionManager, "Exercise")
-      .withArgs(0, BigNumber.from(utils.parseEther("240")), BigNumber.from(utils.parseEther("10")), ExcerciseType.Cash)
+      .withArgs(0, BigNumber.from(utils.parseEther("250")), BigNumber.from(utils.parseEther("10")), ExcerciseType.Cash)
       .to.emit(this.oddzDefaultPool, "Profit")
-      .withArgs(0, BigNumber.from(utils.parseEther("14.28186620")));
+      .withArgs(0, BigNumber.from(utils.parseEther("4.2818662")));
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("10")),
+      BigNumber.from(settlmentFee + utils.parseEther("10")),
+    );
+    expect(BigNumber.from(await this.usdcToken.balanceOf(oddzOptionManager.address))).to.equal(
+      BigNumber.from(utils.parseEther("10")).add(optionManagerTokenBalance),
     );
   });
 
@@ -476,13 +481,18 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Put option: Current price is too high");
     await oddzPriceOracle.setUnderlyingPrice(145000000000);
+    const settlmentFee = await oddzOptionManager.settlementFeeAggregate();
+    const optionManagerTokenBalance = await this.usdcToken.balanceOf(oddzOptionManager.address);
     await expect(oddzOptionManager.exercise(0))
       .to.emit(oddzOptionManager, "Exercise")
-      .withArgs(0, BigNumber.from(utils.parseEther("240")), BigNumber.from(utils.parseEther("10")), ExcerciseType.Cash)
+      .withArgs(0, BigNumber.from(utils.parseEther("250")), BigNumber.from(utils.parseEther("10")), ExcerciseType.Cash)
       .to.emit(this.oddzDefaultPool, "Loss")
-      .withArgs(0, BigNumber.from(utils.parseEther("47.94690220")));
+      .withArgs(0, BigNumber.from(utils.parseEther("57.94690220")));
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("10")),
+      BigNumber.from(settlmentFee + utils.parseEther("10")),
+    );
+    expect(BigNumber.from(await this.usdcToken.balanceOf(oddzOptionManager.address))).to.equal(
+      BigNumber.from(utils.parseEther("10")).add(optionManagerTokenBalance),
     );
   });
 
@@ -683,19 +693,23 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await expect(oddzOptionManager.exercise(0)).to.be.revertedWith("Call option: Current price is too low");
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
+    const settlmentFee = await oddzOptionManager.settlementFeeAggregate();
+    const optionManagerTokenBalance = await this.usdcToken.balanceOf(oddzOptionManager.address);
     await expect(oddzOptionManager.exercise(0))
       .to.emit(oddzOptionManager, "Exercise")
       .withArgs(
         0,
-        BigNumber.from(utils.parseEther("237.5")),
+        BigNumber.from(utils.parseEther("250")),
         BigNumber.from(utils.parseEther("12.5")),
         ExcerciseType.Cash,
       )
       .to.emit(this.oddzDefaultPool, "Profit")
-      .withArgs(0, BigNumber.from(utils.parseEther("16.78186620")));
-
+      .withArgs(0, BigNumber.from(utils.parseEther("4.2818662")));
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
-      BigNumber.from(utils.parseEther("12.5")),
+      BigNumber.from(settlmentFee + utils.parseEther("12.5")),
+    );
+    expect(BigNumber.from(await this.usdcToken.balanceOf(oddzOptionManager.address))).to.equal(
+      BigNumber.from(utils.parseEther("12.5")).add(optionManagerTokenBalance),
     );
   });
 
@@ -1315,8 +1329,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       .withArgs(
         utils.formatBytes32String("USD"),
         utils.formatBytes32String("ETH"),
-        BigNumber.from(utils.parseEther("6480")),
-        BigNumber.from(utils.parseEther("2.124590163934426229")),
+        BigNumber.from(utils.parseEther("6750")),
+        BigNumber.from(utils.parseEther("2.213114754098360655")),
       );
   });
 
