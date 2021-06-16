@@ -62,6 +62,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev Premium specific data definitions
      */
     uint256 public premiumLockupDuration = 14 days;
+    uint256 public moveLockupDuration = 7 days;
 
     /**
      * @dev DEX manager
@@ -158,12 +159,16 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
         require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
         uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
-        token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount) + eligiblePremium);
+        token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount, premiumLockupDuration) + eligiblePremium);
 
         _burn(msg.sender, _amount);
     }
 
-    function _removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) private returns (uint256 transferAmount) {
+    function _removeLiquidity(
+        IOddzLiquidityPool _pool,
+        uint256 _amount,
+        uint256 premiumLockPeriod
+    ) private returns (uint256 transferAmount) {
         uint256 validateBalance;
         if (disabledPools[_pool]) validateBalance = _pool.availableBalance() * 10;
         else validateBalance = _pool.availableBalance() * reqBalance;
@@ -173,7 +178,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(_amount > 0, "LP Error: Amount is too small");
 
         transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), _amount);
-        _pool.removeLiquidity(transferAmount, _amount, msg.sender, premiumLockupDuration);
+        _pool.removeLiquidity(transferAmount, _amount, msg.sender, premiumLockPeriod);
     }
 
     function lockLiquidity(
@@ -259,8 +264,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     function move(PoolTransfer memory _poolTransfer) external {
         require(
-            lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + 1 weeks) < block.timestamp,
-            "LP Error: Pool transfer available only once in 7 days"
+            lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + moveLockupDuration) < block.timestamp,
+            "LP Error: Pool transfer not allowed"
         );
         lastPoolTransfer[msg.sender] = block.timestamp;
         int256 totalTransfer = 0;
@@ -269,7 +274,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 (poolExposure[_poolTransfer._source[i]] > 0) || disabledPools[_poolTransfer._source[i]],
                 "LP Error: Invalid pool"
             );
-            _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i]);
+            _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i], moveLockupDuration);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
         for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
@@ -519,5 +524,17 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             "LP Error: invalid premium lockup duration"
         );
         premiumLockupDuration = _premiumLockupDuration;
+    }
+
+    /**
+     * @notice updates move lockup duration
+     * @param _moveLockupDuration premium lockup duration
+     */
+    function updateMoveLockupDuration(uint256 _moveLockupDuration) public onlyOwner(msg.sender) {
+        require(
+            _moveLockupDuration >= 3 days && _moveLockupDuration <= 30 days,
+            "LP Error: invalid move lockup duration"
+        );
+        moveLockupDuration = _moveLockupDuration;
     }
 }
