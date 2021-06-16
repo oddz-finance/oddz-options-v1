@@ -158,6 +158,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
         require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
+        require(_amount <= balanceOf(msg.sender), "LP Error: Amount exceeds oUSD balance");
+
         uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
         token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount, premiumLockupDuration) + eligiblePremium);
 
@@ -174,7 +176,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         else validateBalance = _pool.availableBalance() * reqBalance;
 
         require(_amount * 10 <= validateBalance, "LP Error: Not enough funds in the pool. Please lower the amount.");
-        require(_amount <= balanceOf(msg.sender), "LP Error: Amount is too large");
         require(_amount > 0, "LP Error: Amount is too small");
 
         transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), _amount);
