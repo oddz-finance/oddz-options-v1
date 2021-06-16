@@ -529,7 +529,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     /**
      * @notice updates move lockup duration
-     * @param _moveLockupDuration premium lockup duration
+     * @param _moveLockupDuration move lockup duration
      */
     function updateMoveLockupDuration(uint256 _moveLockupDuration) public onlyOwner(msg.sender) {
         require(
