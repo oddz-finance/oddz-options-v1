@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import Web3 from "Web3";
+import Web3 from "web3";
 import { utils, constants } from "ethers";
 import { DistributionPercentage, getExpiry, addSnapshotCount } from "../../test-utils";
 
