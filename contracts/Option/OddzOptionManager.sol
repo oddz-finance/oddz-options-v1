@@ -403,13 +403,13 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(option.holder == msg.sender, "Wrong msg.sender");
         require(option.state == State.Active, "Wrong state");
 
-        option.holder = _newHolder;
-
         uint256 transferFee = _getTransactionFee(_amount, _newHolder);
         txnFeeAggregate += transferFee;
 
         token.safeTransferFrom(_newHolder, msg.sender, _amount - transferFee);
         token.safeTransferFrom(_newHolder, address(this), transferFee);
+
+        option.holder = _newHolder;
 
         emit OptionTransfer(_optionId, msg.sender, _newHolder, _amount, transferFee);
     }
