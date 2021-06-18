@@ -54,6 +54,11 @@ contract OddzOptionManager is IOddzOption, Ownable {
     IOddzSDK public sdk;
     IOddzAdministrator public administrator;
 
+    /**
+     * @dev minimum premium
+     */
+    uint256 public minimumPremium;
+
     constructor(
         IOddzPriceOracleManager _oracle,
         IOddzIVOracleManager _iv,
@@ -115,7 +120,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @param _value user paid amount
      * @param _premium option premium
      */
-    function _validateOptionAmount(uint256 _value, uint256 _premium) private pure {
+    function _validateOptionAmount(uint256 _value, uint256 _premium) private view {
+        require(_premium >= minimumPremium, "amount is lower than minimum premium");
         require(_value >= _premium, "Premium is low");
     }
 
@@ -492,6 +498,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
 
         // Approve token transfer to administrator contract
         token.safeApprove(address(administrator), type(uint256).max);
+    }
+
+    function setMinimumPremium(uint256 _amount) external onlyOwner {
+        uint256 amount = _amount / 10**token.decimals();
+        require(amount >= 1 && amount < 50, "invalid minimum premium");
+        minimumPremium = _amount;
     }
 
     /**
