@@ -1499,4 +1499,163 @@ export function shouldBehaveLikeOddzOptionManager(): void {
         .allowance(oddzOptionManager.address, this.mockAdministrator.address),
     ).to.equal(0);
   });
+
+  it("should revert transfer expired option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      1,
+      this.accounts.admin,
+      false,
+    );
+
+    await oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin);
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 3
+    await provider.send("evm_increaseTime", [getExpiry(1) + 1]);
+    await expect(
+      oddzOptionManager.transferOption(0, this.accounts.admin1, BigInt(premiumWithSlippage)),
+    ).to.revertedWith("Option has expired");
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should revert transfer of an option from invalid owner", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(170000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      1,
+      this.accounts.admin,
+      false,
+    );
+
+    await oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin);
+    await expect(
+      this.oddzOptionManager
+        .connect(this.signers.admin1)
+        .transferOption(0, this.accounts.admin1, BigInt(premiumWithSlippage)),
+    ).to.revertedWith("Wrong msg.sender");
+  });
+
+  it("should revert transfer exercised option", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(159000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      1,
+      this.accounts.admin,
+      false,
+    );
+
+    await oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin);
+    await oddzOptionManager.exercise(0);
+
+    await expect(
+      oddzOptionManager.transferOption(0, this.accounts.admin1, BigInt(premiumWithSlippage)),
+    ).to.revertedWith("Wrong state");
+  });
+
+  it("should succesfully transger and exercise transfer option by new holder", async function () {
+    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+    const optionDetails = getOptionDetailsStruct(
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(159000000000),
+      OptionType.Call,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzOptionManager,
+      optionDetails,
+      1,
+      this.accounts.admin,
+      false,
+    );
+
+    await oddzOptionManager.buy(optionDetails, BigInt(premiumWithSlippage), this.accounts.admin);
+
+    const optionManagerTokenBalance = await this.usdcToken.balanceOf(oddzOptionManager.address);
+    const txnFeeBalance = await oddzOptionManager.txnFeeAggregate();
+    const transferFee = BigNumber.from(utils.parseEther("3.62551674439000023"));
+    await expect(oddzOptionManager.transferOption(0, this.accounts.admin1, BigInt(premiumWithSlippage)))
+      .to.emit(oddzOptionManager, "OptionTransfer")
+      .withArgs(0, this.accounts.admin, this.accounts.admin1, BigInt(premiumWithSlippage), transferFee);
+
+    expect(BigNumber.from(await oddzOptionManager.txnFeeAggregate())).to.equal(
+      BigNumber.from(txnFeeBalance).add(transferFee),
+    );
+    expect(BigNumber.from(await this.usdcToken.balanceOf(oddzOptionManager.address))).to.equal(
+      transferFee.add(optionManagerTokenBalance),
+    );
+
+    await expect(this.oddzOptionManager.connect(this.signers.admin1).exercise(0)).to.be.ok;
+  });
 }
