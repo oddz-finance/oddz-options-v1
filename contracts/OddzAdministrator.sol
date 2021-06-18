@@ -106,7 +106,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         minimumAmount = _minimumAmount;
     }
 
-    function updateDeadline(uint256 _deadline) external onlyOwner(msg.sender){
+    function updateDeadline(uint256 _deadline) external onlyOwner(msg.sender) {
         require(_deadline >= 1 minutes && _deadline <= 30 minutes, "Administrator: invalid deadline");
         deadline = _deadline;
     }
@@ -124,12 +124,10 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         txnDistribution = _txnDP;
     }
 
-    function updateSettlementDistribution(
-        DistributionPercentage memory _settlementDP
-        ) 
+    function updateSettlementDistribution(DistributionPercentage memory _settlementDP)
         external
-        onlyExecutor(msg.sender) 
-        {
+        onlyExecutor(msg.sender)
+    {
         require(
             (_settlementDP.developer + _settlementDP.gasless + _settlementDP.maintainer + _settlementDP.staker) == 100,
             "Administrator: invalid settlement distribution"

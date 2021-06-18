@@ -79,10 +79,9 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         oddzFeeManager = _oddzFeeManager;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
-
     }
 
-     modifier onlyOwner(address _address) {
+    modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
         _;
     }
@@ -481,7 +480,6 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     function setMaxDeadline(uint32 _deadline) external onlyOwner(msg.sender) {
         maxDeadline = _deadline;
     }
-
 
     /**
      * @notice sets SDK address

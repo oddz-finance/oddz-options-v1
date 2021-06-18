@@ -39,7 +39,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
     mapping(address => AssetPair) public addressPairMap;
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
-     modifier onlyOwner(address _address) {
+    modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
         _;
     }
@@ -48,7 +48,6 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
         require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
         _;
     }
-
 
     modifier validAsset(bytes32 _asset) {
         require(assetNameMap[_asset]._active == true, "Invalid Asset");
@@ -70,7 +69,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
         _;
     }
 
-    constructor(){
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
     }
@@ -243,14 +242,11 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      * @param _address asset pair address
      * @param _maxDays maximum option period
      */
-    function updateMaxPeriod(
-        address _address, 
-        uint256 _maxDays
-        ) 
-        external 
-        onlyExecutor(msg.sender) 
-        validAssetPair(_address) 
-        {
+    function updateMaxPeriod(address _address, uint256 _maxDays)
+        external
+        onlyExecutor(msg.sender)
+        validAssetPair(_address)
+    {
         AssetPair storage pair = addressPairMap[_address];
         validMaxDays(_maxDays, pair._minDays);
         pair._maxDays = _maxDays;
@@ -263,14 +259,11 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      * @param _address asset pair address
      * @param _minDays minimum option period
      */
-    function updateMinPeriod(
-        address _address, 
-        uint256 _minDays
-        )
-         external 
-         onlyExecutor(msg.sender) 
-         validAssetPair(_address) 
-         {
+    function updateMinPeriod(address _address, uint256 _minDays)
+        external
+        onlyExecutor(msg.sender)
+        validAssetPair(_address)
+    {
         AssetPair storage pair = addressPairMap[_address];
         validMinDays(_minDays, pair._maxDays);
         pair._minDays = _minDays;
@@ -283,14 +276,11 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      * @param _address asset pair address
      * @param _limit purchase limit for the pair
      */
-    function setPurchaseLimit(
-        address _address, 
-        uint256 _limit
-        ) 
-        external 
-        onlyExecutor(msg.sender) 
-        validAssetPair(_address) 
-        {
+    function setPurchaseLimit(address _address, uint256 _limit)
+        external
+        onlyExecutor(msg.sender)
+        validAssetPair(_address)
+    {
         AssetPair storage pair = addressPairMap[_address];
         pair._limit = _limit;
 

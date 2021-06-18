@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../Libs/IERC20Extented.sol";
 
 contract OddzFeeManager is IOddzFeeManager, AccessControl {
-
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
     IERC20Extented[] public txnFeeTokens;
@@ -27,7 +26,7 @@ contract OddzFeeManager is IOddzFeeManager, AccessControl {
     uint8 public txnFeePerc = 5;
     uint8 public settlementFeePerc = 4;
 
-     modifier onlyOwner(address _address) {
+    modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
         _;
     }
@@ -37,7 +36,7 @@ contract OddzFeeManager is IOddzFeeManager, AccessControl {
         _;
     }
 
-    constructor(){
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
     }

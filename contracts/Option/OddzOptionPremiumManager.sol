@@ -12,7 +12,6 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
-
     struct PremiumModel {
         bool _active;
         IOddzPremium _model;

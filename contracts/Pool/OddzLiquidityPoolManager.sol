@@ -458,7 +458,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     /**
-     * @notice removes the executor for the liqudity pool contract 
+     * @notice removes the executor for the liqudity pool contract
      * @param _address executor contract address
      * Note: This can be called only by the owner
      */

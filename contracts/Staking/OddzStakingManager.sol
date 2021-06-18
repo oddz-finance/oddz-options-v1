@@ -142,7 +142,6 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         revokeRole(EXECUTOR_ROLE, _address);
     }
 
-
     /**
      * @notice Set lockup duration for the token
      * @param _token token address

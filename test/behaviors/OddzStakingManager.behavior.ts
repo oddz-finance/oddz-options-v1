@@ -15,7 +15,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert deactivate for non owner", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
     await expect(oddzStakingManager.deactivateToken(this.oddzToken.address)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -36,7 +36,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert activate for non owner", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
     await expect(oddzStakingManager.activateToken(this.oddzToken.address)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -49,7 +49,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert setting lockup duration for the token by non owner", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
     await expect(oddzStakingManager.setLockupDuration(this.oddzToken.address, getExpiry(1))).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -84,7 +84,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
   it("Should revert setting rewards lockup duration for the token by non owner", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
     await expect(oddzStakingManager.setRewardLockupDuration(this.oddzToken.address, getExpiry(1))).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -660,7 +660,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
         [60, 40],
         [20, 80],
       ),
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("Should revert setting rewards reward percentages for invalid token", async function () {

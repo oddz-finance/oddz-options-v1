@@ -35,7 +35,7 @@ import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockER
 
 const { deployContract } = waffle;
 
-describe("Timelock Controller Unit tests", function () {
+describe("Oddz Administrator Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -50,7 +50,7 @@ describe("Timelock Controller Unit tests", function () {
     this.walletTo = walletTo;
   });
 
-  describe("Timelock Controller", function () {
+  describe("Oddz Administrator", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
 

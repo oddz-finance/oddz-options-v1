@@ -3,14 +3,8 @@ import { ethers, waffle } from "hardhat";
 import OddzStakingManagerArtifact from "../artifacts/contracts/Staking/OddzStakingManager.sol/OddzStakingManager.json";
 import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
-import OddzOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
-import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap.json";
-import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
-import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
-import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
 import TimeLockControllerArtifact from "../artifacts/contracts/TimeLockController.sol/TimelockController.json";
 import { Accounts, Signers } from "../types";
 
@@ -19,14 +13,8 @@ import {
   OddzStakingManager,
   DexManager,
   OddzAssetManager,
-  OddzLiquidityPoolManager,
   OddzSDK,
   OddzAdministrator,
-  OddzOptionManager,
-  MockSwap,
-  OddzTokenStaking,
-  MockOddzPriceOracle,
-  OddzPriceOracleManager,
   TimelockController,
 } from "../typechain";
 import { shouldBehaveLikeTimeLockController } from "./behaviors/TimeLockController.behavior";
@@ -36,7 +24,7 @@ import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockER
 
 const { deployContract } = waffle;
 
-describe("Oddz Administrator Unit tests", function () {
+describe("TimeLocker Controller Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -51,7 +39,7 @@ describe("Oddz Administrator Unit tests", function () {
     this.walletTo = walletTo;
   });
 
-  describe("Oddz Administrator", function () {
+  describe("TimeLocker Controller", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
 
@@ -73,61 +61,18 @@ describe("Oddz Administrator Unit tests", function () {
         [],
       )) as OddzAssetManager;
 
-      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
-        BigNumber.from(161200000000),
-      ])) as MockOddzPriceOracle;
-
-      this.oddzPriceOracleManager = (await deployContract(
-        this.signers.admin,
-        OddzPriceOracleManagerArtifact,
-        [],
-      )) as OddzPriceOracleManager;
-      await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
-
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
       ])) as DexManager;
-
-      this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [
-        this.oddzPriceOracleManager.address,
-        [utils.formatBytes32String("ETH"), utils.formatBytes32String("BTC")],
-        [this.usdcToken.address, this.usdcToken.address],
-      ])) as MockSwap;
-
-      await this.dexManager.addExchange(
-        utils.formatBytes32String("ODDZ"),
-        utils.formatBytes32String("USD"),
-        this.mockOddzDex.address,
-      );
-
-      const dexHash = utils.keccak256(
-        utils.defaultAbiCoder.encode(
-          ["bytes32", "bytes32", "address"],
-          [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USD"), this.mockOddzDex.address],
-        ),
-      );
-
-      await this.dexManager.setActiveExchange(dexHash);
-      await this.mockOddzDex.setManager(this.dexManager.address);
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
         this.oddzToken.address,
       ])) as OddzStakingManager;
 
-      this.oddzLiquidityPoolManager = (await deployContract(this.signers.admin, OddzLiquidityPoolManagerArtifact, [
-        this.usdcToken.address,
-        this.dexManager.address,
-      ])) as OddzLiquidityPoolManager;
-
       const bscForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
 
-      this.oddzOptionManager = (await deployContract(this.signers.admin, OddzOptionManagerArtifact, [
-        this.oddzLiquidityPoolManager.address,
-        this.usdcToken.address,
-      ])) as OddzOptionManager;
-
       this.oddzSDK = (await deployContract(this.signers.admin, OddzSDKArtifact, [
-        this.oddzOptionManager.address,
+        this.oddzToken.address, // just to test
         bscForwarder,
         this.oddzToken.address,
       ])) as OddzSDK;
@@ -142,32 +87,15 @@ describe("Oddz Administrator Unit tests", function () {
         this.dexManager.address,
       ])) as OddzAdministrator;
 
-      // this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
-      //   this.oddzToken.address,
-      // ])) as OddzTokenStaking;
-
-      // await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
-
-      // await this.oddzStaking.addToken(
-      //   this.oddzToken.address,
-      //   this.oddzTokenStaking.address,
-      //   86400,
-      //   86400,
-      //   100,
-      //   100,
-      //   100,
-      // );
-
-      // await this.dexManager.setSwapper(this.oddzAdministrator.address);
-
-      this.timeLockController = (await deployContract(
-        this.signers.admin,
-        TimeLockControllerArtifact,
-        [10, [this.accounts.admin1], [this.accounts.admin1]]
-      )) as TimelockController;
-      this.oddzAdministrator.transferOwnership(this.timeLockController.address)
+      this.timeLockController = (await deployContract(this.signers.admin, TimeLockControllerArtifact, [
+        10,
+        [this.accounts.admin1],
+        [this.accounts.admin1],
+      ])) as TimelockController;
+      this.oddzAdministrator.removeExecutor(this.accounts.admin);
+      this.oddzAdministrator.setExecutor(this.timeLockController.address);
     });
-    
+
     shouldBehaveLikeTimeLockController();
   });
 });
