@@ -282,7 +282,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 _details._optionType
             );
         pool.lockLiquidity(optionId, liquidityParams, premiumResult.optionPremium);
-        txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
+        txnFeeAggregate += premiumResult.txnFee;
 
         token.safeTransferFrom(_buyer, address(pool), premiumResult.optionPremium);
         token.safeTransferFrom(_buyer, address(this), premiumResult.txnFee);
@@ -391,6 +391,27 @@ contract OddzOptionManager is IOddzOption, Ownable {
         pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _slippage);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
+    }
+
+    function transferOption(
+        uint256 _optionId,
+        address _newHolder,
+        uint256 _amount
+    ) external {
+        Option storage option = options[_optionId];
+        require(option.expiration >= block.timestamp, "Option has expired");
+        require(option.holder == msg.sender, "Wrong msg.sender");
+        require(option.state == State.Active, "Wrong state");
+
+        option.holder = _newHolder;
+
+        uint256 transferFee = _getTransactionFee(_amount, _newHolder);
+        txnFeeAggregate += transferFee;
+
+        token.safeTransferFrom(_newHolder, msg.sender, _amount - transferFee);
+        token.safeTransferFrom(_newHolder, address(this), transferFee);
+
+        emit OptionTransfer(_optionId, msg.sender, _newHolder, _amount, transferFee);
     }
 
     /**
