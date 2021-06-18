@@ -11,7 +11,7 @@ import MockSwapArtifact from "../artifacts/contracts/Mocks/MockSwap.sol/MockSwap
 import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenStaking.sol/OddzTokenStaking.json";
 import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
 import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
-
+import TimeLockControllerArtifact from "../artifacts/contracts/TimeLockController.sol/TimelockController.json";
 import { Accounts, Signers } from "../types";
 
 import {
@@ -27,15 +27,16 @@ import {
   OddzTokenStaking,
   MockOddzPriceOracle,
   OddzPriceOracleManager,
+  TimelockController,
 } from "../typechain";
-import { shouldBehaveLikeOddzAdministrator } from "./behaviors/OddzAdministrator.behavior";
+import { shouldBehaveLikeTimeLockController } from "./behaviors/TimeLockController.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 
 const { deployContract } = waffle;
 
-describe("Timelock Controller Unit tests", function () {
+describe("Oddz Administrator Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -50,7 +51,7 @@ describe("Timelock Controller Unit tests", function () {
     this.walletTo = walletTo;
   });
 
-  describe("Timelock Controller", function () {
+  describe("Oddz Administrator", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
 
@@ -130,7 +131,7 @@ describe("Timelock Controller Unit tests", function () {
         bscForwarder,
         this.oddzToken.address,
       ])) as OddzSDK;
-
+      this.oddzAdministratorAbi = OddzAdministratorArtifact.abi;
       this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [
         this.usdcToken.address,
         this.oddzToken.address,
@@ -141,25 +142,32 @@ describe("Timelock Controller Unit tests", function () {
         this.dexManager.address,
       ])) as OddzAdministrator;
 
-      this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
-        this.oddzToken.address,
-      ])) as OddzTokenStaking;
+      // this.oddzTokenStaking = (await deployContract(this.signers.admin, OddzTokenStakingArtifact, [
+      //   this.oddzToken.address,
+      // ])) as OddzTokenStaking;
 
-      await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
+      // await this.oddzTokenStaking.transferOwnership(this.oddzStaking.address);
 
-      await this.oddzStaking.addToken(
-        this.oddzToken.address,
-        this.oddzTokenStaking.address,
-        86400,
-        86400,
-        100,
-        100,
-        100,
-      );
+      // await this.oddzStaking.addToken(
+      //   this.oddzToken.address,
+      //   this.oddzTokenStaking.address,
+      //   86400,
+      //   86400,
+      //   100,
+      //   100,
+      //   100,
+      // );
 
-      await this.dexManager.setSwapper(this.oddzAdministrator.address);
+      // await this.dexManager.setSwapper(this.oddzAdministrator.address);
+
+      this.timeLockController = (await deployContract(
+        this.signers.admin,
+        TimeLockControllerArtifact,
+        [10, [this.accounts.admin1], [this.accounts.admin1]]
+      )) as TimelockController;
+      this.oddzAdministrator.transferOwnership(this.timeLockController.address)
     });
-
-    shouldBehaveLikeOddzAdministrator();
+    
+    shouldBehaveLikeTimeLockController();
   });
 });

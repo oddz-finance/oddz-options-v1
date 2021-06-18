@@ -2,10 +2,13 @@
 pragma solidity 0.8.3;
 
 import "./IOddzFeeManager.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../Libs/IERC20Extented.sol";
 
-contract OddzFeeManager is IOddzFeeManager, Ownable {
+contract OddzFeeManager is IOddzFeeManager, AccessControl {
+
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+
     IERC20Extented[] public txnFeeTokens;
     IERC20Extented[] public settlementFeeTokens;
     mapping(IERC20 => bool) public tokens;
@@ -24,6 +27,30 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
     uint8 public txnFeePerc = 5;
     uint8 public settlementFeePerc = 4;
 
+     modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyExecutor(address _address) {
+        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    constructor(){
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(EXECUTOR_ROLE, msg.sender);
+    }
+
+    function setExecutor(address _address) external {
+        require(_address != address(0), "Invalid executor address");
+        grantRole(EXECUTOR_ROLE, _address);
+    }
+
+    function removeExecutor(address _address) external {
+        revokeRole(EXECUTOR_ROLE, _address);
+    }
+
     /**
      * @notice adds token discounts
      * @param _token Approved token
@@ -34,7 +61,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
         IERC20 _token,
         uint8 _digits,
         uint8 _discount
-    ) public onlyOwner {
+    ) public onlyOwner(msg.sender) {
         require(tokens[_token], "invalid token");
         tokenFeeDiscounts[_token][_digits] = _discount;
     }
@@ -43,7 +70,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice add transaction fee discount tokens
      * @param _token IERC20 token
      */
-    function addTxnTokens(IERC20Extented _token) public onlyOwner {
+    function addTxnTokens(IERC20Extented _token) public onlyOwner(msg.sender) {
         txnFeeTokens.push(_token);
         tokens[_token] = true;
     }
@@ -52,7 +79,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice add settlement fee discount tokens
      * @param _token IERC20 token
      */
-    function addSettlementTokens(IERC20Extented _token) public onlyOwner {
+    function addSettlementTokens(IERC20Extented _token) public onlyOwner(msg.sender) {
         settlementFeeTokens.push(_token);
         tokens[_token] = true;
     }
@@ -61,7 +88,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice set transaction fee percentage
      * @param _feePerc transaction fee percentage valid range (1, 10)
      */
-    function setTransactionFeePerc(uint8 _feePerc) external onlyOwner {
+    function setTransactionFeePerc(uint8 _feePerc) external onlyExecutor(msg.sender) {
         require(_feePerc >= 1 && _feePerc <= 10, "Invalid transaction fee");
         txnFeePerc = _feePerc;
     }
@@ -70,7 +97,7 @@ contract OddzFeeManager is IOddzFeeManager, Ownable {
      * @notice set settlement fee percentage
      * @param _feePerc settlement fee percentage valid range (1, 10)
      */
-    function setSettlementFeePerc(uint8 _feePerc) external onlyOwner {
+    function setSettlementFeePerc(uint8 _feePerc) external onlyExecutor(msg.sender) {
         require(_feePerc >= 1 && _feePerc <= 10, "Invalid settlement fee");
         settlementFeePerc = _feePerc;
     }
