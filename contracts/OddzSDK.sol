@@ -164,7 +164,7 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
 
     function setMinimumGaslessPremium(uint256 _amount) external onlyOwner {
         uint256 amount = _amount / 10**usdcToken.decimals();
-        require(amount >= 1 && amount < 500, "invalid minimum premium");
+        require(amount >= 1 && amount < 500, "invalid minimum gasless premium");
         minimumGaslessPremium = _amount;
     }
 }
