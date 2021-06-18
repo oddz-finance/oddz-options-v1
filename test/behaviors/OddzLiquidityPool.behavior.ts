@@ -486,22 +486,18 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
   it("should not allow withdraw when the pool does not have sufficient balance", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
-    const withdrawalAmount = 1000;
-    await expect(
-      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
-    ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount.");
-  });
-
-  it("should not allow withdrawal when the the user is trying to withdraw more amount than deposited", async function () {
-    const depositAmount = 1000;
-    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
-    await expect(liquidityManager.addLiquidity(this.oddzDefaultPool.address, depositAmount)).to.emit(
-      this.oddzDefaultPool,
-      "AddLiquidity",
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
     );
-    const withdrawalAmount = 1001;
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await expect(mockOptionManager.lock(0)).to.be.ok;
     await expect(
-      liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
+      liquidityManager.removeLiquidity(
+        this.oddzDefaultPool.address,
+        BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      ),
     ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount.");
   });
 
@@ -552,6 +548,62 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(liquidityManager.removeManager(this.mockOptionManager.address)).to.be.revertedWith(
       "sender must be an admin to revoke",
     );
+  });
+
+  it("should throw caller is not the owner while updating premium lockup duration", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.updatePremiumLockupDuration(100)).to.be.revertedWith(
+      "LP Error: caller has no access to the method",
+    );
+  });
+
+  it("should throw invalid lockup duration while updating premium lockup duration for lower than expected", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updatePremiumLockupDuration(getExpiry(1) - 1)).to.be.revertedWith(
+      "LP Error: invalid premium lockup duration",
+    );
+  });
+
+  it("should throw invalid lockup duration while updating premium lockup duration for higher than expected", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updatePremiumLockupDuration(getExpiry(30) + 1)).to.be.revertedWith(
+      "LP Error: invalid premium lockup duration",
+    );
+  });
+
+  it("should successdully update premium lockup duration", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updatePremiumLockupDuration(getExpiry(7))).to.be.ok;
+
+    expect(await liquidityManager.premiumLockupDuration()).to.equal(getExpiry(7));
+  });
+
+  it("should throw caller is not the owner while updating move lockup duration", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.updateMoveLockupDuration(100)).to.be.revertedWith(
+      "LP Error: caller has no access to the method",
+    );
+  });
+
+  it("should throw invalid lockup duration while updating move lockup duration for lower than expected", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updateMoveLockupDuration(getExpiry(3) - 1)).to.be.revertedWith(
+      "LP Error: invalid move lockup duration",
+    );
+  });
+
+  it("should throw invalid lockup duration while updating move lockup duration for higher than expected", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updateMoveLockupDuration(getExpiry(30) + 1)).to.be.revertedWith(
+      "LP Error: invalid move lockup duration",
+    );
+  });
+
+  it("should successdully update move lockup duration", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.updateMoveLockupDuration(getExpiry(4))).to.be.ok;
+
+    expect(await liquidityManager.moveLockupDuration()).to.equal(getExpiry(4));
   });
 
   it("should be able to successfully lock pool", async function () {
@@ -676,7 +728,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const withdrawalAmount = 1001;
     await expect(
       liquidityManager.removeLiquidity(this.oddzDefaultPool.address, BigNumber.from(withdrawalAmount)),
-    ).to.be.revertedWith("LP Error: Amount is too large");
+    ).to.be.revertedWith("LP Error: Amount exceeds oUSD balance");
   });
 
   it("should revert remove liquidity for invalid amount", async function () {
@@ -990,21 +1042,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
     await liquidityManager.move(poolTransfer);
 
-    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
-      "LP Error: Pool transfer available only once in 7 days",
-    );
+    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith("LP Error: Pool transfer not allowed");
 
     await provider.send("evm_snapshot", []);
-    await provider.send("evm_increaseTime", [getExpiry(7)]);
-    await expect(liquidityManager.move(poolTransfer)).to.be.revertedWith(
-      "LP Error: Pool transfer available only once in 7 days",
-    );
-
-    await provider.send("evm_snapshot", []);
-    await provider.send("evm_increaseTime", [getExpiry(1)]);
+    await provider.send("evm_increaseTime", [getExpiry(7) + 1]);
     expect(await liquidityManager.move(poolTransfer)).to.be.ok;
 
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 
