@@ -438,4 +438,100 @@ export function shouldBehaveLikeOddzSDK(): void {
       BigNumber.from(utils.parseEther("27.85800402")),
     );
   });
+
+  it("should revert set minimum gasless premium for non owner", async function () {
+    const oddzSDK = await this.oddzSDK.connect(this.signers.admin1);
+
+    await expect(oddzSDK.setMinimumGaslessPremium(BigNumber.from(utils.parseEther("1")))).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+  });
+
+  it("should revert set minimum gasless premium for invalid range", async function () {
+    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
+
+    await expect(oddzSDK.setMinimumGaslessPremium(BigNumber.from(utils.parseEther("0.5")))).to.be.revertedWith(
+      "invalid minimum gasless premium",
+    );
+  });
+
+  it("should revert buy option with gasless if premium is less than minimum allowed", async function () {
+    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzSDK,
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(160000000000),
+      OptionType.Call,
+      0.05,
+      this.accounts.admin,
+      false,
+    );
+    await oddzSDK.setMinimumGaslessPremium(BigNumber.from(utils.parseEther("100")));
+
+    await expect(
+      oddzSDK.buyWithGasless(
+        pair,
+        utils.formatBytes32String("B_S"),
+        BigInt(premiumWithSlippage),
+        getExpiry(1),
+        BigNumber.from(utils.parseEther("1")), // number of options
+        BigNumber.from(160000000000),
+        OptionType.Call,
+        this.accounts.admin,
+      ),
+    ).to.be.revertedWith("SDK: premium amount not elgible for gasless");
+  });
+
+  it("should buy option with gasless", async function () {
+    const oddzSDK = await this.oddzSDK.connect(this.signers.admin);
+    const optionManager = await this.oddzOptionManager.connect(this.signers.admin);
+    await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
+    const pair = await getAssetPair(
+      this.oddzAssetManager,
+      this.signers.admin,
+      this.oddzPriceOracleManager,
+      this.oddzPriceOracle,
+      this.usdcToken,
+      this.ethToken,
+    );
+
+    const premiumWithSlippage = await getPremiumWithSlippageAndBuy(
+      this.oddzSDK,
+      pair,
+      utils.formatBytes32String("B_S"),
+      getExpiry(1),
+      BigNumber.from(utils.parseEther("1")), // number of options
+      BigNumber.from(160000000000),
+      OptionType.Call,
+      0.05,
+      this.accounts.admin,
+      false,
+    );
+
+    await expect(
+      oddzSDK.buyWithGasless(
+        pair,
+        utils.formatBytes32String("B_S"),
+        BigInt(premiumWithSlippage),
+        getExpiry(1),
+        BigNumber.from(utils.parseEther("1")), // number of options
+        BigNumber.from(160000000000),
+        OptionType.Call,
+        this.accounts.admin,
+      ),
+    ).to.emit(optionManager, "Buy");
+  });
 }
