@@ -24,9 +24,9 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
     mapping(address => mapping(uint256 => uint256)) public premiumCollected;
 
     /**
-     * @dev minimum premium
+     * @dev minimum gasless premium
      */
-    uint256 public override minimumPremium;
+    uint256 public override minimumGaslessPremium;
 
     constructor(
         IOddzOption _optionManager,
@@ -91,7 +91,7 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
         IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, _msgSender());
         require(
-            premiumResult.optionPremium + premiumResult.txnFee > minimumPremium,
+            premiumResult.optionPremium + premiumResult.txnFee > minimumGaslessPremium,
             "SDK: premium amount not elgible for gasless"
         );
         return _buy(option, _premiumWithSlippage, _provider, _msgSender());
@@ -162,10 +162,9 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
         }
     }
 
-    function setMinimumPremium(uint256 _amount) external onlyOwner {
+    function setMinimumGaslessPremium(uint256 _amount) external onlyOwner {
         uint256 amount = _amount / 10**usdcToken.decimals();
         require(amount >= 1 && amount < 500, "invalid minimum premium");
-        minimumPremium = _amount;
+        minimumGaslessPremium = _amount;
     }
 }
-g

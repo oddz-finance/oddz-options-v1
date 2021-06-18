@@ -49,5 +49,5 @@ interface IOddzSDK {
 
     function distributeReward(address[] memory _providers, uint256 _month) external;
 
-    function minimumPremium() external returns (uint256);
+    function minimumGaslessPremium() external returns (uint256);
 }
