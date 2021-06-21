@@ -363,7 +363,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.holder == msg.sender, "Invalid Caller");
         require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
@@ -388,7 +388,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.holder == msg.sender, "Invalid Caller");
         require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
@@ -405,15 +405,16 @@ contract OddzOptionManager is IOddzOption, Ownable {
             option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
             "Option not eligble for transfer"
         );
-        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.holder == msg.sender, "Invalid Caller");
         require(option.state == State.Active, "Invalid state");
+        require(_minAmount >= minimumPremium, "amount is lower than minimum premium");
 
         optionTransferMap[_optionId] = _minAmount;
 
         emit OptionTransferEnabled(_optionId, _minAmount);
     }
 
-    function optionTransfer(uint256 _optionId) external {
+    function optionTransfer(uint256 _optionId, uint256 _amount) external {
         Option storage option = options[_optionId];
         require(
             option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
@@ -421,24 +422,25 @@ contract OddzOptionManager is IOddzOption, Ownable {
         );
         uint256 minAmount = optionTransferMap[_optionId];
         require(minAmount > 0, "Option not enabled for transfer");
+        require(_amount >= minAmount, "Amount is lower than min amount");
         require(option.state == State.Active, "Invalid state");
         require(option.holder != msg.sender, "Self option transfer is not allowed");
 
         // once transfer initiated update option tranfer map
         delete optionTransferMap[_optionId];
 
-        uint256 transferFee = _getTransactionFee(minAmount, msg.sender);
+        uint256 transferFee = _getTransactionFee(_amount, msg.sender);
         txnFeeAggregate += transferFee;
 
-        _validateOptionAmount(token.allowance(msg.sender, address(this)), minAmount + transferFee);
+        _validateOptionAmount(token.allowance(msg.sender, address(this)), _amount + transferFee);
 
-        token.safeTransferFrom(msg.sender, option.holder, minAmount);
+        token.safeTransferFrom(msg.sender, option.holder, _amount);
         token.safeTransferFrom(msg.sender, address(this), transferFee);
 
         address oldHolder = option.holder;
         option.holder = msg.sender;
 
-        emit OptionTransfer(_optionId, oldHolder, msg.sender, minAmount, transferFee);
+        emit OptionTransfer(_optionId, oldHolder, msg.sender, _amount, transferFee);
     }
 
     /**
