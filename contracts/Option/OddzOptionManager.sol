@@ -59,6 +59,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
      */
     uint256 public minimumPremium;
 
+    /**
+     * @dev option transfer map
+     * mapping (optionId => minAmount)
+     */
+    mapping(uint256 => uint256) public optionTransferMap;
+
     constructor(
         IOddzPriceOracleManager _oracle,
         IOddzIVOracleManager _iv,
@@ -357,8 +363,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Wrong msg.sender");
-        require(option.state == State.Active, "Wrong state");
+        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
@@ -382,8 +388,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Wrong msg.sender");
-        require(option.state == State.Active, "Wrong state");
+        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
@@ -393,25 +399,46 @@ contract OddzOptionManager is IOddzOption, Ownable {
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
 
-    function transferOption(
-        uint256 _optionId,
-        address _newHolder,
-        uint256 _amount
-    ) external {
+    function enableOptionTransfer(uint256 _optionId, uint256 _minAmount) external {
         Option storage option = options[_optionId];
-        require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Wrong msg.sender");
-        require(option.state == State.Active, "Wrong state");
+        require(
+            option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
+            "Option not eligble for transfer"
+        );
+        require(option.holder == msg.sender, "Invalid msg.sender");
+        require(option.state == State.Active, "Invalid state");
 
-        uint256 transferFee = _getTransactionFee(_amount, _newHolder);
+        optionTransferMap[_optionId] = _minAmount;
+
+        emit OptionTransferEnabled(_optionId, _minAmount);
+    }
+
+    function optionTransfer(uint256 _optionId) external {
+        Option storage option = options[_optionId];
+        require(
+            option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
+            "Option not eligble for transfer"
+        );
+        uint256 minAmount = optionTransferMap[_optionId];
+        require(minAmount > 0, "Option not enabled for transfer");
+        require(option.state == State.Active, "Invalid state");
+        require(option.holder != msg.sender, "Self option transfer is not allowed");
+
+        // once transfer initiated update option tranfer map
+        delete optionTransferMap[_optionId];
+
+        uint256 transferFee = _getTransactionFee(minAmount, msg.sender);
         txnFeeAggregate += transferFee;
 
-        token.safeTransferFrom(_newHolder, msg.sender, _amount - transferFee);
-        token.safeTransferFrom(_newHolder, address(this), transferFee);
+        _validateOptionAmount(token.allowance(msg.sender, address(this)), minAmount + transferFee);
 
-        option.holder = _newHolder;
+        token.safeTransferFrom(msg.sender, option.holder, minAmount);
+        token.safeTransferFrom(msg.sender, address(this), transferFee);
 
-        emit OptionTransfer(_optionId, msg.sender, _newHolder, _amount, transferFee);
+        address oldHolder = option.holder;
+        option.holder = msg.sender;
+
+        emit OptionTransfer(_optionId, oldHolder, msg.sender, minAmount, transferFee);
     }
 
     /**

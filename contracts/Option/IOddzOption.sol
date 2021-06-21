@@ -20,7 +20,6 @@ interface IOddzOption {
         uint256 _totalFee,
         address _pair
     );
-
     event Exercise(uint256 indexed _optionId, uint256 _profit, uint256 _settlementFee, ExcerciseType _type);
     event Expire(uint256 indexed _optionId, uint256 _premium);
     event OptionTransfer(
@@ -30,6 +29,7 @@ interface IOddzOption {
         uint256 _amount,
         uint256 _transferFee
     );
+    event OptionTransferEnabled(uint256 indexed _optionId, uint256 indexed _minAmount);
 
     struct Option {
         State state;
