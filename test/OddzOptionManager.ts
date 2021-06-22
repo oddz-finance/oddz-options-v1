@@ -192,6 +192,7 @@ describe("Oddz Option Manager Unit tests", function () {
         this.oddzOptionManager.address,
         bscForwarder,
         this.usdcToken.address,
+        this.usdcToken.address,
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setAdministrator(this.mockAdministrator.address);
