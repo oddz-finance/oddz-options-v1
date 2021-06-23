@@ -5,7 +5,7 @@ import OddzSDKArtifact from "../artifacts/contracts/OddzSDK.sol/OddzSDK.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import OddzAdministratorArtifact from "../artifacts/contracts/OddzAdministrator.sol/OddzAdministrator.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
-import TimeLockControllerArtifact from "../artifacts/contracts/TimeLockController.sol/TimelockController.json";
+import TimeLockererArtifact from "../artifacts/contracts/TimeLocker.sol/TimeLocker.json";
 import { Accounts, Signers } from "../types";
 
 import {
@@ -15,16 +15,16 @@ import {
   OddzAssetManager,
   OddzSDK,
   OddzAdministrator,
-  TimelockController,
+  TimeLocker,
 } from "../typechain";
-import { shouldBehaveLikeTimeLockController } from "./behaviors/TimeLockController.behavior";
+import { shouldBehaveLikeTimeLocker } from "./behaviors/TimeLocker.behavior";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 
 const { deployContract } = waffle;
 
-describe("TimeLocker Controller Unit tests", function () {
+describe("TimeLocker Unit tests", function () {
   const [wallet, walletTo] = new MockProvider().getWallets();
   before(async function () {
     this.accounts = {} as Accounts;
@@ -39,7 +39,7 @@ describe("TimeLocker Controller Unit tests", function () {
     this.walletTo = walletTo;
   });
 
-  describe("TimeLocker Controller", function () {
+  describe("TimeLocker", function () {
     beforeEach(async function () {
       const totalSupply = BigNumber.from(utils.parseEther("100000000"));
 
@@ -87,14 +87,14 @@ describe("TimeLocker Controller Unit tests", function () {
         this.dexManager.address,
       ])) as OddzAdministrator;
 
-      this.timeLockController = (await deployContract(this.signers.admin, TimeLockControllerArtifact, [
+      this.timeLocker = (await deployContract(this.signers.admin, TimeLockererArtifact, [
         10,
         [this.accounts.admin1],
         [this.accounts.admin1],
-      ])) as TimelockController;
-      this.oddzAdministrator.setExecutor(this.timeLockController.address);
+      ])) as TimeLocker;
+      this.oddzAdministrator.setExecutor(this.timeLocker.address);
     });
 
-    shouldBehaveLikeTimeLockController();
+    shouldBehaveLikeTimeLocker();
   });
 });
