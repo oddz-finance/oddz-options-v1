@@ -79,6 +79,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         oddzFeeManager = _oddzFeeManager;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
+        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
     }
 
     modifier onlyOwner(address _address) {

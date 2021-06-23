@@ -72,6 +72,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
+        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
     }
 
     function setExecutor(address _address) external {

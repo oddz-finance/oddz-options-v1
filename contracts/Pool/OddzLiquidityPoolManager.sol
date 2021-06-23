@@ -108,6 +108,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     constructor(IERC20 _token, IDexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
+        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+
         token = _token;
         dexManager = _dexManager;
 

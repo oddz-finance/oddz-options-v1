@@ -93,7 +93,6 @@ describe("TimeLocker Controller Unit tests", function () {
         [this.accounts.admin1],
       ])) as TimelockController;
       this.oddzAdministrator.setExecutor(this.timeLockController.address);
-
     });
 
     shouldBehaveLikeTimeLockController();

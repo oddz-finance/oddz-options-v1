@@ -61,6 +61,7 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
+        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
     }
 
     function setManager(address _address) external {
