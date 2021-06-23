@@ -27,7 +27,7 @@ interface IOddzLiquidityPoolManager {
         IOddzOption.OptionType _type;
     }
 
-     /**
+    /**
      * @dev Pool transfer
      */
     struct PoolTransfer {
@@ -108,4 +108,6 @@ interface IOddzLiquidityPoolManager {
      * @return balance Pool balance
      */
     function totalBalance() external view returns (uint256 balance);
+
+    function move(PoolTransfer memory _poolTransfer) external;
 }

@@ -1,14 +1,14 @@
 pragma solidity 0.8.3;
 
+import "./IOddzLiquidityPoolManager.sol";
 
-interface IOddzWriteStrategy{
-
-     struct Strategy{
-        address[] _pools;
+interface IOddzWriteStrategy {
+    struct Strategy {
+        IOddzLiquidityPool[] _pools;
         uint256[] _shares;
     }
 
-    enum TransactionType {ADD, REMOVE}
+    enum TransactionType { ADD, REMOVE }
 
     function addLiquidity(address _provider, uint256 _amount) external;
 
@@ -17,5 +17,4 @@ interface IOddzWriteStrategy{
     event AddedLiquidity(address indexed _provider, uint256 _amount);
 
     event RemovedLiquidity(address indexed _provider, uint256 _amount);
-
 }

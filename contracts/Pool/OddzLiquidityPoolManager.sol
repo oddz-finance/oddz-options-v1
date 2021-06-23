@@ -46,7 +46,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     mapping(IOddzLiquidityPool => bool) public disabledPools;
 
-   
     // user address -> date of transfer
     mapping(address => uint256) public lastPoolTransfer;
 
@@ -255,7 +254,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice Move liquidity between pools
      * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function move(PoolTransfer memory _poolTransfer) external {
+    function move(PoolTransfer memory _poolTransfer) external override {
         require(
             lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + moveLockupDuration) < block.timestamp,
             "LP Error: Pool transfer not allowed"
