@@ -27,6 +27,16 @@ interface IOddzLiquidityPoolManager {
         IOddzOption.OptionType _type;
     }
 
+     /**
+     * @dev Pool transfer
+     */
+    struct PoolTransfer {
+        IOddzLiquidityPool[] _source;
+        IOddzLiquidityPool[] _destination;
+        uint256[] _sAmount;
+        uint256[] _dAmount;
+    }
+
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
      * @param _pool Liquidity pool

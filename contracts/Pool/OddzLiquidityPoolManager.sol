@@ -46,15 +46,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     mapping(IOddzLiquidityPool => bool) public disabledPools;
 
-    /**
-     * @dev Pool transfer
-     */
-    struct PoolTransfer {
-        IOddzLiquidityPool[] _source;
-        IOddzLiquidityPool[] _destination;
-        uint256[] _sAmount;
-        uint256[] _dAmount;
-    }
+   
     // user address -> date of transfer
     mapping(address => uint256) public lastPoolTransfer;
 
