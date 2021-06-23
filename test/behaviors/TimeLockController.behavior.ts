@@ -8,6 +8,57 @@ import { waffle } from "hardhat";
 const provider = waffle.provider;
 
 export function shouldBehaveLikeTimeLockController(): void {
+
+  
+  it("should revert update txn distribution for default admin", async function () {
+    const distribution: DistributionPercentage = {
+      gasless: 30,
+      maintainer: 10,
+      developer: 20,
+      staker: 40,
+    };
+    await this.oddzAdministrator.removeExecutor(this.accounts.admin);
+    // keccak256("EXECUTOR_ROLE")
+    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+      expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
+    
+    await expect(this.oddzAdministrator.updateTxnDistribution(distribution))
+      .to.be.revertedWith("caller has no access to the method");
+    
+  });
+
+  it("should revert setting role for default admin", async function () {
+   
+    await this.oddzAdministrator.removeExecutor(this.accounts.admin);
+    
+    // keccak256("EXECUTOR_ROLE")
+    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+      expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
+
+      await expect(this.oddzAdministrator.setExecutor(this.accounts.admin))
+          .to.be.revertedWith("AccessControl: sender must be an admin to grant")  
+    
+  });
+
+  it("should update txn distribution for default admin", async function () {
+    const distribution: DistributionPercentage = {
+      gasless: 30,
+      maintainer: 10,
+      developer: 20,
+      staker: 40,
+    };
+    // keccak256("EXECUTOR_ROLE")
+    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+      expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.true;
+    
+     await this.oddzAdministrator.updateTxnDistribution(distribution);
+     let maintainer = 0;
+    [, maintainer, , ,] = await this.oddzAdministrator.txnDistribution();
+    expect(maintainer).to.equal(10);
+    
+  });
+
+
   it("should revert schedule for non proposer role", async function () {
     const timelockController = await this.timeLockController.connect(this.signers.admin);
     const web3 = new Web3(Web3.givenProvider);
@@ -109,7 +160,7 @@ export function shouldBehaveLikeTimeLockController(): void {
       timelockController.execute(this.oddzAdministrator.address, 0, data, constants.HashZero, constants.HashZero),
     ).to.emit(timelockController, "CallExecuted");
     let maintainer = 0;
-    [, maintainer, , ,] = await this.oddzAdministrator.settlementDistribution();
+    [, maintainer, , ,] = await this.oddzAdministrator.txnDistribution();
     expect(maintainer).to.equal(10);
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);

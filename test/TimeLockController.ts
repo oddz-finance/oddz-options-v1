@@ -92,8 +92,8 @@ describe("TimeLocker Controller Unit tests", function () {
         [this.accounts.admin1],
         [this.accounts.admin1],
       ])) as TimelockController;
-      this.oddzAdministrator.removeExecutor(this.accounts.admin);
       this.oddzAdministrator.setExecutor(this.timeLockController.address);
+
     });
 
     shouldBehaveLikeTimeLockController();

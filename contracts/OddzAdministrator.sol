@@ -79,6 +79,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         oddzToken.safeApprove(address(staking), type(uint256).max);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(EXECUTOR_ROLE, msg.sender);
+        _setRoleAdmin(EXECUTOR_ROLE,EXECUTOR_ROLE);
     }
 
     function setExecutor(address _address) external {
