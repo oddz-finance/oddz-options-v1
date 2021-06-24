@@ -4,8 +4,6 @@ import "./IOddzStrategyManager.sol";
 import "./OddzWriteStrategy.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
-
 
 contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     using Address for address;
@@ -21,6 +19,11 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     uint256 public strategyChangeLockupDuration = 3 days;
     uint256 public strategyCreateLockupDuration = 3 days;
 
+    modifier validStrategy(address _strategy) {
+        require(_strategy != address(0), "SM Error: strategy cannot be zero address");
+        require(_strategy.isContract(), "SM Error: strategy is not contract address");
+        _;
+    }
     constructor(IOddzLiquidityPoolManager _poolManager, IERC20 _token) {
         poolManager = _poolManager;
         token = _token;
@@ -51,7 +54,12 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         IOddzLiquidityPool[] memory _pools,
         uint256[] memory _shares,
         uint256 _amount
-    ) public override returns (address strategy) {
+        ) 
+        public 
+        override 
+        returns 
+        (address strategy) 
+        {
         require(
             block.timestamp > lastStrategyCreated[msg.sender] + strategyCreateLockupDuration,
             "SM Error: Strategy creation not allowed within lockup duration"
@@ -60,17 +68,34 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
         lastStrategyCreated[msg.sender] = block.timestamp;
         strategy = address(new OddzWriteStrategy(_pools, _shares));
-        console.log("strategy: ",strategy);
 
         manageLiquidity(strategy, _amount, IOddzWriteStrategy.TransactionType.ADD);
         emit CreatedStrategy(strategy, msg.sender);
+    }
+
+    function manageStrategy(
+        address _strategy, 
+        ManageStrategy _manageStrategy
+        ) 
+        public 
+        onlyOwner 
+        validStrategy(_strategy)
+        {
+        if(_manageStrategy == ManageStrategy.ACTIVATE){
+            OddzWriteStrategy(_strategy).activateStrategy();
+        }else{
+            OddzWriteStrategy(_strategy).deactivateStrategy();
+        }
     }
 
     function manageLiquidity(
         address _strategy,
         uint256 _amount,
         IOddzWriteStrategy.TransactionType _transactionType
-    ) public {
+        ) 
+        public 
+        validStrategy(_strategy)
+        {           
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = IOddzWriteStrategy(_strategy).getPools();
         uint256[] memory shares = IOddzWriteStrategy(_strategy).getShares();
@@ -97,7 +122,15 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         }
     }
 
-    function changeStrategy(address _old, address _new) public override {
+    function changeStrategy(
+        address _old, 
+        address _new
+        ) 
+        public 
+        override 
+        validStrategy(_old) 
+        validStrategy(_new)
+        {
         require(
             block.timestamp > lastStrategyChanged[msg.sender] + strategyChangeLockupDuration,
             "SM Error: Strategy changes not allowed within lockup duration"

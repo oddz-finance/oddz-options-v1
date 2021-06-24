@@ -5,6 +5,7 @@ import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLi
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
+import OddzWriteStrategyArtifact from "../artifacts/contracts/Pool/OddzWriteStrategy.sol/OddzWriteStrategy.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -77,6 +78,8 @@ describe("Oddz Strategy Manager Unit tests", function () {
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
       await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
+
+      this.oddzWriteStrategyAbi = OddzWriteStrategyArtifact.abi
 
       // ETH Call
       await this.oddzLiquidityPoolManager

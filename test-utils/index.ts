@@ -29,6 +29,11 @@ export const ExcerciseType = {
   Physical: 1,
 };
 
+export const ManageStrategy = {
+  ACTIVATE: 0,
+  DEACTIVATE: 1
+}
+
 export const addDaysAndGetSeconds = (days = 0) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
