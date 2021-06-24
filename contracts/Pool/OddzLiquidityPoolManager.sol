@@ -546,7 +546,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice updates move lockup duration
      * @param _moveLockupDuration move lockup duration
      */
-    function updateMoveLockupDuration(uint256 _moveLockupDuration) public onlyOwner(msg.sender) {
+    function updateMoveLockupDuration(uint256 _moveLockupDuration) public onlyTimeLocker(msg.sender) {
         require(
             _moveLockupDuration >= 3 days && _moveLockupDuration <= 30 days,
             "LP Error: invalid move lockup duration"
