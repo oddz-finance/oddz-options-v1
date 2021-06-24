@@ -92,10 +92,4 @@ interface IOddzLiquidityPoolManager {
         uint32 _deadline,
         uint16 _slippage
     ) external;
-
-    /**
-     * @notice Returns the total balance of USD provided to the pool
-     * @return balance Pool balance
-     */
-    function totalBalance() external view returns (uint256 balance);
 }
