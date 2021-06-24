@@ -104,7 +104,16 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     expect(await oddzStrategyManager.validPools(this.oddzDefaultPool.address)).to.be.false;
   });
 
-  
+  it.only("should create strategy", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address,BigNumber.from(utils.parseEther("1000")))
+    await expect(oddzStrategyManager.createStrategy([this.oddzDefaultPool.address],[100],BigNumber.from(utils.parseEther("1000"))))
+        .to.emit(oddzStrategyManager, "CreatedStrategy")
+        .to.emit(oddzStrategyManager, "AddedLiquidity")
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address))
+        .to.equal(BigNumber.from(utils.parseEther("1000")))   
+  });
 
  
 }

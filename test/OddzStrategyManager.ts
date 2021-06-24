@@ -72,6 +72,7 @@ describe("Oddz Strategy Manager Unit tests", function () {
 
       this.oddzStrategyManager = (await deployContract(this.signers.admin, OddzStrategyManagerArtifact, [
         this.oddzLiquidityPoolManager.address,
+        this.usdcToken.address
       ])) as OddzStrategyManager;
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
