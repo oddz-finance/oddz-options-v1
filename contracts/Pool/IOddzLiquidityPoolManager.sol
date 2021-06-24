@@ -28,6 +28,16 @@ interface IOddzLiquidityPoolManager {
     }
 
     /**
+     * @dev Pool transfer
+     */
+    struct PoolTransfer {
+        IOddzLiquidityPool[] _source;
+        IOddzLiquidityPool[] _destination;
+        uint256[] _sAmount;
+        uint256[] _dAmount;
+    }
+
+    /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
      * @param _pool Liquidity pool
      * @param _amount Amount in USD
@@ -98,4 +108,10 @@ interface IOddzLiquidityPoolManager {
      * @return balance Pool balance
      */
     function totalBalance() external view returns (uint256 balance);
+
+    /**
+     * @notice Move liquidity between pools
+     * @param _poolTransfer source and destination pools with amount of transfer
+     */
+    function move(PoolTransfer memory _poolTransfer) external;
 }
