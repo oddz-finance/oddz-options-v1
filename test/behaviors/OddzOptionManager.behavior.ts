@@ -792,26 +792,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert set max deadline by non owner", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
 
-    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("Ownable: caller is not the owner");
-  });
-
-  it("should set max slippage by owner", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const slippage = 100;
-    await oddzOptionManager.setMaxSlippage(slippage);
-    expect(await oddzOptionManager.maxSlippage()).to.equal(slippage);
-  });
-
-  it("should revert set max slippage by non owner", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin1);
-
-    await expect(oddzOptionManager.setMaxSlippage(100)).to.be.revertedWith("Ownable: caller is not the owner");
-  });
-
-  it("should revert set max slippage for out of bound", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-
-    await expect(oddzOptionManager.setMaxSlippage(1001)).to.be.revertedWith("invalid slippage");
+    await expect(oddzOptionManager.setMaxDeadline(100)).to.be.revertedWith("caller has no access to the method");
   });
 
   it("should revert buy for less than purchase limit", async function () {
@@ -1173,7 +1154,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert exercise UA with more than slippage limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const deadline = 15;
-    const slippage = 101;
+    const slippage = 501;
     await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
       "Slippage input is more than maximum limit allowed",
     );

@@ -5,7 +5,7 @@ import "./IOddzStakingManager.sol";
 import "./IOddzTokenStaking.sol";
 import "../Libs/DateTimeLibrary.sol";
 
-contract OddzStakingManager is Ownable, IOddzStakingManager {
+contract OddzStakingManager is AccessControl, IOddzStakingManager {
     using Address for address;
     using SafeERC20 for IERC20;
 
@@ -91,6 +91,8 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     event TransferReward(address indexed _staker, address indexed _token, uint256 _reward);
 
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
+
     IERC20 public oddzToken;
     mapping(IERC20 => Token) public tokens;
     Token[] public tokensList;
@@ -115,8 +117,30 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         _;
     }
 
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
     constructor(IERC20 _oddzToken) {
         oddzToken = _oddzToken;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
+    }
+
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -126,7 +150,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     function setLockupDuration(IERC20 _token, uint256 _duration)
         external
-        onlyOwner
+        onlyTimeLocker(msg.sender)
         validToken(_token)
         validDuration(_duration)
     {
@@ -140,7 +164,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      */
     function setRewardLockupDuration(IERC20 _token, uint256 _duration)
         external
-        onlyOwner
+        onlyTimeLocker(msg.sender)
         validToken(_token)
         validDuration(_duration)
     {
@@ -152,7 +176,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         uint8[] calldata _txnFeeRewards,
         uint8[] calldata _settlementFeeRewards,
         uint8[] calldata _allotedRewards
-    ) external onlyOwner {
+    ) external onlyTimeLocker(msg.sender) {
         uint8 totalTxnFee;
         uint8 totalSettlementFee;
         uint8 totalAllotedFee;
@@ -175,7 +199,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(IERC20 _token) external onlyOwner validToken(_token) {
+    function deactivateToken(IERC20 _token) external onlyTimeLocker(msg.sender) validToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(address(_token));
     }
@@ -184,7 +208,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
      * @notice Activate token
      * @param _token token address
      */
-    function activateToken(IERC20 _token) external onlyOwner inactiveToken(_token) {
+    function activateToken(IERC20 _token) external onlyOwner(msg.sender) inactiveToken(_token) {
         tokens[_token]._active = true;
         emit TokenActivate(address(_token));
     }
@@ -215,7 +239,7 @@ contract OddzStakingManager is Ownable, IOddzStakingManager {
         uint8 _txnFeeReward,
         uint8 _settlementFeeReward,
         uint8 _allotedReward
-    ) external onlyOwner validDuration(_lockupDuration) {
+    ) external onlyOwner(msg.sender) validDuration(_lockupDuration) {
         require(address(_address).isContract(), "Staking: invalid token address");
         tokens[_address] = Token(
             _address,
