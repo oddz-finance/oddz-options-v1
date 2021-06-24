@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-4-Clause
 pragma solidity 0.8.3;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-
 /**
  * @title Oddz Call and Put Options
  * @notice Oddz Options Contract

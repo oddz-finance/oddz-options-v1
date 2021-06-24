@@ -32,18 +32,10 @@ $ cp .env.example .env
 
 ### Compile
 
-Compile the smart contracts with Hardhat:
-
-```sh
-$ yarn compile
-```
-
-### TypeChain
-
 Compile the smart contracts and generate TypeChain artifacts:
 
 ```sh
-$ yarn build
+$ yarn compile
 ```
 
 ### Lint Solidity

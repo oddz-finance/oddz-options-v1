@@ -97,6 +97,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     function unlockLiquidity(uint256 _amount) external override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
         lockedAmount -= _amount;
+
         emit UnlockLiquidity(_amount);
     }
 

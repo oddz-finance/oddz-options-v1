@@ -45,7 +45,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
   it("should revert set update minimum amount for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
     await expect(oddzAdministrator.updateMinimumAmount(BigNumber.from(utils.parseEther("1100")))).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -72,7 +72,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
   it("should revert change gasless facililatator for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
     await expect(oddzAdministrator.changeGaslessFacilitator(this.accounts.admin1)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -85,7 +85,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
   it("should revert change maintenance facililatator for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
     await expect(oddzAdministrator.changeMaintenanceFacilitator(this.accounts.admin1)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -97,7 +97,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
 
   it("should revert update deadline for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
-    await expect(oddzAdministrator.updateDeadline(60)).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(oddzAdministrator.updateDeadline(60)).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("should revert update deadline for invalid value", async function () {
@@ -113,7 +113,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
 
   it("should revert update slippage for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
-    await expect(oddzAdministrator.updateSlippage(60)).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(oddzAdministrator.updateSlippage(60)).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("should revert update slippage for invalid value", async function () {
@@ -136,7 +136,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
       staker: 40,
     };
     await expect(oddzAdministrator.updateTxnDistribution(distribution)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -176,7 +176,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
       staker: 40,
     };
     await expect(oddzAdministrator.updateSettlementDistribution(distribution)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
