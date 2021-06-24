@@ -15,9 +15,9 @@ export function shouldBehaveLikeTimeLocker(): void {
       developer: 20,
       staker: 40,
     };
-    await this.oddzAdministrator.removeExecutor(this.accounts.admin);
-    // keccak256("EXECUTOR_ROLE")
-    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
+    await this.oddzAdministrator.removeTimeLocker(this.accounts.admin);
+    // keccak256("TIMELOCKER_ROLE")
+    const roleHash = "0x518a492b51bf88c1be675ab97647d88d770fcd201b74de363b9b137e6d641b20";
     expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
 
     await expect(this.oddzAdministrator.updateTxnDistribution(distribution)).to.be.revertedWith(
@@ -25,16 +25,38 @@ export function shouldBehaveLikeTimeLocker(): void {
     );
   });
 
-  it("should revert setting role for default admin", async function () {
-    await this.oddzAdministrator.removeExecutor(this.accounts.admin);
+  it("should revert setting role for default admin after renounce", async function () {
+    // keccak256("TIMELOCKER_ROLE")
+    const roleHash = "0x518a492b51bf88c1be675ab97647d88d770fcd201b74de363b9b137e6d641b20";
+    await this.oddzAdministrator.renounceRole(roleHash, this.accounts.admin);
 
-    // keccak256("EXECUTOR_ROLE")
-    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
     expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
 
-    await expect(this.oddzAdministrator.setExecutor(this.accounts.admin)).to.be.revertedWith(
+    await expect(this.oddzAdministrator.setTimeLocker(this.accounts.admin)).to.be.revertedWith(
       "AccessControl: sender must be an admin to grant",
     );
+  });
+
+  it("should revert setting role for default admin after removeTimeLocker", async function () {
+    await this.oddzAdministrator.removeTimeLocker(this.accounts.admin);
+
+    // keccak256("TIMELOCKER_ROLE")
+    const roleHash = "0x518a492b51bf88c1be675ab97647d88d770fcd201b74de363b9b137e6d641b20";
+    expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
+
+    await expect(this.oddzAdministrator.setTimeLocker(this.accounts.admin)).to.be.revertedWith(
+      "AccessControl: sender must be an admin to grant",
+    );
+  });
+
+  it("should set change gasless facilator after renouncing time locker role", async function () {
+    // keccak256("TIMELOCKER_ROLE")
+    const roleHash = "0x518a492b51bf88c1be675ab97647d88d770fcd201b74de363b9b137e6d641b20";
+    await this.oddzAdministrator.renounceRole(roleHash, this.accounts.admin);
+
+    expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.false;
+    await this.oddzAdministrator.changeGaslessFacilitator(this.accounts.admin);
+    expect(await this.oddzAdministrator.gaslessFacilitator()).to.equal(this.accounts.admin);
   });
 
   it("should update txn distribution for default admin", async function () {
@@ -44,8 +66,8 @@ export function shouldBehaveLikeTimeLocker(): void {
       developer: 20,
       staker: 40,
     };
-    // keccak256("EXECUTOR_ROLE")
-    const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
+    // keccak256("TIMELOCKER_ROLE")
+    const roleHash = "0x518a492b51bf88c1be675ab97647d88d770fcd201b74de363b9b137e6d641b20";
     expect(await this.oddzAdministrator.hasRole(roleHash, this.accounts.admin)).to.be.true;
 
     await this.oddzAdministrator.updateTxnDistribution(distribution);
@@ -79,7 +101,7 @@ export function shouldBehaveLikeTimeLocker(): void {
   it("should set executor for timelock admin role", async function () {
     const timeLocker = await this.timeLocker.connect(this.signers.admin);
     await timeLocker.setExecutor(this.accounts.admin);
-    // keccak256("EXECUTOR_ROLE")
+    // keccak256("TIMELOCKER_ROLE")
     const roleHash = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
     expect(await timeLocker.hasRole(roleHash, this.accounts.admin)).to.be.true;
   });
@@ -116,7 +138,7 @@ export function shouldBehaveLikeTimeLocker(): void {
     ).to.be.revertedWith("TimelockController: insufficient delay");
   });
 
-  it("should revert execute for non executor role", async function () {
+  it("should revert execute for non timelocker role", async function () {
     const timeLocker = await this.timeLocker.connect(this.signers.admin1);
     const timeLocker1 = await this.timeLocker.connect(this.signers.admin);
     const web3 = new Web3(Web3.givenProvider);

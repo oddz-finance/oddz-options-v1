@@ -37,15 +37,15 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
 
     mapping(bytes32 => Asset) public assetNameMap;
     mapping(address => AssetPair) public addressPairMap;
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -71,17 +71,17 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     // Asset functions
@@ -167,7 +167,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      * @notice Used for deactivating the asset
      * @param _asset underlying asset
      */
-    function deactivateAsset(bytes32 _asset) external onlyExecutor(msg.sender) validAsset(_asset) {
+    function deactivateAsset(bytes32 _asset) external onlyTimeLocker(msg.sender) validAsset(_asset) {
         Asset storage asset = assetNameMap[_asset];
         asset._active = false;
 
@@ -231,7 +231,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      * @notice Deactivate an asset pair
      * @param _address asset pair address
      */
-    function deactivateAssetPair(address _address) external onlyExecutor(msg.sender) validAssetPair(_address) {
+    function deactivateAssetPair(address _address) external onlyTimeLocker(msg.sender) validAssetPair(_address) {
         AssetPair storage pair = addressPairMap[_address];
         pair._active = false;
 
@@ -245,7 +245,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      */
     function updateMaxPeriod(address _address, uint256 _maxDays)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
         validAssetPair(_address)
     {
         AssetPair storage pair = addressPairMap[_address];
@@ -262,7 +262,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      */
     function updateMinPeriod(address _address, uint256 _minDays)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
         validAssetPair(_address)
     {
         AssetPair storage pair = addressPairMap[_address];
@@ -279,7 +279,7 @@ contract OddzAssetManager is AccessControl, IOddzAsset {
      */
     function setPurchaseLimit(address _address, uint256 _limit)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
         validAssetPair(_address)
     {
         AssetPair storage pair = addressPairMap[_address];

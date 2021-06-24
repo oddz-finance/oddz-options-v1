@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../Libs/IERC20Extented.sol";
 
 contract OddzFeeManager is IOddzFeeManager, AccessControl {
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IERC20Extented[] public txnFeeTokens;
     IERC20Extented[] public settlementFeeTokens;
@@ -31,24 +31,24 @@ contract OddzFeeManager is IOddzFeeManager, AccessControl {
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -88,7 +88,7 @@ contract OddzFeeManager is IOddzFeeManager, AccessControl {
      * @notice set transaction fee percentage
      * @param _feePerc transaction fee percentage valid range (1, 10)
      */
-    function setTransactionFeePerc(uint8 _feePerc) external onlyExecutor(msg.sender) {
+    function setTransactionFeePerc(uint8 _feePerc) external onlyTimeLocker(msg.sender) {
         require(_feePerc >= 1 && _feePerc <= 10, "Invalid transaction fee");
         txnFeePerc = _feePerc;
     }
@@ -97,7 +97,7 @@ contract OddzFeeManager is IOddzFeeManager, AccessControl {
      * @notice set settlement fee percentage
      * @param _feePerc settlement fee percentage valid range (1, 10)
      */
-    function setSettlementFeePerc(uint8 _feePerc) external onlyExecutor(msg.sender) {
+    function setSettlementFeePerc(uint8 _feePerc) external onlyTimeLocker(msg.sender) {
         require(_feePerc >= 1 && _feePerc <= 10, "Invalid settlement fee");
         settlementFeePerc = _feePerc;
     }

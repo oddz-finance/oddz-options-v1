@@ -92,7 +92,7 @@ describe("TimeLocker Unit tests", function () {
         [this.accounts.admin1],
         [this.accounts.admin1],
       ])) as TimeLocker;
-      this.oddzAdministrator.setExecutor(this.timeLocker.address);
+      this.oddzAdministrator.setTimeLocker(this.timeLocker.address);
     });
 
     shouldBehaveLikeTimeLocker();

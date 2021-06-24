@@ -21,7 +21,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     using SafeERC20 for IERC20Extented;
     using Address for address;
 
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IOddzAsset public assetManager;
     IOddzLiquidityPoolManager public pool;
@@ -80,8 +80,8 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         premiumManager = _premiumManager;
         oddzFeeManager = _oddzFeeManager;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
     modifier onlyOwner(address _address) {
@@ -89,8 +89,8 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -488,7 +488,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
      * @notice sets SDK address
      * @param _sdk Oddz SDK address
      */
-    function setSdk(IOddzSDK _sdk) external onlyExecutor(msg.sender) {
+    function setSdk(IOddzSDK _sdk) external onlyTimeLocker(msg.sender) {
         require(address(_sdk).isContract(), "invalid SDK contract address");
         sdk = _sdk;
     }
@@ -497,7 +497,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
      * @notice sets administrator address
      * @param _administrator Oddz administrator address
      */
-    function setAdministrator(IOddzAdministrator _administrator) external onlyExecutor(msg.sender) {
+    function setAdministrator(IOddzAdministrator _administrator) external onlyTimeLocker(msg.sender) {
         require(address(_administrator).isContract(), "invalid administrator contract address");
         // Set token allowance of previous administrator to 0
         if (address(administrator) != address(0)) token.safeApprove(address(administrator), 0);
@@ -508,19 +508,19 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         token.safeApprove(address(administrator), type(uint256).max);
     }
 
-    function setMinimumPremium(uint256 _amount) external onlyExecutor(msg.sender) {
+    function setMinimumPremium(uint256 _amount) external onlyTimeLocker(msg.sender) {
         uint256 amount = _amount / 10**token.decimals();
         require(amount >= 1 && amount < 50, "invalid minimum premium");
         minimumPremium = _amount;
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**

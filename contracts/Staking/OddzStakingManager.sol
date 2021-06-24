@@ -91,7 +91,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
      */
     event TransferReward(address indexed _staker, address indexed _token, uint256 _reward);
 
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IERC20 public oddzToken;
     mapping(IERC20 => Token) public tokens;
@@ -122,25 +122,25 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
     constructor(IERC20 _oddzToken) {
         oddzToken = _oddzToken;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -150,7 +150,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
      */
     function setLockupDuration(IERC20 _token, uint256 _duration)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
         validToken(_token)
         validDuration(_duration)
     {
@@ -164,7 +164,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
      */
     function setRewardLockupDuration(IERC20 _token, uint256 _duration)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
         validToken(_token)
         validDuration(_duration)
     {
@@ -176,7 +176,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         uint8[] calldata _txnFeeRewards,
         uint8[] calldata _settlementFeeRewards,
         uint8[] calldata _allotedRewards
-    ) external onlyExecutor(msg.sender) {
+    ) external onlyTimeLocker(msg.sender) {
         uint8 totalTxnFee;
         uint8 totalSettlementFee;
         uint8 totalAllotedFee;
@@ -199,7 +199,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(IERC20 _token) external onlyExecutor(msg.sender) validToken(_token) {
+    function deactivateToken(IERC20 _token) external onlyTimeLocker(msg.sender) validToken(_token) {
         tokens[_token]._active = false;
         emit TokenDeactivate(address(_token));
     }

@@ -72,7 +72,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev Access control specific data definitions
      */
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "LP Error: caller has no access to the method");
@@ -84,8 +84,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "LP Error: caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "LP Error: caller has no access to the method");
         _;
     }
 
@@ -107,8 +107,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     constructor(IERC20 _token, IDexManager _dexManager) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
 
         token = _token;
         dexManager = _dexManager;
@@ -450,22 +450,22 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     }
 
     /**
-     * @notice sets the executor for the liqudity pool contract
-     * @param _address executor address
+     * @notice sets the timelocker for the liqudity pool contract
+     * @param _address timelocker address
      * Note: This can be called only by the owner
      */
-    function setExecutor(address _address) external {
-        require(_address != address(0), "LP Error: Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "LP Error: Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
-     * @notice removes the executor for the liqudity pool contract
-     * @param _address executor contract address
+     * @notice removes the timelocker for the liqudity pool contract
+     * @param _address timelocker contract address
      * Note: This can be called only by the owner
      */
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -473,7 +473,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _reqBalance required balance between 6 and 9
      * Note: This can be called only by the owner
      */
-    function setReqBalance(uint8 _reqBalance) external onlyExecutor(msg.sender) reqBalanceValidRange(_reqBalance) {
+    function setReqBalance(uint8 _reqBalance) external onlyTimeLocker(msg.sender) reqBalanceValidRange(_reqBalance) {
         reqBalance = _reqBalance;
     }
 
@@ -483,7 +483,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _dest destimation period
      * Note: This can be called only by the owner
      */
-    function mapPeriod(uint256 _source, uint256 _dest) public validMaxExpiration(_dest) onlyExecutor(msg.sender) {
+    function mapPeriod(uint256 _source, uint256 _dest) public validMaxExpiration(_dest) onlyTimeLocker(msg.sender) {
         periodMapper[_source] = _dest;
     }
 
@@ -502,7 +502,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         bytes32 _model,
         uint256 _period,
         IOddzLiquidityPool[] memory _pools
-    ) public onlyExecutor(msg.sender) {
+    ) public onlyTimeLocker(msg.sender) {
         require(_pools.length <= 10, "LP Error: pools length should be <= 10");
         // delete all the existing pool mapping
         IOddzLiquidityPool[] storage aPools = poolMapper[keccak256(abi.encode(_pair, _type, _model, _period))];
@@ -541,7 +541,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice updates premium lockup duration
      * @param _premiumLockupDuration premium lockup duration
      */
-    function updatePremiumLockupDuration(uint256 _premiumLockupDuration) public onlyExecutor(msg.sender) {
+    function updatePremiumLockupDuration(uint256 _premiumLockupDuration) public onlyTimeLocker(msg.sender) {
         require(
             _premiumLockupDuration >= 1 days && _premiumLockupDuration <= 30 days,
             "LP Error: invalid premium lockup duration"

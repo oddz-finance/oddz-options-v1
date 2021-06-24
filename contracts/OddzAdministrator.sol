@@ -13,7 +13,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     using SafeERC20 for IERC20Extented;
     using SafeERC20 for IERC20;
 
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IERC20Extented public usdcToken;
     IERC20 public oddzToken;
@@ -50,8 +50,8 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -79,17 +79,17 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         oddzToken.safeApprove(address(sdk), type(uint256).max);
         oddzToken.safeApprove(address(staking), type(uint256).max);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     function changeGaslessFacilitator(address _gaslessFacilitator) external onlyOwner(msg.sender) {
@@ -118,7 +118,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         slippage = _slippage;
     }
 
-    function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyExecutor(msg.sender) {
+    function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyTimeLocker(msg.sender) {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
             "Administrator: invalid txn distribution"
@@ -128,7 +128,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
 
     function updateSettlementDistribution(DistributionPercentage memory _settlementDP)
         external
-        onlyExecutor(msg.sender)
+        onlyTimeLocker(msg.sender)
     {
         require(
             (_settlementDP.developer + _settlementDP.gasless + _settlementDP.maintainer + _settlementDP.staker) == 100,

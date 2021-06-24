@@ -10,7 +10,7 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     struct PremiumModel {
         bool _active;
@@ -43,8 +43,8 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
         _;
     }
 
-    modifier onlyExecutor(address _address) {
-        require(hasRole(EXECUTOR_ROLE, _address), "caller has no access to the method");
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -60,8 +60,8 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(EXECUTOR_ROLE, msg.sender);
-        _setRoleAdmin(EXECUTOR_ROLE, EXECUTOR_ROLE);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
     function setManager(address _address) external {
@@ -73,13 +73,13 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
         revokeRole(MANAGER_ROLE, _address);
     }
 
-    function setExecutor(address _address) external {
-        require(_address != address(0), "Invalid executor address");
-        grantRole(EXECUTOR_ROLE, _address);
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
     }
 
-    function removeExecutor(address _address) external {
-        revokeRole(EXECUTOR_ROLE, _address);
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -116,7 +116,7 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
      * @notice Function to enable option premium model
      * @param _name premium model identifier.
      */
-    function disableOptionPremiumModel(bytes32 _name) external onlyExecutor(msg.sender) validModel(_name) {
+    function disableOptionPremiumModel(bytes32 _name) external onlyTimeLocker(msg.sender) validModel(_name) {
         PremiumModel storage data = premiumModelMap[_name];
         require(data._active == true, "Premium model is disabled");
 
