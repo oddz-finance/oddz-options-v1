@@ -44,6 +44,14 @@ Compile the smart contracts and generate TypeChain artifacts:
 $ yarn compile
 ```
 
+## Clean
+
+Delete the smart contract artifacts, the coverage reports and the Hardhat cache:
+
+```sh
+$ yarn clean
+```
+
 ## Code formatting
 
 We use [Prettier](https://prettier.io/) to format all the code without any special configuration. Whatever Prettier does is considered The Right Thing. It's completely fine to commit non-prettied code and then reformat it in a later commit.
@@ -70,7 +78,7 @@ Run the Mocha tests:
 $ yarn test
 ```
 
-## Performance and dependencies loading
+## Coverage
 
 Generate the code coverage report:
 
