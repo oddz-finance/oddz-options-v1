@@ -75,6 +75,7 @@ describe("TimeLocker Unit tests", function () {
         this.oddzToken.address, // just to test
         bscForwarder,
         this.oddzToken.address,
+        this.usdcToken.address,
       ])) as OddzSDK;
       this.oddzAdministratorAbi = OddzAdministratorArtifact.abi;
       this.oddzAdministrator = (await deployContract(this.signers.admin, OddzAdministratorArtifact, [

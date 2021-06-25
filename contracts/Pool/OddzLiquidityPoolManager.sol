@@ -3,7 +3,6 @@ pragma solidity 0.8.3;
 
 import "./IOddzLiquidityPoolManager.sol";
 import "../Libs/DateTimeLibrary.sol";
-import "../Libs/ABDKMath64x64.sol";
 import "../Swap/IDexManager.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -25,7 +24,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @dev Liquidity specific data definitions
      */
     LockedLiquidity[] public lockedLiquidity;
-    uint256 public totalLockedPremium;
     IERC20 public token;
 
     /**
@@ -178,8 +176,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(_amount * 10 <= validateBalance, "LP Error: Not enough funds in the pool. Please lower the amount.");
         require(_amount > 0, "LP Error: Amount is too small");
 
-        transferAmount = ABDKMath64x64.mulu(ABDKMath64x64.divu(_pool.totalBalance(), _pool.totalSupply()), _amount);
-        _pool.removeLiquidity(transferAmount, _amount, msg.sender, premiumLockPeriod);
+        transferAmount = _pool.removeLiquidity(_amount, msg.sender, premiumLockPeriod);
     }
 
     function lockLiquidity(
@@ -198,16 +195,12 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         while (count < pools.length) {
             if (base > poolBalances[count]) share[count] = poolBalances[count];
             else share[count] = base;
-            IOddzLiquidityPool(pools[count]).lockLiquidity(
-                share[count],
-                (_premium * share[count]) / _liquidityParams._amount
-            );
+            IOddzLiquidityPool(pools[count]).lockLiquidity(share[count]);
             totalAmount -= share[count];
             if (totalAmount > 0) base = totalAmount / (pools.length - (count + 1));
             count++;
         }
         lockedLiquidity.push(LockedLiquidity(_liquidityParams._amount, _premium, true, pools, share));
-        totalLockedPremium += _premium;
     }
 
     function unlockLiquidity(uint256 _id) external override onlyManager(msg.sender) validLiquidty(_id) {
@@ -217,7 +210,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             IOddzLiquidityPool(ll._pools[i]).unlockPremium(_id, (ll._premium * ll._share[i]) / ll._amount);
         }
         ll._locked = false;
-        totalLockedPremium -= ll._premium;
     }
 
     function send(
@@ -255,10 +247,10 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         );
     }
 
-    function totalBalance() public view override returns (uint256 balance) {
-        return token.balanceOf(address(this)) - totalLockedPremium;
-    }
-
+    /**
+     * @notice Move liquidity between pools
+     * @param _poolTransfer source and destination pools with amount of transfer
+     */
     function move(PoolTransfer memory _poolTransfer) external override {
         require(
             lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + moveLockupDuration) < block.timestamp,
@@ -280,17 +272,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             totalTransfer -= int256(_poolTransfer._dAmount[i]);
         }
         require(totalTransfer == 0, "LP Error: invalid transfer amount");
-    }
-
-    /**
-     * @notice Returns LP's balance in USD
-     * @param _account Liquidity provider's address
-     * @return share Liquidity provider's balance in USD
-     */
-    function usdBalanceOf(address _account) external view returns (uint256 share) {
-        if (totalSupply() > 0)
-            share = ABDKMath64x64.mulu(ABDKMath64x64.divu(totalBalance(), totalSupply()), balanceOf(_account));
-        else share = 0;
     }
 
     /**
@@ -330,7 +311,6 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
                 (transferAmount * ll._share[i]) / ll._amount
             );
         }
-        totalLockedPremium -= lockedPremium;
     }
 
     /**

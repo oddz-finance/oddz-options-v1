@@ -13,7 +13,6 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      * @dev Liquidity specific data definitions
      */
     uint256 public poolBalance;
-    uint256 public oUsdSupply;
     uint256 public lockedAmount;
     struct ProviderBalance {
         uint256 _amount;
@@ -46,56 +45,48 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         require(_amount > 0, "LP Error: Amount is too small");
         _updateLiquidity(_amount, TransactionType.ADD);
         _allocatePremium(_provider);
-        _updateProviderBalance(TransactionType.ADD, _amount, _provider);
-        oUsdSupply += _amount;
+        _updateProviderBalance(_provider, _amount, TransactionType.ADD);
 
         emit AddLiquidity(_provider, _amount);
     }
 
     /**
      * @notice Provider burns oUSD and receives USD from the pool
-     * @param _amount Amount of USD to receive
-     * @param _oUSD Amount of oUSD to be burnt
+     * @param _amount Amount of oUSD to burn
      * @param _provider Address of the Liquidity Provider
      * @param _lockDuration premium lockup days
      */
     function removeLiquidity(
         uint256 _amount,
-        uint256 _oUSD,
         address _provider,
         uint256 _lockDuration
-    ) external override onlyOwner {
-        require(
-            _amount <=
-                liquidityProvider[_provider]._amount -
-                    (
-                        (liquidityProvider[_provider]._isNegativePremium)
-                            ? liquidityProvider[_provider]._premiumAllocated
-                            : 0
-                    ),
-            "LP Error: Amount is too large"
-        );
+    ) external override onlyOwner returns (uint256 transferAmount) {
         require(_amount > 0, "LP Error: Amount is too small");
-
-        _updateLiquidity(_amount, TransactionType.REMOVE);
         _allocatePremium(_provider);
+
+        uint256 maxAllowedAmount = liquidityProvider[_provider]._amount;
+        if (liquidityProvider[_provider]._isNegativePremium)
+            maxAllowedAmount -= liquidityProvider[_provider]._premiumAllocated;
+        require(_amount <= maxAllowedAmount, "LP Error: Amount is too large");
+
+        transferAmount = (_amount * maxAllowedAmount) / liquidityProvider[_provider]._amount;
+        _updateLiquidity(transferAmount, TransactionType.REMOVE);
+        // using oUSD (i.e. _amount) for forfeit premium provides higher slash percentage
         _forfeitPremium(_provider, _amount, _lockDuration);
         // oUSD should be the balance of the user
-        _updateProviderBalance(TransactionType.REMOVE, _oUSD, _provider);
-        oUsdSupply -= _oUSD;
+        _updateProviderBalance(_provider, _amount, TransactionType.REMOVE);
 
-        emit RemoveLiquidity(_provider, _amount, _oUSD);
+        emit RemoveLiquidity(_provider, transferAmount, _amount);
     }
 
     /**
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
-     * @param _premium premium allocated to the pool
      */
-    function lockLiquidity(uint256 _amount, uint256 _premium) external override onlyOwner {
+    function lockLiquidity(uint256 _amount) external override onlyOwner {
         require(_amount <= availableBalance(), "LP Error: Amount is too large.");
-        lockedAmount = lockedAmount + _amount;
-        oUsdSupply += _premium;
+        lockedAmount += _amount;
+
         emit LockLiquidity(_amount);
     }
 
@@ -105,7 +96,8 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      */
     function unlockLiquidity(uint256 _amount) external override onlyOwner {
         require(_amount > 0, "LP Error: Amount is too small");
-        lockedAmount = lockedAmount - _amount;
+        lockedAmount -= _amount;
+
         emit UnlockLiquidity(_amount);
     }
 
@@ -116,8 +108,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      */
     function unlockPremium(uint256 _lid, uint256 _amount) external override onlyOwner {
         PremiumPool storage dayPremium = premiumDayPool[DateTimeLibrary.getPresentDayTimestamp()];
-        dayPremium._collected = dayPremium._collected + _amount;
-        oUsdSupply -= _amount;
+        dayPremium._collected += _amount;
 
         emit Profit(_lid, _amount);
     }
@@ -137,7 +128,6 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         PremiumPool storage dayPremium = premiumDayPool[date];
         dayPremium._collected += _amount;
         dayPremium._exercised += _transfer;
-        oUsdSupply -= _transfer;
 
         if (_amount >= _transfer) emit Profit(_lid, _amount - _transfer);
         else emit Loss(_lid, _transfer - _amount);
@@ -201,14 +191,6 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
      */
     function totalBalance() public view override returns (uint256) {
         return poolBalance;
-    }
-
-    /**
-     * @notice Returns the total supply allocated for the pool
-     * @return balance total supply allocated to the pool
-     */
-    function totalSupply() external view override returns (uint256) {
-        return oUsdSupply;
     }
 
     /**
@@ -289,13 +271,14 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
 
     /**
      * @notice Updates liquidity provider balance
-     * @param _type Transaction type
+     * @param _provider liquidity provider address
      * @param _amount amount of liquidity added/removed
+     * @param _type Transaction type
      */
     function _updateProviderBalance(
-        TransactionType _type,
+        address _provider,
         uint256 _amount,
-        address _provider
+        TransactionType _type
     ) private {
         if (_type == TransactionType.ADD) liquidityProvider[_provider]._amount += _amount;
         else liquidityProvider[_provider]._amount -= _amount;
