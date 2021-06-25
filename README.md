@@ -28,7 +28,7 @@ There's a folder for each modules in `contracts/` and test cases in `tests/`
 
 To install the project's dependencies, run `yarn install` in the root directory of the repository.
 
-## Set up .evn
+## Set up .env
 
 create a new .env file by copying it's content from .env.example and update `INFURA_API_KEY` and `MNEMONIC`
 
