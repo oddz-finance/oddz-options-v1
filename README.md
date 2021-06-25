@@ -24,12 +24,9 @@ If you find a bug or want to propose a new feature, please [open an issue](https
 
 There's a folder for each modules in `contracts/` and test cases in `tests/`
 
-
-
 ## Installing
 
 To install the project's dependencies, run `yarn install` in the root directory of the repository.
-
 
 ## Set up .evn
 
@@ -48,7 +45,6 @@ $ yarn compile
 ```
 
 ## Code formatting
-
 
 We use [Prettier](https://prettier.io/) to format all the code without any special configuration. Whatever Prettier does is considered The Right Thing. It's completely fine to commit non-prettied code and then reformat it in a later commit.
 
@@ -81,7 +77,6 @@ Generate the code coverage report:
 ```sh
 $ yarn coverage
 ```
-
 
 ## Branching
 
