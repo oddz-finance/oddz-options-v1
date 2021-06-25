@@ -25,7 +25,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     const oddzAssetManager = await this.oddzAssetManager.connect(this.signers.admin1);
     await expect(
       oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8),
-    ).to.be.revertedWith("caller is not the owner");
+    ).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("should activate asset successfully", async function () {
@@ -58,7 +58,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
     await expect(oddzAssetManager1.deactivateAsset(utils.formatBytes32String("USD"))).to.be.revertedWith(
-      "caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -68,7 +68,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     await oddzAssetManager.deactivateAsset(utils.formatBytes32String("USD"));
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
     await expect(oddzAssetManager1.activateAsset(utils.formatBytes32String("USD"))).to.be.revertedWith(
-      "caller is not the owner",
+      "revert caller has no access to the method",
     );
   });
 
@@ -161,7 +161,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
         2592000,
         86400,
       ),
-    ).to.be.revertedWith("caller is not the owner");
+    ).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("should activate asset pair successfully", async function () {
@@ -232,7 +232,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(oddzAssetManager1.deactivateAssetPair(addr)).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.deactivateAssetPair(addr)).to.be.revertedWith(
+      "revert caller has no access to the method",
+    );
   });
 
   it("should revert for non owner while activate asset pair", async function () {
@@ -249,7 +251,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     await oddzAssetManager.deactivateAssetPair(addr);
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(oddzAssetManager1.activateAssetPair(addr)).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.activateAssetPair(addr)).to.be.revertedWith(
+      "revert caller has no access to the method",
+    );
   });
 
   it("should fail with message Invalid asset pair", async function () {
@@ -325,7 +329,7 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
     await expect(
       oddzAssetManager1.setPurchaseLimit(addr, BigNumber.from(utils.parseEther("0.001"))),
-    ).to.be.revertedWith("caller is not the owner");
+    ).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("should revert with message Invalid max days when update max days", async function () {
@@ -371,7 +375,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(oddzAssetManager1.updateMaxPeriod(addr, 2592000)).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.updateMaxPeriod(addr, 2592000)).to.be.revertedWith(
+      "revert caller has no access to the method",
+    );
   });
 
   it("should successfully update max days with value greater to min days", async function () {
@@ -451,7 +457,9 @@ export function shouldBehaveLikeOddzAssetManager(): void {
     );
     const addr = (await oddzAssetManager.addressPairMap(pair))._address;
     const oddzAssetManager1 = await this.oddzAssetManager.connect(this.signers.admin1);
-    await expect(oddzAssetManager1.updateMinPeriod(addr, 86500)).to.be.revertedWith("caller is not the owner");
+    await expect(oddzAssetManager1.updateMinPeriod(addr, 86500)).to.be.revertedWith(
+      "revert caller has no access to the method",
+    );
   });
 
   it("should successfully update min days with value equal to max days", async function () {

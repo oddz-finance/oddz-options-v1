@@ -10,6 +10,7 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
     using Address for address;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     struct PremiumModel {
         bool _active;
@@ -42,6 +43,11 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
         _;
     }
 
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
     modifier validModelName(bytes32 _name) {
         require(address(premiumModelMap[_name]._model) == address(0), "model name already used");
         _;
@@ -54,6 +60,8 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
     function setManager(address _address) external {
@@ -63,6 +71,15 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
 
     function removeManager(address _address) external {
         revokeRole(MANAGER_ROLE, _address);
+    }
+
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**
@@ -99,7 +116,7 @@ contract OddzOptionPremiumManager is AccessControl, IOddzOptionPremiumManager {
      * @notice Function to enable option premium model
      * @param _name premium model identifier.
      */
-    function disableOptionPremiumModel(bytes32 _name) external onlyOwner(msg.sender) validModel(_name) {
+    function disableOptionPremiumModel(bytes32 _name) external onlyTimeLocker(msg.sender) validModel(_name) {
         PremiumModel storage data = premiumModelMap[_name];
         require(data._active == true, "Premium model is disabled");
 

@@ -2,6 +2,8 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./IOddzOption.sol";
 import "./IOddzAsset.sol";
 import "../Pool/IOddzLiquidityPoolManager.sol";
@@ -14,10 +16,12 @@ import "../Libs/ABDKMath64x64.sol";
 import "../Libs/IERC20Extented.sol";
 import "./IOddzFeeManager.sol";
 
-contract OddzOptionManager is IOddzOption, Ownable {
+contract OddzOptionManager is IOddzOption, AccessControl {
     using Math for uint256;
     using SafeERC20 for IERC20Extented;
     using Address for address;
+
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IOddzAsset public assetManager;
     IOddzLiquidityPoolManager public pool;
@@ -46,7 +50,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
     /**
      * @dev Max Slippage
      */
-    uint16 public maxSlippage = 100;
+    uint16 public maxSlippage = 500;
 
     /**
      * @dev SDK contract address
@@ -58,6 +62,12 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @dev minimum premium
      */
     uint256 public minimumPremium;
+
+    /**
+     * @dev option transfer map
+     * mapping (optionId => minAmount)
+     */
+    mapping(uint256 => uint256) public optionTransferMap;
 
     constructor(
         IOddzPriceOracleManager _oracle,
@@ -75,6 +85,19 @@ contract OddzOptionManager is IOddzOption, Ownable {
         assetManager = _assetManager;
         premiumManager = _premiumManager;
         oddzFeeManager = _oddzFeeManager;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
+    }
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
+        _;
     }
 
     modifier validAmount(uint256 _amount, address _pair) {
@@ -282,7 +305,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
                 _details._optionType
             );
         pool.lockLiquidity(optionId, liquidityParams, premiumResult.optionPremium);
-        txnFeeAggregate = txnFeeAggregate + premiumResult.txnFee;
+        txnFeeAggregate += premiumResult.txnFee;
 
         token.safeTransferFrom(_buyer, address(pool), premiumResult.optionPremium);
         token.safeTransferFrom(_buyer, address(this), premiumResult.txnFee);
@@ -357,8 +380,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
     function exercise(uint256 _optionId) external override {
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Wrong msg.sender");
-        require(option.state == State.Active, "Wrong state");
+        require(option.holder == msg.sender, "Invalid Caller");
+        require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
@@ -382,8 +405,8 @@ contract OddzOptionManager is IOddzOption, Ownable {
         require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
-        require(option.holder == msg.sender, "Wrong msg.sender");
-        require(option.state == State.Active, "Wrong state");
+        require(option.holder == msg.sender, "Invalid Caller");
+        require(option.state == State.Active, "Invalid state");
 
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
@@ -391,6 +414,49 @@ contract OddzOptionManager is IOddzOption, Ownable {
         pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _slippage);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
+    }
+
+    function enableOptionTransfer(uint256 _optionId, uint256 _minAmount) external {
+        Option storage option = options[_optionId];
+        require(
+            option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
+            "Option not eligble for transfer"
+        );
+        require(option.holder == msg.sender, "Invalid Caller");
+        require(option.state == State.Active, "Invalid state");
+        require(_minAmount >= minimumPremium, "amount is lower than minimum premium");
+
+        optionTransferMap[_optionId] = _minAmount;
+
+        emit OptionTransferEnabled(_optionId, _minAmount);
+    }
+
+    function optionTransfer(uint256 _optionId) external {
+        Option storage option = options[_optionId];
+        require(
+            option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
+            "Option not eligble for transfer"
+        );
+        uint256 minAmount = optionTransferMap[_optionId];
+        require(minAmount > 0, "Option not enabled for transfer");
+        require(option.state == State.Active, "Invalid state");
+        require(option.holder != msg.sender, "Self option transfer is not allowed");
+
+        // once transfer initiated update option tranfer map
+        delete optionTransferMap[_optionId];
+
+        uint256 transferFee = _getTransactionFee(minAmount, msg.sender);
+        txnFeeAggregate += transferFee;
+
+        _validateOptionAmount(token.allowance(msg.sender, address(this)), minAmount + transferFee);
+
+        token.safeTransferFrom(msg.sender, option.holder, minAmount);
+        token.safeTransferFrom(msg.sender, address(this), transferFee);
+
+        address oldHolder = option.holder;
+        option.holder = msg.sender;
+
+        emit OptionTransfer(_optionId, oldHolder, msg.sender, minAmount, transferFee);
     }
 
     /**
@@ -463,24 +529,15 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice sets maximum deadline for DEX swap
      * @param _deadline maximum swap transaction time
      */
-    function setMaxDeadline(uint32 _deadline) external onlyOwner {
+    function setMaxDeadline(uint32 _deadline) external onlyOwner(msg.sender) {
         maxDeadline = _deadline;
-    }
-
-    /**
-     * @notice sets maximum slippage for DEX swap
-     * @param _slippage maximum slippage
-     */
-    function setMaxSlippage(uint16 _slippage) external onlyOwner {
-        require(_slippage > 0 && _slippage <= 1000, "invalid slippage");
-        maxSlippage = _slippage;
     }
 
     /**
      * @notice sets SDK address
      * @param _sdk Oddz SDK address
      */
-    function setSdk(IOddzSDK _sdk) external onlyOwner {
+    function setSdk(IOddzSDK _sdk) external onlyTimeLocker(msg.sender) {
         require(address(_sdk).isContract(), "invalid SDK contract address");
         sdk = _sdk;
     }
@@ -489,7 +546,7 @@ contract OddzOptionManager is IOddzOption, Ownable {
      * @notice sets administrator address
      * @param _administrator Oddz administrator address
      */
-    function setAdministrator(IOddzAdministrator _administrator) external onlyOwner {
+    function setAdministrator(IOddzAdministrator _administrator) external onlyTimeLocker(msg.sender) {
         require(address(_administrator).isContract(), "invalid administrator contract address");
         // Set token allowance of previous administrator to 0
         if (address(administrator) != address(0)) token.safeApprove(address(administrator), 0);
@@ -500,10 +557,19 @@ contract OddzOptionManager is IOddzOption, Ownable {
         token.safeApprove(address(administrator), type(uint256).max);
     }
 
-    function setMinimumPremium(uint256 _amount) external onlyOwner {
+    function setMinimumPremium(uint256 _amount) external onlyTimeLocker(msg.sender) {
         uint256 amount = _amount / 10**token.decimals();
         require(amount >= 1 && amount < 50, "invalid minimum premium");
         minimumPremium = _amount;
+    }
+
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
     }
 
     /**

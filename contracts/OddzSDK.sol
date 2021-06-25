@@ -4,17 +4,20 @@ pragma solidity 0.8.3;
 import "./IOddzSDK.sol";
 import "./Libs/DateTimeLibrary.sol";
 import "./Integrations/Gasless/BaseRelayRecipient.sol";
+import "./Libs/IERC20Extented.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
+contract OddzSDK is IOddzSDK, BaseRelayRecipient, AccessControl {
     using Address for address;
     using SafeERC20 for IERC20;
 
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
+
     IOddzOption public optionManager;
     IERC20 public oddzToken;
+    IERC20Extented public usdcToken;
     mapping(bytes32 => bool) public usersForTheMonth;
     // Month -> Amount
     mapping(uint256 => uint256) public totalPremiumCollected;
@@ -22,17 +25,46 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
     // Address -> Month -> Amount
     mapping(address => mapping(uint256 => uint256)) public premiumCollected;
 
+    /**
+     * @dev minimum gasless premium
+     */
+    uint256 public override minimumGaslessPremium;
+
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "SDK: caller has no access to the method");
+        _;
+    }
+
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "SDK: caller has no access to the method");
+        _;
+    }
+
     constructor(
         IOddzOption _optionManager,
         address _trustedForwarder,
-        IERC20 _oddzToken
+        IERC20 _oddzToken,
+        IERC20Extented _usdcToken
     ) {
         oddzToken = _oddzToken;
+        usdcToken = _usdcToken;
         optionManager = _optionManager;
         trustedForwarder = _trustedForwarder;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setTrustedForwarder(address forwarderAddress) public onlyOwner {
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "SDK: Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function setTrustedForwarder(address forwarderAddress) public onlyOwner(msg.sender) {
         require(forwarderAddress != address(0), "SDK: Forwarder Address cannot be 0");
         trustedForwarder = forwarderAddress;
     }
@@ -64,10 +96,39 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
         IOddzOption.OptionType _optionType,
         address _provider
     ) public override returns (uint256 optionId) {
-        require(_provider != address(0), "SDK: invalid provider address");
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
-        optionId = optionManager.buy(option, _premiumWithSlippage, msgSender());
+        return _buy(option, _premiumWithSlippage, _provider, msg.sender);
+    }
+
+    function buyWithGasless(
+        address _pair,
+        bytes32 _optionModel,
+        uint256 _premiumWithSlippage,
+        uint256 _expiration,
+        uint256 _amount,
+        uint256 _strike,
+        IOddzOption.OptionType _optionType,
+        address _provider
+    ) public override returns (uint256 optionId) {
+        IOddzOption.OptionDetails memory option =
+            IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
+        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, _msgSender());
+        require(
+            premiumResult.optionPremium + premiumResult.txnFee > minimumGaslessPremium,
+            "SDK: premium amount not elgible for gasless"
+        );
+        return _buy(option, _premiumWithSlippage, _provider, _msgSender());
+    }
+
+    function _buy(
+        IOddzOption.OptionDetails memory _option,
+        uint256 _premiumWithSlippage,
+        address _provider,
+        address _buyer
+    ) private returns (uint256 optionId) {
+        require(_provider != address(0), "SDK: invalid provider address");
+        optionId = optionManager.buy(_option, _premiumWithSlippage, _buyer);
         (, , , , , uint256 premium, , , ) = optionManager.options(optionId);
         uint256 month = DateTimeLibrary.getMonth(block.timestamp);
 
@@ -123,5 +184,11 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
                 (totalOddzAllocated[_month] * premiumCollected[_providers[i]][_month]) / totalPremiumCollected[_month];
             if (amount > 0) oddzToken.safeTransfer(_providers[i], amount);
         }
+    }
+
+    function setMinimumGaslessPremium(uint256 _amount) external onlyTimeLocker(msg.sender) {
+        uint256 amount = _amount / 10**usdcToken.decimals();
+        require(amount >= 1 && amount < 500, "invalid minimum gasless premium");
+        minimumGaslessPremium = _amount;
     }
 }

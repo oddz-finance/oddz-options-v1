@@ -104,10 +104,8 @@ interface IOddzLiquidityPoolManager {
     ) external;
 
     /**
-     * @notice Returns the total balance of USD provided to the pool
-     * @return balance Pool balance
+     * @notice Move liquidity between pools
+     * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function totalBalance() external view returns (uint256 balance);
-
     function move(PoolTransfer memory _poolTransfer) external;
 }

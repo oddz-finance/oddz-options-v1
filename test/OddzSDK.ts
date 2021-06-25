@@ -163,6 +163,7 @@ describe("Oddz Option Sdk Unit tests", function () {
         this.oddzOptionManager.address,
         bscForwarder,
         this.oddzToken.address,
+        this.usdcToken.address,
       ])) as OddzSDK;
 
       await this.oddzOptionManager.setSdk(this.oddzSDK.address);

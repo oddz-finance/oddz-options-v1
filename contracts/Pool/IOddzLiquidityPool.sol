@@ -47,24 +47,22 @@ interface IOddzLiquidityPool {
 
     /**
      * @notice Provider burns oUSD and receives USD from the pool
-     * @param _amount Amount of USD to receive
-     * @param _oUSD Amount of oUSD to be burnt
+     * @param _amount Amount of oUSD to burn
      * @param _account Address of the Liquidity Provider
      * @param _lockDuration premium lockup days
+     * @return transferAmount oUSD corresponding amount to user
      */
     function removeLiquidity(
         uint256 _amount,
-        uint256 _oUSD,
         address _account,
         uint256 _lockDuration
-    ) external;
+    ) external returns (uint256 transferAmount);
 
     /**
      * @notice called by Oddz call options to lock the funds
      * @param _amount Amount of funds that should be locked in an option
-     * @param _premium premium allocated to the pool
      */
-    function lockLiquidity(uint256 _amount, uint256 _premium) external;
+    function lockLiquidity(uint256 _amount) external;
 
     /**
      * @notice called by Oddz option to unlock the funds
@@ -83,12 +81,6 @@ interface IOddzLiquidityPool {
      * @return balance Pool balance
      */
     function totalBalance() external view returns (uint256);
-
-    /**
-     * @notice Returns the total supply allocated for the pool
-     * @return balance total supply allocated to the pool
-     */
-    function totalSupply() external view returns (uint256);
 
     /**
      * @notice Allocate premium to pool
