@@ -23,19 +23,19 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
         isActive = true;
     }
 
-    function deactivateStrategy() public onlyOwner activeStrategy {
+    function deactivateStrategy() external onlyOwner activeStrategy {
         isActive = false;
     }
 
-    function activateStrategy() public onlyOwner {
+    function activateStrategy() external onlyOwner {
         isActive = true;
     }
 
-    function getPools() public view override returns (IOddzLiquidityPool[] memory) {
+    function getPools() external view override returns (IOddzLiquidityPool[] memory) {
         return pools;
     }
 
-    function getShares() public view override returns (uint256[] memory) {
+    function getShares() external view override returns (uint256[] memory) {
         return shares;
     }
 
@@ -43,7 +43,7 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
         address _provider,
         uint256 _amount,
         TransactionType _transaction
-    ) public override onlyOwner activeStrategy {
+    ) external override onlyOwner activeStrategy {
         if (_transaction == TransactionType.ADD) {
             userLiquidity[_provider] += _amount;
             liquidity += _amount;

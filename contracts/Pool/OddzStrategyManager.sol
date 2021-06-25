@@ -32,22 +32,22 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         token.safeApprove(address(poolManager), type(uint256).max);
     }
 
-    function addPool(address _pool) public onlyOwner {
+    function addPool(address _pool) external onlyOwner {
         require(_pool.isContract(), "SM Error: invalid pool address");
         validPools[_pool] = true;
     }
 
-    function removePool(address _pool) public onlyOwner {
+    function removePool(address _pool) external onlyOwner {
         require(_pool.isContract(), "SM Error: invalid pool address");
         validPools[_pool] = false;
     }
 
-    function updateStrategyCreateLockupDuration(uint256 _duration) public onlyOwner {
+    function updateStrategyCreateLockupDuration(uint256 _duration) external onlyOwner {
         require(_duration >= 1 days && _duration <= 30 days, "SM Error: invalid duration");
         strategyCreateLockupDuration = _duration;
     }
 
-    function updateStrategyChangeLockupDuration(uint256 _duration) public onlyOwner {
+    function updateStrategyChangeLockupDuration(uint256 _duration) external onlyOwner {
         require(_duration >= 1 days && _duration <= 30 days, "SM Error: invalid duration");
         strategyChangeLockupDuration = _duration;
     }
@@ -56,7 +56,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         IOddzLiquidityPool[] memory _pools,
         uint256[] memory _shares,
         uint256 _amount
-    ) public override {
+    ) external override {
         require(
             block.timestamp > lastStrategyCreated[msg.sender] + strategyCreateLockupDuration,
             "SM Error: Strategy creation not allowed within lockup duration"
@@ -72,7 +72,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     }
 
     function manageStrategy(address _strategy, ManageStrategy _manageStrategy)
-        public
+        external
         onlyOwner
         validStrategy(_strategy)
     {
@@ -87,7 +87,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         address _strategy,
         uint256 _amount,
         IOddzWriteStrategy.TransactionType _transactionType
-    ) public validStrategy(_strategy) {
+    ) external validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = IOddzWriteStrategy(_strategy).getPools();
         uint256[] memory shares = IOddzWriteStrategy(_strategy).getShares();
@@ -115,7 +115,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         IOddzWriteStrategy(_strategy).updateLiquidity(msg.sender, _amount, _transactionType);
     }
 
-    function changeStrategy(address _old, address _new) public override validStrategy(_old) validStrategy(_new) {
+    function changeStrategy(address _old, address _new) external override validStrategy(_old) validStrategy(_new) {
         require(
             block.timestamp > lastStrategyChanged[msg.sender] + strategyChangeLockupDuration,
             "SM Error: Strategy changes not allowed within lockup duration"
