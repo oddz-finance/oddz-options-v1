@@ -87,7 +87,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         address _strategy,
         uint256 _amount,
         IOddzWriteStrategy.TransactionType _transactionType
-    ) external validStrategy(_strategy) {
+    ) public validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = IOddzWriteStrategy(_strategy).getPools();
         uint256[] memory shares = IOddzWriteStrategy(_strategy).getShares();
