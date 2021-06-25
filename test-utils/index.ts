@@ -34,6 +34,11 @@ export const ManageStrategy = {
   DEACTIVATE: 1,
 };
 
+export const TransactionType = {
+  ADD: 0,
+  REMOVE: 1,
+};
+
 export const addDaysAndGetSeconds = (days = 0) => {
   const date = new Date();
   date.setDate(date.getDate() + days);

@@ -20,7 +20,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     uint256 public strategyCreateLockupDuration = 3 days;
 
     modifier validStrategy(address _strategy) {
-        require(_strategy != address(0), "SM Error: strategy cannot be zero address");
         require(_strategy.isContract(), "SM Error: strategy is not contract address");
         _;
     }
@@ -64,8 +63,8 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
         lastStrategyCreated[msg.sender] = block.timestamp;
         strategy = address(new OddzWriteStrategy(_pools, _shares));
-
         manageLiquidity(strategy, _amount, IOddzWriteStrategy.TransactionType.ADD);
+
         emit CreatedStrategy(strategy, msg.sender);
     }
 
@@ -98,6 +97,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
                 poolManager.addLiquidity(pools[i], (shares[i] * _amount) / 100);
             }
             require(totalAmount == _amount, "SM Error: invalid shares between pools");
+
             emit AddedLiquidity(_strategy, msg.sender, _amount);
         } else {
             for (uint256 i = 0; i < pools.length; i++) {
@@ -106,8 +106,11 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
                 poolManager.removeLiquidity(pools[i], (shares[i] * _amount) / 100);
             }
             require(totalAmount == _amount, "SM Error: invalid shares between pools");
+
             emit RemovedLiquidity(_strategy, msg.sender, _amount);
         }
+            IOddzWriteStrategy(_strategy).updateLiquidity(msg.sender, _amount, _transactionType);
+
     }
 
     function changeStrategy(address _old, address _new) public override validStrategy(_old) validStrategy(_new) {
@@ -118,12 +121,12 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         lastStrategyChanged[msg.sender] = block.timestamp;
         uint256 userLiquidity = OddzWriteStrategy(_old).userLiquidity(msg.sender);
         uint256[] memory oldPools = IOddzWriteStrategy(_old).getShares();
-        uint256[] memory oldStrategyPoolLiquidity;
+        uint256[] memory oldStrategyPoolLiquidity = new uint256[](oldPools.length);
         for (uint256 i = 0; i < oldPools.length; i++) {
             oldStrategyPoolLiquidity[i] = (userLiquidity * oldPools[i]) / 100;
         }
         uint256[] memory newPools = IOddzWriteStrategy(_new).getShares();
-        uint256[] memory newStrategyPoolLiquidity;
+        uint256[] memory newStrategyPoolLiquidity = new uint256[](newPools.length);
         for (uint256 i = 0; i < newPools.length; i++) {
             newStrategyPoolLiquidity[i] = (userLiquidity * newPools[i]) / 100;
         }
@@ -134,7 +137,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
                 oldStrategyPoolLiquidity,
                 newStrategyPoolLiquidity
             );
-
         poolManager.move(poolTransfer);
         IOddzWriteStrategy(_old).updateLiquidity(msg.sender, userLiquidity, IOddzWriteStrategy.TransactionType.REMOVE);
         IOddzWriteStrategy(_new).updateLiquidity(msg.sender, userLiquidity, IOddzWriteStrategy.TransactionType.ADD);

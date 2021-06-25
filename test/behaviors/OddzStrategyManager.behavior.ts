@@ -1,7 +1,9 @@
 import { expect } from "chai";
 import { BigNumber, constants, Contract, utils } from "ethers";
-import { getExpiry, ManageStrategy } from "../../test-utils";
-import { ethers } from "hardhat";
+import { getExpiry, ManageStrategy, TransactionType, addSnapshotCount } from "../../test-utils";
+import { ethers, waffle } from "hardhat";
+
+const provider = waffle.provider;
 
 export function shouldBehaveLikeOddzStrategyManager(): void {
   it("should revert setting strategy create lockup duration for non owner", async function () {
@@ -68,6 +70,19 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     expect(await oddzStrategyManager.validPools(this.oddzDefaultPool.address)).to.be.false;
   });
 
+  it("should revert create strategy for no input pools provided", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await expect(
+      oddzStrategyManager.createStrategy(
+        [],
+        [],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    )
+    .to.be.revertedWith("SM Error: no pool selected for strategy")
+      
+  });
+
   it("should create strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
@@ -86,11 +101,37 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
   });
 
+  it("should revert create strategy again within create lockup duration", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    )
+      .to.emit(oddzStrategyManager, "CreatedStrategy")
+      .to.emit(oddzStrategyManager, "AddedLiquidity");
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
+    await expect(
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    )
+    .to.be.revertedWith("SM Error: Strategy creation not allowed within lockup duration")
+  });
+
   it("should revert deactivate strategy for zero address strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await expect(
       oddzStrategyManager.manageStrategy(constants.AddressZero, ManageStrategy.DEACTIVATE),
-    ).to.be.revertedWith("SM Error: strategy cannot be zero address");
+    ).to.be.revertedWith("SM Error: strategy is not contract address");
   });
 
   it("should revert deactivate strategy for non contract address strategy", async function () {
@@ -107,7 +148,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
   });
 
-  it.only("should deactivate strategy for owner", async function () {
+  it("should deactivate strategy for owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
     await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
@@ -127,4 +168,136 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
     expect(await strategyContract.isActive()).to.be.false;
   });
+
+  it("should add liquidity to the existing strategy", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
+
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(oddzStrategyManager.manageLiquidity(
+      "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      BigNumber.from(utils.parseEther("1000")),
+      TransactionType.ADD))
+      .to.emit(oddzStrategyManager, "AddedLiquidity");
+      expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+        BigNumber.from(utils.parseEther("2000")),
+      );  
+  });
+
+  it("should remove liquidity from the existing strategy", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
+
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(oddzStrategyManager.manageLiquidity(
+      "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      BigNumber.from(utils.parseEther("800")),
+      TransactionType.REMOVE))
+      .to.emit(oddzStrategyManager, "RemovedLiquidity");
+      expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+        BigNumber.from(utils.parseEther("200")),
+      );  
+  });
+
+  it("should revert remove liquidity from the existing strategy to maintain the pool balance", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
+
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(oddzStrategyManager.manageLiquidity(
+      "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      BigNumber.from(utils.parseEther("1000")),
+      TransactionType.REMOVE))
+      .to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount")
+    await expect(oddzStrategyManager.manageLiquidity(
+      "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      BigNumber.from(utils.parseEther("900")),
+      TransactionType.REMOVE))
+      .to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount")  
+    await expect(oddzStrategyManager.manageLiquidity(
+      "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      BigNumber.from(utils.parseEther("800")),
+      TransactionType.REMOVE))
+      .to.emit(oddzStrategyManager, "RemovedLiquidity");
+      expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+        BigNumber.from(utils.parseEther("200")),
+      );
+  });
+
+  it("should change strategy", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
+    await provider.send("evm_snapshot", []);
+    // execution day + 1
+    await provider.send("evm_increaseTime", [getExpiry(3)]);
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("10000")));
+    await
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("10000")),
+      ),
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("11000")),
+    );
+    await 
+      oddzStrategyManager.changeStrategy(
+        "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+        "0x23db4a08f2272df049a4932a4cc3a6dc1002b33e"
+      )
+      const strategyContract1: Contract = await ethers.getContractAt(
+        this.oddzWriteStrategyAbi,
+        "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
+      );
+      const strategyContract2: Contract = await ethers.getContractAt(
+        this.oddzWriteStrategyAbi,
+        "0x23db4a08f2272df049a4932a4cc3a6dc1002b33e",
+      );
+    expect(await strategyContract1.userLiquidity(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("0")))  
+    expect(await strategyContract2.userLiquidity(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("11000")))  
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+
+  });
+
+  
 }
