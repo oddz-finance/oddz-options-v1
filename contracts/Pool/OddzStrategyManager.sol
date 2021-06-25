@@ -19,6 +19,8 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     uint256 public strategyChangeLockupDuration = 3 days;
     uint256 public strategyCreateLockupDuration = 3 days;
 
+    address public latestStrategy;
+
     modifier validStrategy(address _strategy) {
         require(_strategy.isContract(), "SM Error: strategy is not contract address");
         _;
@@ -54,7 +56,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         IOddzLiquidityPool[] memory _pools,
         uint256[] memory _shares,
         uint256 _amount
-    ) public override returns (address strategy) {
+    ) public override {
         require(
             block.timestamp > lastStrategyCreated[msg.sender] + strategyCreateLockupDuration,
             "SM Error: Strategy creation not allowed within lockup duration"
@@ -62,8 +64,9 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         require(_pools.length > 0, "SM Error: no pool selected for strategy");
 
         lastStrategyCreated[msg.sender] = block.timestamp;
-        strategy = address(new OddzWriteStrategy(_pools, _shares));
+        address strategy = address(new OddzWriteStrategy(_pools, _shares));
         manageLiquidity(strategy, _amount, IOddzWriteStrategy.TransactionType.ADD);
+        latestStrategy = strategy;
 
         emit CreatedStrategy(strategy, msg.sender);
     }
@@ -109,8 +112,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
             emit RemovedLiquidity(_strategy, msg.sender, _amount);
         }
-            IOddzWriteStrategy(_strategy).updateLiquidity(msg.sender, _amount, _transactionType);
-
+        IOddzWriteStrategy(_strategy).updateLiquidity(msg.sender, _amount, _transactionType);
     }
 
     function changeStrategy(address _old, address _new) public override validStrategy(_old) validStrategy(_new) {
