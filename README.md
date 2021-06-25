@@ -1,4 +1,4 @@
-![Build Status](https://github.com/oddz-finance/oddz-contracts/workflows/build/badge.svg?branch=master)
+![Build Status](https://github.com/oddz-finance/oddz-options-v1/workflows/build/badge.svg?branch=master)
 
 # Oddz finance
 
@@ -12,17 +12,26 @@ World's First multi-chain Options trading Protocol built on Binance chain with b
 - [Solcover](https://github.com/sc-forks/solidity-coverage) code coverage
 - [Prettier Plugin Solidity](https://github.com/prettier-solidity/prettier-plugin-solidity): code formatter
 
-## Usage
+# How to contribute to Oddz
 
-### Pre Requisites
+This document contains some tips on how to collaborate in this project.
 
-Before running any command, make sure to install dependencies:
+## Filing an issue
 
-```sh
-$ yarn install
-```
+If you find a bug or want to propose a new feature, please [open an issue](https://github.com/oddz-finance/oddz-options-v1/issues/new). Pull requests are welcome, but we recommend you discuss it in an issue first, especially for big changes. This will increase the odds that we can accept your PR.
 
-### Set up .evn
+## Project structure
+
+There's a folder for each modules in `contracts/` and test cases in `tests/`
+
+
+
+## Installing
+
+To install the project's dependencies, run `yarn install` in the root directory of the repository.
+
+
+## Set up .evn
 
 create a new .env file by copying it's content from .env.example and update `INFURA_API_KEY` and `MNEMONIC`
 
@@ -30,7 +39,7 @@ create a new .env file by copying it's content from .env.example and update `INF
 $ cp .env.example .env
 ```
 
-### Compile
+## Building the projects
 
 Compile the smart contracts and generate TypeChain artifacts:
 
@@ -38,7 +47,10 @@ Compile the smart contracts and generate TypeChain artifacts:
 $ yarn compile
 ```
 
-### Lint Solidity
+## Code formatting
+
+
+We use [Prettier](https://prettier.io/) to format all the code without any special configuration. Whatever Prettier does is considered The Right Thing. It's completely fine to commit non-prettied code and then reformat it in a later commit.
 
 Lint the Solidity code:
 
@@ -46,15 +58,15 @@ Lint the Solidity code:
 $ yarn lint:sol
 ```
 
-### Lint TypeScript
-
 Lint the TypeScript code:
 
 ```sh
 $ yarn lint:ts
 ```
 
-### Test
+## Testing
+
+All tests are written using [mocha](https://mochajs.org).
 
 Run the Mocha tests:
 
@@ -62,7 +74,7 @@ Run the Mocha tests:
 $ yarn test
 ```
 
-### Coverage
+## Performance and dependencies loading
 
 Generate the code coverage report:
 
@@ -70,10 +82,9 @@ Generate the code coverage report:
 $ yarn coverage
 ```
 
-### Clean
 
-Delete the smart contract artifacts, the coverage reports and the Hardhat cache:
+## Branching
 
-```sh
-$ yarn clean
-```
+We work on the branch [`master`](https://github.com/oddz-finance/oddz-options-v1/tree/master). Versions of the different packages are always tagged and pushed to GitHub. So if you are looking for the latests released version of something, please refer to the tags.
+
+Use branch from `master` when implementing a new feature or fixing a bug and use it as the base branch in pull requests.
