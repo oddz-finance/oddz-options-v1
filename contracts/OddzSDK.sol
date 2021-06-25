@@ -7,11 +7,13 @@ import "./Integrations/Gasless/BaseRelayRecipient.sol";
 import "./Libs/IERC20Extented.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
+contract OddzSDK is IOddzSDK, BaseRelayRecipient, AccessControl {
     using Address for address;
     using SafeERC20 for IERC20;
+
+    bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
 
     IOddzOption public optionManager;
     IERC20 public oddzToken;
@@ -28,6 +30,16 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
      */
     uint256 public override minimumGaslessPremium;
 
+    modifier onlyOwner(address _address) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _address), "SDK: caller has no access to the method");
+        _;
+    }
+
+    modifier onlyTimeLocker(address _address) {
+        require(hasRole(TIMELOCKER_ROLE, _address), "SDK: caller has no access to the method");
+        _;
+    }
+
     constructor(
         IOddzOption _optionManager,
         address _trustedForwarder,
@@ -38,9 +50,21 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
         usdcToken = _usdcToken;
         optionManager = _optionManager;
         trustedForwarder = _trustedForwarder;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(TIMELOCKER_ROLE, msg.sender);
+        _setRoleAdmin(TIMELOCKER_ROLE, TIMELOCKER_ROLE);
     }
 
-    function setTrustedForwarder(address forwarderAddress) public onlyOwner {
+    function setTimeLocker(address _address) external {
+        require(_address != address(0), "SDK: Invalid timelocker address");
+        grantRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function removeTimeLocker(address _address) external {
+        revokeRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function setTrustedForwarder(address forwarderAddress) public onlyOwner(msg.sender) {
         require(forwarderAddress != address(0), "SDK: Forwarder Address cannot be 0");
         trustedForwarder = forwarderAddress;
     }
@@ -162,7 +186,7 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, Ownable {
         }
     }
 
-    function setMinimumGaslessPremium(uint256 _amount) external onlyOwner {
+    function setMinimumGaslessPremium(uint256 _amount) external onlyTimeLocker(msg.sender) {
         uint256 amount = _amount / 10**usdcToken.decimals();
         require(amount >= 1 && amount < 500, "invalid minimum gasless premium");
         minimumGaslessPremium = _amount;

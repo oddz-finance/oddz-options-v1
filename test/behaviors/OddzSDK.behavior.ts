@@ -443,7 +443,7 @@ export function shouldBehaveLikeOddzSDK(): void {
     const oddzSDK = await this.oddzSDK.connect(this.signers.admin1);
 
     await expect(oddzSDK.setMinimumGaslessPremium(BigNumber.from(utils.parseEther("1")))).to.be.revertedWith(
-      "Ownable: caller is not the owner",
+      "SDK: caller has no access to the method",
     );
   });
 
