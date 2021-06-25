@@ -24,6 +24,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         require(_strategy.isContract(), "SM Error: strategy is not contract address");
         _;
     }
+
     constructor(IOddzLiquidityPoolManager _poolManager, IERC20 _token) {
         poolManager = _poolManager;
         token = _token;
@@ -54,12 +55,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         IOddzLiquidityPool[] memory _pools,
         uint256[] memory _shares,
         uint256 _amount
-        ) 
-        public 
-        override 
-        returns 
-        (address strategy) 
-        {
+    ) public override returns (address strategy) {
         require(
             block.timestamp > lastStrategyCreated[msg.sender] + strategyCreateLockupDuration,
             "SM Error: Strategy creation not allowed within lockup duration"
@@ -73,17 +69,14 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         emit CreatedStrategy(strategy, msg.sender);
     }
 
-    function manageStrategy(
-        address _strategy, 
-        ManageStrategy _manageStrategy
-        ) 
-        public 
-        onlyOwner 
+    function manageStrategy(address _strategy, ManageStrategy _manageStrategy)
+        public
+        onlyOwner
         validStrategy(_strategy)
-        {
-        if(_manageStrategy == ManageStrategy.ACTIVATE){
+    {
+        if (_manageStrategy == ManageStrategy.ACTIVATE) {
             OddzWriteStrategy(_strategy).activateStrategy();
-        }else{
+        } else {
             OddzWriteStrategy(_strategy).deactivateStrategy();
         }
     }
@@ -92,10 +85,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         address _strategy,
         uint256 _amount,
         IOddzWriteStrategy.TransactionType _transactionType
-        ) 
-        public 
-        validStrategy(_strategy)
-        {           
+    ) public validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = IOddzWriteStrategy(_strategy).getPools();
         uint256[] memory shares = IOddzWriteStrategy(_strategy).getShares();
@@ -109,7 +99,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             }
             require(totalAmount == _amount, "SM Error: invalid shares between pools");
             emit AddedLiquidity(_strategy, msg.sender, _amount);
-
         } else {
             for (uint256 i = 0; i < pools.length; i++) {
                 require(validPools[address(pools[i])], "SM Error: invalid pool");
@@ -118,19 +107,10 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             }
             require(totalAmount == _amount, "SM Error: invalid shares between pools");
             emit RemovedLiquidity(_strategy, msg.sender, _amount);
-
         }
     }
 
-    function changeStrategy(
-        address _old, 
-        address _new
-        ) 
-        public 
-        override 
-        validStrategy(_old) 
-        validStrategy(_new)
-        {
+    function changeStrategy(address _old, address _new) public override validStrategy(_old) validStrategy(_new) {
         require(
             block.timestamp > lastStrategyChanged[msg.sender] + strategyChangeLockupDuration,
             "SM Error: Strategy changes not allowed within lockup duration"
@@ -161,5 +141,4 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
         emit ChangedStrategy(_old, _new, msg.sender);
     }
-
 }

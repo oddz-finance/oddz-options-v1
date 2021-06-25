@@ -31,8 +31,8 @@ export const ExcerciseType = {
 
 export const ManageStrategy = {
   ACTIVATE: 0,
-  DEACTIVATE: 1
-}
+  DEACTIVATE: 1,
+};
 
 export const addDaysAndGetSeconds = (days = 0) => {
   const date = new Date();

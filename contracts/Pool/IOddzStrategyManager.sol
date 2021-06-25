@@ -3,8 +3,7 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPoolManager.sol";
 
 interface IOddzStrategyManager {
-
-    enum ManageStrategy {ACTIVATE, DEACTIVATE}
+    enum ManageStrategy { ACTIVATE, DEACTIVATE }
     event CreatedStrategy(address indexed _strategy, address indexed _user);
     event ChangedStrategy(address indexed _old, address indexed _new, address indexed _user);
     event AddedLiquidity(address indexed _strategy, address indexed _provider, uint256 _amount);

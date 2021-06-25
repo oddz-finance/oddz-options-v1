@@ -1,47 +1,7 @@
 import { expect } from "chai";
 import { BigNumber, constants, Contract, utils } from "ethers";
-import { OddzAssetManager, MockERC20, OddzPriceOracleManager, MockOddzPriceOracle } from "../../typechain";
 import { getExpiry, ManageStrategy } from "../../test-utils";
-import { ethers, waffle } from "hardhat";
-
-import { Signer } from "@ethersproject/abstract-signer";
-import { Address } from "cluster";
-
-const addAssetPair = async (
-  oddzAssetManager: OddzAssetManager,
-  admin: Signer,
-  usdcToken: MockERC20,
-  oddzToken: MockERC20,
-  oddzPriceOracleManager: OddzPriceOracleManager,
-  oracleAddress: MockOddzPriceOracle,
-) => {
-  const oam = await oddzAssetManager.connect(admin);
-  await oam.addAsset(utils.formatBytes32String("USD"), usdcToken.address, 8);
-  await oam.addAsset(utils.formatBytes32String("ODDZ"), oddzToken.address, 8);
-  await oam.addAssetPair(
-    utils.formatBytes32String("ODDZ"),
-    utils.formatBytes32String("USD"),
-    BigNumber.from(utils.parseEther("0.01")),
-    2592000,
-    86400,
-  );
-  await oddzPriceOracleManager
-    .connect(admin)
-    .addAggregator(
-      utils.formatBytes32String("ODDZ"),
-      utils.formatBytes32String("USD"),
-      oracleAddress.address,
-      oracleAddress.address,
-    );
-  const hash = utils.keccak256(
-    utils.defaultAbiCoder.encode(
-      ["bytes32", "bytes32", "address"],
-      [utils.formatBytes32String("ODDZ"), utils.formatBytes32String("USD"), oracleAddress.address],
-    ),
-  );
-
-  await oddzPriceOracleManager.connect(admin).setActiveAggregator(hash);
-};
+import { ethers } from "hardhat";
 
 export function shouldBehaveLikeOddzStrategyManager(): void {
   it("should revert setting strategy create lockup duration for non owner", async function () {
@@ -86,8 +46,9 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
 
   it("should revert add pool for non owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin1);
-    await expect(oddzStrategyManager.addPool(this.oddzDefaultPool.address))
-        .to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(oddzStrategyManager.addPool(this.oddzDefaultPool.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
   });
   it("should add pool for owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
@@ -97,59 +58,73 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
 
   it("should revert remove pool for non owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin1);
-    await expect(oddzStrategyManager.removePool(this.oddzDefaultPool.address))
-        .to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(oddzStrategyManager.removePool(this.oddzDefaultPool.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
   });
   it("should remove pool for owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.removePool(this.oddzDefaultPool.address);
     expect(await oddzStrategyManager.validPools(this.oddzDefaultPool.address)).to.be.false;
   });
-  
+
   it("should create strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
-    await this.usdcToken.approve(this.oddzStrategyManager.address,BigNumber.from(utils.parseEther("1000")))
-    await expect(oddzStrategyManager.createStrategy([this.oddzDefaultPool.address],[100],BigNumber.from(utils.parseEther("1000"))))
-        .to.emit(oddzStrategyManager, "CreatedStrategy")
-        .to.emit(oddzStrategyManager, "AddedLiquidity")
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address))
-        .to.equal(BigNumber.from(utils.parseEther("1000")))   
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await expect(
+      oddzStrategyManager.createStrategy(
+        [this.oddzDefaultPool.address],
+        [100],
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    )
+      .to.emit(oddzStrategyManager, "CreatedStrategy")
+      .to.emit(oddzStrategyManager, "AddedLiquidity");
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
   });
 
   it("should revert deactivate strategy for zero address strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(oddzStrategyManager.manageStrategy(constants.AddressZero, ManageStrategy.DEACTIVATE))
-          .to.be.revertedWith("SM Error: strategy cannot be zero address")
+    await expect(
+      oddzStrategyManager.manageStrategy(constants.AddressZero, ManageStrategy.DEACTIVATE),
+    ).to.be.revertedWith("SM Error: strategy cannot be zero address");
   });
 
   it("should revert deactivate strategy for non contract address strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE))
-          .to.be.revertedWith("SM Error: strategy is not contract address")
+    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE)).to.be.revertedWith(
+      "SM Error: strategy is not contract address",
+    );
   });
 
   it("should revert deactivate strategy for non owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin1);
-    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE))
-          .to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
   });
 
   it.only("should deactivate strategy for owner", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
-    await this.usdcToken.approve(this.oddzStrategyManager.address,BigNumber.from(utils.parseEther("1000")))
-    await oddzStrategyManager.createStrategy([this.oddzDefaultPool.address],[100],BigNumber.from(utils.parseEther("1000")))
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address))
-        .to.equal(BigNumber.from(utils.parseEther("1000")))  
+    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
+    await oddzStrategyManager.createStrategy(
+      [this.oddzDefaultPool.address],
+      [100],
+      BigNumber.from(utils.parseEther("1000")),
+    );
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
+      BigNumber.from(utils.parseEther("1000")),
+    );
 
     await oddzStrategyManager.manageStrategy("0x61c36a8d610163660e21a8b7359e1cac0c9133e1", ManageStrategy.DEACTIVATE);
     const strategyContract: Contract = await ethers.getContractAt(
       this.oddzWriteStrategyAbi,
       "0x61c36a8d610163660e21a8b7359e1cac0c9133e1",
-  );
+    );
     expect(await strategyContract.isActive()).to.be.false;
   });
-
- 
 }

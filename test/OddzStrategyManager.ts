@@ -73,13 +73,13 @@ describe("Oddz Strategy Manager Unit tests", function () {
 
       this.oddzStrategyManager = (await deployContract(this.signers.admin, OddzStrategyManagerArtifact, [
         this.oddzLiquidityPoolManager.address,
-        this.usdcToken.address
+        this.usdcToken.address,
       ])) as OddzStrategyManager;
 
       this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
       await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
 
-      this.oddzWriteStrategyAbi = OddzWriteStrategyArtifact.abi
+      this.oddzWriteStrategyAbi = OddzWriteStrategyArtifact.abi;
 
       // ETH Call
       await this.oddzLiquidityPoolManager
@@ -107,8 +107,6 @@ describe("Oddz Strategy Manager Unit tests", function () {
         .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
           this.oddzDefaultPool.address,
         ]);
-
-
     });
 
     shouldBehaveLikeOddzStrategyManager();
