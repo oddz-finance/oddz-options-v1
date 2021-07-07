@@ -110,4 +110,8 @@ interface IOddzLiquidityPoolManager {
     function move(PoolTransfer memory _poolTransfer) external;
 
     function poolExposure(IOddzLiquidityPool _pool) external view returns (uint256);
+
+    function lastPoolTransfer(address _provider) external view returns (uint256);
+
+    function moveLockupDuration() external view returns (uint256);
 }

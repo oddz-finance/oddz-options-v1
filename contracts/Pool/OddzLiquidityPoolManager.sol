@@ -45,13 +45,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     mapping(IOddzLiquidityPool => bool) public disabledPools;
 
     // user address -> date of transfer
-    mapping(address => uint256) public lastPoolTransfer;
+    mapping(address => uint256) public override lastPoolTransfer;
 
     /**
      * @dev Premium specific data definitions
      */
     uint256 public premiumLockupDuration = 14 days;
-    uint256 public moveLockupDuration = 7 days;
+    uint256 public override moveLockupDuration = 7 days;
 
     /**
      * @dev DEX manager
