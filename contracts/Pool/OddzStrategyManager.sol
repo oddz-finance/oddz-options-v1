@@ -12,7 +12,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     IERC20 public token;
     IOddzLiquidityPoolManager public poolManager;
 
-    mapping(address => bool) public validPools;
     mapping(address => uint256) public lastStrategyChanged;
     mapping(address => uint256) public lastStrategyCreated;
 
@@ -30,16 +29,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         poolManager = _poolManager;
         token = _token;
         token.safeApprove(address(poolManager), type(uint256).max);
-    }
-
-    function addPool(address _pool) external onlyOwner {
-        require(_pool.isContract(), "SM Error: invalid pool address");
-        validPools[_pool] = true;
-    }
-
-    function removePool(address _pool) external onlyOwner {
-        require(_pool.isContract(), "SM Error: invalid pool address");
-        validPools[_pool] = false;
     }
 
     function updateStrategyCreateLockupDuration(uint256 _duration) external onlyOwner {
@@ -83,7 +72,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         if (_transactionType == IOddzWriteStrategy.TransactionType.ADD) {
             token.safeTransferFrom(msg.sender, address(this), _amount);
             for (uint256 i = 0; i < pools.length; i++) {
-                require(validPools[address(pools[i])], "SM Error: invalid pool");
+                require(poolManager.poolExposure(pools[i]) > 0, "SM Error: invalid pool");
                 totalAmount += (shares[i] * _amount) / 100;
                 poolManager.addLiquidity(pools[i], (shares[i] * _amount) / 100);
             }
@@ -92,7 +81,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             emit AddedLiquidity(_strategy, msg.sender, _amount);
         } else {
             for (uint256 i = 0; i < pools.length; i++) {
-                require(validPools[address(pools[i])], "SM Error: invalid pool");
+                require(poolManager.poolExposure(pools[i]) > 0, "SM Error: invalid pool");
                 totalAmount += (shares[i] * _amount) / 100;
                 poolManager.removeLiquidity(pools[i], (shares[i] * _amount) / 100);
             }

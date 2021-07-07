@@ -108,4 +108,6 @@ interface IOddzLiquidityPoolManager {
      * @param _poolTransfer source and destination pools with amount of transfer
      */
     function move(PoolTransfer memory _poolTransfer) external;
+
+    function poolExposure(IOddzLiquidityPool _pool) external view returns (uint256);
 }
