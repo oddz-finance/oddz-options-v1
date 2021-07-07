@@ -71,18 +71,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         emit CreatedStrategy(strategy, msg.sender);
     }
 
-    function manageStrategy(address _strategy, ManageStrategy _manageStrategy)
-        external
-        onlyOwner
-        validStrategy(_strategy)
-    {
-        if (_manageStrategy == ManageStrategy.ACTIVATE) {
-            OddzWriteStrategy(_strategy).activateStrategy();
-        } else {
-            OddzWriteStrategy(_strategy).deactivateStrategy();
-        }
-    }
-
     function manageLiquidity(
         address _strategy,
         uint256 _amount,

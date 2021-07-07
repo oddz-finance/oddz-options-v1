@@ -120,45 +120,6 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     ).to.be.revertedWith("SM Error: Strategy creation not allowed within lockup duration");
   });
 
-  it("should revert deactivate strategy for zero address strategy", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(
-      oddzStrategyManager.manageStrategy(constants.AddressZero, ManageStrategy.DEACTIVATE),
-    ).to.be.revertedWith("SM Error: strategy is not contract address");
-  });
-
-  it("should revert deactivate strategy for non contract address strategy", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE)).to.be.revertedWith(
-      "SM Error: strategy is not contract address",
-    );
-  });
-
-  it("should revert deactivate strategy for non owner", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin1);
-    await expect(oddzStrategyManager.manageStrategy(this.accounts.admin, ManageStrategy.DEACTIVATE)).to.be.revertedWith(
-      "Ownable: caller is not the owner",
-    );
-  });
-
-  it("should deactivate strategy for owner", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
-    await this.usdcToken.approve(this.oddzStrategyManager.address, BigNumber.from(utils.parseEther("1000")));
-    await oddzStrategyManager.createStrategy(
-      [this.oddzDefaultPool.address],
-      [100],
-      BigNumber.from(utils.parseEther("1000")),
-    );
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
-      BigNumber.from(utils.parseEther("1000")),
-    );
-    const strategy = await oddzStrategyManager.latestStrategy();
-    await oddzStrategyManager.manageStrategy(strategy, ManageStrategy.DEACTIVATE);
-    const strategyContract: Contract = await ethers.getContractAt(this.oddzWriteStrategyAbi, strategy);
-    expect(await strategyContract.isActive()).to.be.false;
-  });
-
   it("should add liquidity to the existing strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await oddzStrategyManager.addPool(this.oddzDefaultPool.address);
