@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { BigNumber, Contract, utils } from "ethers";
-import { getExpiry, OptionType, TransactionType, addSnapshotCount } from "../../test-utils";
+import { getExpiry, OptionType, TransactionType, PoolTransfer, addSnapshotCount } from "../../test-utils";
 import { ethers, waffle } from "hardhat";
 import OddzDefaultPoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
 import OddzEthUsdCallBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS1Pool.json";
@@ -52,6 +52,17 @@ const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) 
     oddzDefaultPool: oddzDefaultPool,
     oddzEthUsdCallBS1Pool: oddzEthUsdCallBS1Pool,
   };
+};
+
+const getPoolTransferStruct = (source: any[], destination: any[], sAmount: BigNumber[], dAmount: BigNumber[]) => {
+  const poolTransfer: PoolTransfer = {
+    _source: source,
+    _destination: destination,
+    _sAmount: sAmount,
+    _dAmount: dAmount,
+  };
+
+  return poolTransfer;
 };
 
 export function shouldBehaveLikeOddzStrategyManager(): void {
@@ -288,5 +299,68 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       BigNumber.from(utils.parseEther("11000")),
     );
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should revert change strategy for invalid shares", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    const userLiquidity = BigNumber.from(utils.parseEther("1000"));
+    const oldStrategyShare = [userLiquidity.mul(60).div(100), userLiquidity.mul(40).div(100)];
+    // mock share < 100%
+    const newStrategyShare = [userLiquidity.mul(50).div(100), userLiquidity.mul(40).div(100)];
+
+    await provider.send("evm_snapshot", []);
+    // execution day + 7
+    await provider.send("evm_increaseTime", [getExpiry(7)]);
+
+    // build mock method
+    await expect(
+      oddzStrategyManager.changeStrategy(
+        oddzStrategyManager.address,
+        oddzStrategyManager.address,
+        userLiquidity,
+        oldStrategyShare,
+        newStrategyShare,
+      ),
+    ).to.be.revertedWith("SM Error: invalid strategy share to migrate");
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should revert change strategy with in lpool move lockup", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    const userLiquidity = BigNumber.from(utils.parseEther("1000"));
+    // build mock shares
+    const oldStrategyShare = [userLiquidity.mul(60).div(100), userLiquidity.mul(40).div(100)];
+    const newStrategyShare = [userLiquidity.mul(50).div(100), userLiquidity.mul(50).div(100)];
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+    );
+
+    await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, userLiquidity);
+
+    await expect(this.oddzLiquidityPoolManager.addLiquidity(oddzDefaultPool.address, userLiquidity)).to.emit(
+      oddzDefaultPool,
+      "AddLiquidity",
+    );
+
+    const poolTransfer = await getPoolTransferStruct(
+      [oddzDefaultPool.address],
+      [oddzEthUsdCallBS1Pool.address],
+      [BigNumber.from(utils.parseEther("500"))],
+      [BigNumber.from(utils.parseEther("500"))],
+    );
+    await this.oddzLiquidityPoolManager.move(poolTransfer);
+
+    // build mock method
+    await expect(
+      oddzStrategyManager.changeStrategy(
+        oddzStrategyManager.address,
+        oddzStrategyManager.address,
+        userLiquidity,
+        oldStrategyShare,
+        newStrategyShare,
+      ),
+    ).to.be.revertedWith("SM Error: Strategy changes not allowed within lockup duration");
   });
 }

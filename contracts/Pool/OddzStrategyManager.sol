@@ -97,8 +97,8 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             "SM Error: Strategy changes not allowed within lockup duration"
         );
         uint256 amount;
-        for (uint256 i = 0; i < _oldPoolsShare.length; i++) {
-            amount += _oldPoolsShare[i];
+        for (uint256 i = 0; i < _newPoolsShare.length; i++) {
+            amount += _newPoolsShare[i];
         }
         require(amount == _oldStrategyLiquidity, "SM Error: invalid strategy share to migrate");
 
