@@ -3,7 +3,6 @@ pragma solidity 0.8.3;
 import "./IOddzLiquidityPoolManager.sol";
 import "./OddzWriteStrategy.sol";
 
-
 interface IOddzStrategyManager {
     event CreatedStrategy(address indexed _strategy, address indexed _user);
     event ChangedStrategy(address indexed _old, address indexed _new, address indexed _user);
@@ -18,10 +17,10 @@ interface IOddzStrategyManager {
     ) external;
 
     function changeStrategy(
-        IOddzWriteStrategy _old, 
+        IOddzWriteStrategy _old,
         IOddzWriteStrategy _new,
-        uint256 _oldStrategyLiquidity, 
+        uint256 _oldStrategyLiquidity,
         uint256[] memory _oldPoolsShare,
         uint256[] memory _newPoolsShare
-        ) external;
+    ) external;
 }

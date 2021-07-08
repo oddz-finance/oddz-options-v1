@@ -86,45 +86,27 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     }
 
     function changeStrategy(
-        IOddzWriteStrategy _old, 
+        IOddzWriteStrategy _old,
         IOddzWriteStrategy _new,
-        uint256 _oldStrategyLiquidity, 
+        uint256 _oldStrategyLiquidity,
         uint256[] memory _oldPoolsShare,
         uint256[] memory _newPoolsShare
-        ) 
-        external 
-        override 
-        validStrategy(_old) 
-        validStrategy(_new) 
-        {
+    ) external override validStrategy(_old) validStrategy(_new) {
         require(
             block.timestamp > poolManager.lastPoolTransfer(msg.sender) + poolManager.moveLockupDuration(),
             "SM Error: Strategy changes not allowed within lockup duration"
         );
         uint256 amount;
-        for(uint256 i = 0;i<_oldPoolsShare.length; i++){
+        for (uint256 i = 0; i < _oldPoolsShare.length; i++) {
             amount += _oldPoolsShare[i];
         }
         require(amount == _oldStrategyLiquidity, "SM Error: invalid strategy share to migrate");
-       
+
         IOddzLiquidityPoolManager.PoolTransfer memory poolTransfer =
-            IOddzLiquidityPoolManager.PoolTransfer(
-                _old.getPools(),
-                _new.getPools(),
-                _oldPoolsShare,
-                _newPoolsShare
-            );
+            IOddzLiquidityPoolManager.PoolTransfer(_old.getPools(), _new.getPools(), _oldPoolsShare, _newPoolsShare);
         poolManager.move(poolTransfer);
-        _old.updateLiquidity(
-            msg.sender, 
-            _oldStrategyLiquidity, 
-            IOddzWriteStrategy.TransactionType.REMOVE
-            );
-        _new.updateLiquidity(
-            msg.sender, 
-            _oldStrategyLiquidity, 
-            IOddzWriteStrategy.TransactionType.ADD
-            );
+        _old.updateLiquidity(msg.sender, _oldStrategyLiquidity, IOddzWriteStrategy.TransactionType.REMOVE);
+        _new.updateLiquidity(msg.sender, _oldStrategyLiquidity, IOddzWriteStrategy.TransactionType.ADD);
 
         emit ChangedStrategy(address(_old), address(_new), msg.sender);
     }

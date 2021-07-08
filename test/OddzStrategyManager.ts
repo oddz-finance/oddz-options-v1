@@ -4,24 +4,15 @@ import OddzStrategyManagerArtifact from "../artifacts/contracts/Pool/OddzStrateg
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import OddzDefaultPoolArtifact from "../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
 import OddzWriteStrategyArtifact from "../artifacts/contracts/Pool/OddzWriteStrategy.sol/OddzWriteStrategy.json";
 
 import { Accounts, Signers } from "../types";
 
-import {
-  MockERC20,
-  OddzStrategyManager,
-  DexManager,
-  OddzLiquidityPoolManager,
-  OddzAssetManager,
-  OddzDefaultPool,
-} from "../typechain";
+import { MockERC20, OddzStrategyManager, DexManager, OddzLiquidityPoolManager, OddzAssetManager } from "../typechain";
 import { MockProvider } from "ethereum-waffle";
 import { BigNumber, utils } from "ethers";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
 import { shouldBehaveLikeOddzStrategyManager } from "./behaviors/OddzStrategyManager.behavior";
-import { OptionType } from "../test-utils";
 
 const { deployContract } = waffle;
 
@@ -76,37 +67,7 @@ describe("Oddz Strategy Manager Unit tests", function () {
         this.usdcToken.address,
       ])) as OddzStrategyManager;
 
-      this.oddzDefaultPool = (await deployContract(this.signers.admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
-      await this.oddzDefaultPool.transferOwnership(this.oddzLiquidityPoolManager.address);
-
       this.oddzWriteStrategyAbi = OddzWriteStrategyArtifact.abi;
-
-      // ETH Call
-      await this.oddzLiquidityPoolManager
-        .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
-          this.oddzDefaultPool.address,
-        ]);
-      await this.oddzLiquidityPoolManager
-        .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
-          this.oddzDefaultPool.address,
-        ]);
-      await this.oddzLiquidityPoolManager
-        .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
-          this.oddzDefaultPool.address,
-        ]);
-      await this.oddzLiquidityPoolManager
-        .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
-          this.oddzDefaultPool.address,
-        ]);
-      await this.oddzLiquidityPoolManager
-        .connect(this.signers.admin)
-        .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
-          this.oddzDefaultPool.address,
-        ]);
     });
 
     shouldBehaveLikeOddzStrategyManager();
