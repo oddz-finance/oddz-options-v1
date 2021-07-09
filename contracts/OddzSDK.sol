@@ -113,12 +113,12 @@ contract OddzSDK is IOddzSDK, BaseRelayRecipient, AccessControl {
     ) public override returns (uint256 optionId) {
         IOddzOption.OptionDetails memory option =
             IOddzOption.OptionDetails(_optionModel, _expiration, _pair, _amount, _strike, _optionType);
-        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, _msgSender());
+        IOddzOption.PremiumResult memory premiumResult = optionManager.getPremium(option, msgSender());
         require(
             premiumResult.optionPremium + premiumResult.txnFee > minimumGaslessPremium,
             "SDK: premium amount not elgible for gasless"
         );
-        return _buy(option, _premiumWithSlippage, _provider, _msgSender());
+        return _buy(option, _premiumWithSlippage, _provider, msgSender());
     }
 
     function _buy(
