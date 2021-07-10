@@ -114,4 +114,6 @@ interface IOddzLiquidityPool {
      * @return premium Premium balance
      */
     function collectPremium(address _provider, uint256 _lockDuration) external returns (uint256 premium);
+
+    function getBalance(address _provider) external view returns (uint256 amount);
 }

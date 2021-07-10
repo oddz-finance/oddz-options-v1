@@ -37,7 +37,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     /**
      * @dev Active pool count
      */
-    mapping(IOddzLiquidityPool => uint256) public override poolExposure;
+    mapping(IOddzLiquidityPool => uint256) public poolExposure;
 
     /**
      * @dev Disabled pools

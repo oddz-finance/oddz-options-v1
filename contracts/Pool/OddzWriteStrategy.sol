@@ -9,7 +9,8 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
     IOddzLiquidityPool[] public pools;
     uint256[] public shares;
     uint256 public liquidity;
-    mapping(address => uint256) public userLiquidity;
+    // user => amount
+    mapping(address => uint256[]) public poolsLiquidity;
 
     constructor(IOddzLiquidityPool[] memory _pools, uint256[] memory _shares) {
         pools = _pools;
@@ -24,17 +25,6 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
         return shares;
     }
 
-    function updateLiquidity(
-        address _provider,
-        uint256 _amount,
-        TransactionType _transaction
-    ) external override onlyOwner {
-        if (_transaction == TransactionType.ADD) {
-            userLiquidity[_provider] += _amount;
-            liquidity += _amount;
-        } else {
-            userLiquidity[_provider] -= _amount;
-            liquidity -= _amount;
-        }
-    }
+   
+
 }

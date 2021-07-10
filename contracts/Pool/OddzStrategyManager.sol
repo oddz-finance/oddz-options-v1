@@ -47,66 +47,73 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
         lastStrategyCreated[msg.sender] = block.timestamp;
         IOddzWriteStrategy strategy = IOddzWriteStrategy(new OddzWriteStrategy(_pools, _percentageShares));
-        manageLiquidity(strategy, _amount, _shares, IOddzWriteStrategy.TransactionType.ADD);
+        addLiquidity(strategy, _amount, _shares);
         latestStrategy = address(strategy);
 
         emit CreatedStrategy(address(strategy), msg.sender);
     }
 
-    function manageLiquidity(
+    function addLiquidity(
         IOddzWriteStrategy _strategy,
         uint256 _amount,
-        uint256[] memory _shares,
-        IOddzWriteStrategy.TransactionType _transactionType
+        uint256[] memory _shares
     ) public validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
 
-        if (_transactionType == IOddzWriteStrategy.TransactionType.ADD) {
-            token.safeTransferFrom(msg.sender, address(this), _amount);
-            for (uint256 i = 0; i < pools.length; i++) {
-                require(poolManager.poolExposure(pools[i]) > 0, "SM Error: invalid pool");
-                totalAmount += _shares[i];
-                poolManager.addLiquidity(pools[i], _shares[i]);
-            }
-            require(totalAmount == _amount, "SM Error: invalid shares between pools");
-
-            emit AddedLiquidity(address(_strategy), msg.sender, _amount);
-        } else {
-            for (uint256 i = 0; i < pools.length; i++) {
-                require(poolManager.poolExposure(pools[i]) > 0, "SM Error: invalid pool");
-                totalAmount += _shares[i];
-                poolManager.removeLiquidity(pools[i], _shares[i]);
-            }
-            require(totalAmount == _amount, "SM Error: invalid shares between pools");
-
-            emit RemovedLiquidity(address(_strategy), msg.sender, _amount);
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+        for (uint256 i = 0; i < pools.length; i++) {
+            totalAmount += _shares[i];
+            poolManager.addLiquidity(pools[i], _shares[i]);
         }
-        _strategy.updateLiquidity(msg.sender, _amount, _transactionType);
+        require(totalAmount == _amount, "SM Error: invalid shares between pools");
+
+    }
+
+    function removeLiquidity(IOddzWriteStrategy _strategy) external validStrategy(_strategy) {
+        IOddzLiquidityPool[] memory pools = _strategy.getPools();
+       
+        for (uint256 i = 0; i < pools.length; i++){
+            poolManager.removeLiquidity(pools[i], pools[i].getBalance(msg.sender));
+        }
+
     }
 
     function changeStrategy(
         IOddzWriteStrategy _old,
-        IOddzWriteStrategy _new,
-        uint256 _oldStrategyLiquidity,
-        uint256[] memory _oldPoolsShare,
-        uint256[] memory _newPoolsShare
+        IOddzWriteStrategy _new
     ) external override validStrategy(_old) validStrategy(_new) {
         require(
             block.timestamp > poolManager.lastPoolTransfer(msg.sender) + poolManager.moveLockupDuration(),
             "SM Error: Strategy changes not allowed within lockup duration"
         );
-        uint256 amount;
-        for (uint256 i = 0; i < _newPoolsShare.length; i++) {
-            amount += _newPoolsShare[i];
+        uint256 totalAmount;
+        IOddzLiquidityPool[] memory oldPools = _old.getPools();
+        uint256[] memory oldBalances = new uint256[](oldPools.length);
+        for (uint256 i = 0; i < oldPools.length; i++){
+            oldBalances[i] = oldPools[i].getBalance(msg.sender);
+            totalAmount += oldBalances[i];
         }
-        require(amount == _oldStrategyLiquidity, "SM Error: invalid strategy share to migrate");
+        uint256[] memory newPoolsShares = _new.getShares();
+        uint256[] memory newBalances = new uint256[](newPoolsShares.length);
+        uint256 count = 0;
+        uint256 amountDistributed;
+        for (uint256 i = 0; i<newPoolsShares.length; i++){
+            uint256 amountToDistribute;
+            count++;
+            if(count == (i + 1)){
+                // distribute remaining liquidity to last pool
+                amountToDistribute = totalAmount - amountDistributed;
+            }else{
+                amountToDistribute = totalAmount * newPoolsShares[i] / 100;
+            }
+            newBalances[i] = amountToDistribute;
+            amountDistributed += amountToDistribute;
+        }
 
         IOddzLiquidityPoolManager.PoolTransfer memory poolTransfer =
-            IOddzLiquidityPoolManager.PoolTransfer(_old.getPools(), _new.getPools(), _oldPoolsShare, _newPoolsShare);
+            IOddzLiquidityPoolManager.PoolTransfer(oldPools, _new.getPools(), oldBalances, newBalances);
         poolManager.move(poolTransfer);
-        _old.updateLiquidity(msg.sender, _oldStrategyLiquidity, IOddzWriteStrategy.TransactionType.REMOVE);
-        _new.updateLiquidity(msg.sender, _oldStrategyLiquidity, IOddzWriteStrategy.TransactionType.ADD);
 
         emit ChangedStrategy(address(_old), address(_new), msg.sender);
     }

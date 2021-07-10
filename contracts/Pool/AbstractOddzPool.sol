@@ -36,6 +36,10 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
     }
     mapping(uint256 => PremiumPool) public premiumDayPool;
 
+    function getBalance(address _provider) external view override returns(uint256 amount){
+        amount = liquidityProvider[_provider]._amount;
+    }
+
     /**
      * @notice Add liquidity for the day
      * @param _amount USD value
