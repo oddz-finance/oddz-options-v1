@@ -11,10 +11,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     IERC20 public token;
     IOddzLiquidityPoolManager public poolManager;
 
-    mapping(address => uint256) public lastStrategyCreated;
-
-    uint256 public strategyCreateLockupDuration = 3 days;
-
     address public latestStrategy;
 
     modifier validStrategy(IOddzWriteStrategy _strategy) {
@@ -28,10 +24,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         token.safeApprove(address(poolManager), type(uint256).max);
     }
 
-    function updateStrategyCreateLockupDuration(uint256 _duration) external onlyOwner {
-        require(_duration >= 1 days && _duration <= 30 days, "SM Error: invalid duration");
-        strategyCreateLockupDuration = _duration;
-    }
 
     function createStrategy(
         IOddzLiquidityPool[] memory _pools,
@@ -39,13 +31,9 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         uint256[] memory _shares,
         uint256 _amount
     ) external override {
-        require(
-            block.timestamp > lastStrategyCreated[msg.sender] + strategyCreateLockupDuration,
-            "SM Error: Strategy creation not allowed within lockup duration"
-        );
+        
         require(_pools.length > 0, "SM Error: no pool selected for strategy");
 
-        lastStrategyCreated[msg.sender] = block.timestamp;
         IOddzWriteStrategy strategy = IOddzWriteStrategy(new OddzWriteStrategy(_pools, _percentageShares));
         addLiquidity(strategy, _amount, _shares);
         latestStrategy = address(strategy);
