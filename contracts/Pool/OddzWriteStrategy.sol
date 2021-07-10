@@ -24,7 +24,4 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
     function getShares() external view override returns (uint256[] memory) {
         return shares;
     }
-
-   
-
 }

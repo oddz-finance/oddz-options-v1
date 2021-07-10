@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { BigNumber, Contract, utils } from "ethers";
-import { getExpiry, OptionType, TransactionType, PoolTransfer, addSnapshotCount } from "../../test-utils";
-import { ethers, waffle } from "hardhat";
+import { BigNumber, utils } from "ethers";
+import { getExpiry, OptionType, PoolTransfer, addSnapshotCount } from "../../test-utils";
+import { waffle } from "hardhat";
 import OddzDefaultPoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
 import OddzEthUsdCallBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS1Pool.json";
 
@@ -66,26 +66,6 @@ const getPoolTransferStruct = (source: any[], destination: any[], sAmount: BigNu
 };
 
 export function shouldBehaveLikeOddzStrategyManager(): void {
-  it("should revert setting strategy create lockup duration for non owner", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin1);
-    await expect(oddzStrategyManager.updateStrategyCreateLockupDuration(getExpiry(2))).to.be.revertedWith(
-      "Ownable: caller is not the owner",
-    );
-  });
-
-  it("should revert setting strategy create lockup duration for invalid value", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(oddzStrategyManager.updateStrategyCreateLockupDuration(getExpiry(31))).to.be.revertedWith(
-      "SM Error: invalid duration",
-    );
-  });
-
-  it("should set strategy create lockup duration for owner", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await oddzStrategyManager.updateStrategyCreateLockupDuration(getExpiry(30));
-    expect(await oddzStrategyManager.strategyCreateLockupDuration()).to.equal(getExpiry(30));
-  });
-
   it("should revert create strategy for no input pools provided", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await expect(
@@ -108,42 +88,13 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
         [liquidity.mul(60).div(100), liquidity.mul(40).div(100)],
         liquidity,
       ),
-    )
-      .to.emit(oddzStrategyManager, "CreatedStrategy")
-      .to.emit(oddzStrategyManager, "AddedLiquidity");
+    ).to.emit(oddzStrategyManager, "CreatedStrategy");
+
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
     expect(await oddzDefaultPool.poolBalance()).to.equal(liquidity.mul(60).div(100));
     expect(await oddzEthUsdCallBS1Pool.poolBalance()).to.equal(liquidity.mul(40).div(100));
-  });
-
-  it("should revert create strategy again within create lockup duration", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    const liquidity = BigNumber.from(utils.parseEther("1000"));
-    await this.usdcToken.approve(this.oddzStrategyManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
-      this.signers.admin,
-      this.oddzLiquidityPoolManager,
-    );
-
-    await expect(
-      oddzStrategyManager.createStrategy(
-        [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-        [60, 40],
-        [liquidity.mul(60).div(100), liquidity.mul(40).div(100)],
-        liquidity,
-      ),
-    )
-      .to.emit(oddzStrategyManager, "CreatedStrategy")
-      .to.emit(oddzStrategyManager, "AddedLiquidity");
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    await expect(
-      oddzStrategyManager.createStrategy(
-        [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-        [60, 40],
-        [liquidity.mul(60).div(100), liquidity.mul(40).div(100)],
-        liquidity,
-      ),
-    ).to.be.revertedWith("SM Error: Strategy creation not allowed within lockup duration");
+    const provider = await oddzDefaultPool.liquidityProvider(this.accounts.admin);
+    expect(provider._amount).to.equal(liquidity.mul(60).div(100));
   });
 
   it("should add liquidity to the existing strategy", async function () {
@@ -166,14 +117,12 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
 
     await this.usdcToken.approve(this.oddzStrategyManager.address, liquidity);
     await expect(
-      oddzStrategyManager.manageLiquidity(
-        strategy,
-        liquidity,
-        [liquidity.mul(60).div(100), liquidity.mul(40).div(100)],
-        TransactionType.ADD,
-      ),
+      oddzStrategyManager.addLiquidity(strategy, liquidity, [liquidity.mul(60).div(100), liquidity.mul(40).div(100)]),
     ).to.emit(oddzStrategyManager, "AddedLiquidity");
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.mul(2));
+
+    const provider = await oddzDefaultPool.liquidityProvider(this.accounts.admin);
+    expect(provider._amount).to.equal(liquidity.mul(60).div(100).mul(2));
   });
 
   it("should remove liquidity from the existing strategy", async function () {
@@ -192,19 +141,16 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
+    await this.usdcToken.connect(this.signers.admin1).approve(this.oddzStrategyManager.address, liquidity);
     const strategy = await oddzStrategyManager.latestStrategy();
-    const removeLiquidity = BigNumber.from(utils.parseEther("800"));
+    await this.usdcToken.transfer(this.accounts.admin1, liquidity);
     await expect(
-      oddzStrategyManager.manageLiquidity(
-        strategy,
-        removeLiquidity,
-        [removeLiquidity.mul(60).div(100), removeLiquidity.mul(40).div(100)],
-        TransactionType.REMOVE,
-      ),
-    ).to.emit(oddzStrategyManager, "RemovedLiquidity");
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
-      BigNumber.from(utils.parseEther("200")),
-    );
+      oddzStrategyManager
+        .connect(this.signers.admin1)
+        .addLiquidity(strategy, liquidity, [liquidity.mul(60).div(100), liquidity.mul(40).div(100)]),
+    ).to.emit(oddzStrategyManager, "AddedLiquidity");
+    await expect(oddzStrategyManager.removeLiquidity(strategy)).to.emit(oddzStrategyManager, "RemovedLiquidity");
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
   });
 
   it("should revert remove liquidity from the existing strategy to maintain the pool balance", async function () {
@@ -224,28 +170,9 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
     const strategy = await oddzStrategyManager.latestStrategy();
-    const removeLiquidity1 = BigNumber.from(utils.parseEther("900"));
 
-    await expect(
-      oddzStrategyManager.manageLiquidity(
-        strategy,
-        removeLiquidity1,
-        [removeLiquidity1.mul(60).div(100), removeLiquidity1.mul(40).div(100)],
-        TransactionType.REMOVE,
-      ),
-    ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount");
-    const removeLiquidity2 = BigNumber.from(utils.parseEther("800"));
-
-    await expect(
-      oddzStrategyManager.manageLiquidity(
-        strategy,
-        removeLiquidity2,
-        [removeLiquidity2.mul(60).div(100), removeLiquidity2.mul(40).div(100)],
-        TransactionType.REMOVE,
-      ),
-    ).to.emit(oddzStrategyManager, "RemovedLiquidity");
-    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(
-      BigNumber.from(utils.parseEther("200")),
+    await expect(oddzStrategyManager.removeLiquidity(strategy)).to.be.revertedWith(
+      "LP Error: Not enough funds in the pool. Please lower the amount",
     );
   });
 
@@ -257,12 +184,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
-      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-      [60, 40],
-      [liquidity.mul(60).div(100), liquidity.mul(40).div(100)],
-      liquidity,
-    );
+    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], [liquidity], liquidity);
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
     const oldStrategy = await oddzStrategyManager.latestStrategy();
 
@@ -272,56 +194,19 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity1 = BigNumber.from(utils.parseEther("10000"));
     await this.usdcToken.approve(this.oddzStrategyManager.address, liquidity1);
 
-    await oddzStrategyManager.createStrategy(
-      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-      [50, 50],
-      [liquidity1.mul(60).div(100), liquidity1.mul(40).div(100)],
-      liquidity1,
-    );
+    await oddzStrategyManager.createStrategy([oddzEthUsdCallBS1Pool.address], [100], [liquidity1], liquidity1);
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
     const newStrategy = await oddzStrategyManager.latestStrategy();
-    const strategyContract1: Contract = await ethers.getContractAt(this.oddzWriteStrategyAbi, oldStrategy);
-    const strategyContract2: Contract = await ethers.getContractAt(this.oddzWriteStrategyAbi, newStrategy);
-    const userLiquidity = await strategyContract1.userLiquidity(this.accounts.admin);
-    const oldStrategyShare = [userLiquidity.mul(60).div(100), userLiquidity.mul(40).div(100)];
-    const newStrategyShare = [userLiquidity.mul(50).div(100), userLiquidity.mul(50).div(100)];
 
-    await oddzStrategyManager.changeStrategy(
-      oldStrategy,
-      newStrategy,
-      userLiquidity,
-      oldStrategyShare,
-      newStrategyShare,
-    );
-
-    expect(await strategyContract1.userLiquidity(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("0")));
-    expect(await strategyContract2.userLiquidity(this.accounts.admin)).to.equal(
-      BigNumber.from(utils.parseEther("11000")),
-    );
-    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
-  });
-
-  it("should revert change strategy for invalid shares", async function () {
-    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    const userLiquidity = BigNumber.from(utils.parseEther("1000"));
-    const oldStrategyShare = [userLiquidity.mul(60).div(100), userLiquidity.mul(40).div(100)];
-    // mock share < 100%
-    const newStrategyShare = [userLiquidity.mul(50).div(100), userLiquidity.mul(40).div(100)];
-
-    await provider.send("evm_snapshot", []);
-    // execution day + 7
-    await provider.send("evm_increaseTime", [getExpiry(7)]);
-
-    // build mock method
+    await this.usdcToken.connect(this.signers.admin1).approve(this.oddzStrategyManager.address, liquidity);
+    await this.usdcToken.transfer(this.accounts.admin1, liquidity);
     await expect(
-      oddzStrategyManager.changeStrategy(
-        oddzStrategyManager.address,
-        oddzStrategyManager.address,
-        userLiquidity,
-        oldStrategyShare,
-        newStrategyShare,
-      ),
-    ).to.be.revertedWith("SM Error: invalid strategy share to migrate");
+      oddzStrategyManager.connect(this.signers.admin1).addLiquidity(oldStrategy, liquidity, [liquidity]),
+    ).to.emit(oddzStrategyManager, "AddedLiquidity");
+
+    await oddzStrategyManager.changeStrategy(oldStrategy, newStrategy);
+    const lprovider = await oddzEthUsdCallBS1Pool.liquidityProvider(this.accounts.admin);
+    expect(lprovider._amount).to.equal(liquidity.add(liquidity1));
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
@@ -330,8 +215,6 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const userLiquidity = BigNumber.from(utils.parseEther("1000"));
     // build mock shares
-    const oldStrategyShare = [userLiquidity.mul(60).div(100), userLiquidity.mul(40).div(100)];
-    const newStrategyShare = [userLiquidity.mul(50).div(100), userLiquidity.mul(50).div(100)];
     const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
@@ -339,10 +222,9 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, userLiquidity);
 
-    await expect(this.oddzLiquidityPoolManager.addLiquidity(oddzDefaultPool.address, userLiquidity)).to.emit(
-      oddzDefaultPool,
-      "AddLiquidity",
-    );
+    await expect(
+      this.oddzLiquidityPoolManager.addLiquidity(this.accounts.admin, oddzDefaultPool.address, userLiquidity),
+    ).to.emit(oddzDefaultPool, "AddLiquidity");
 
     const poolTransfer = await getPoolTransferStruct(
       [oddzDefaultPool.address],
@@ -350,17 +232,11 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       [BigNumber.from(utils.parseEther("500"))],
       [BigNumber.from(utils.parseEther("500"))],
     );
-    await this.oddzLiquidityPoolManager.move(poolTransfer);
+    await this.oddzLiquidityPoolManager.move(this.accounts.admin, poolTransfer);
 
     // build mock method
     await expect(
-      oddzStrategyManager.changeStrategy(
-        oddzStrategyManager.address,
-        oddzStrategyManager.address,
-        userLiquidity,
-        oldStrategyShare,
-        newStrategyShare,
-      ),
+      oddzStrategyManager.changeStrategy(oddzStrategyManager.address, oddzStrategyManager.address),
     ).to.be.revertedWith("SM Error: Strategy changes not allowed within lockup duration");
   });
 }

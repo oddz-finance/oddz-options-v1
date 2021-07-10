@@ -4,7 +4,6 @@ import OddzStrategyManagerArtifact from "../artifacts/contracts/Pool/OddzStrateg
 import OddzLiquidityPoolManagerArtifact from "../artifacts/contracts/Pool/OddzLiquidityPoolManager.sol/OddzLiquidityPoolManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
-import OddzWriteStrategyArtifact from "../artifacts/contracts/Pool/OddzWriteStrategy.sol/OddzWriteStrategy.json";
 
 import { Accounts, Signers } from "../types";
 
@@ -67,7 +66,7 @@ describe("Oddz Strategy Manager Unit tests", function () {
         this.usdcToken.address,
       ])) as OddzStrategyManager;
 
-      this.oddzWriteStrategyAbi = OddzWriteStrategyArtifact.abi;
+      await this.oddzLiquidityPoolManager.setStrategyManager(this.oddzStrategyManager.address);
     });
 
     shouldBehaveLikeOddzStrategyManager();
