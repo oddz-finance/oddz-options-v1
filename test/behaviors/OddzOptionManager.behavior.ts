@@ -99,7 +99,7 @@ const addLiquidity = async (
   amount: number,
 ) => {
   const olp = await oddzLiquidityPoolManager.connect(admin);
-  await olp.addLiquidity(oddzDefaultPool.address, utils.parseEther(amount.toString()));
+  await olp.addLiquidity(await admin.getAddress(), oddzDefaultPool.address, utils.parseEther(amount.toString()));
   return olp;
 };
 
@@ -1428,7 +1428,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await addLiquidity(this.oddzDefaultPool, this.oddzLiquidityPoolManager, this.signers.admin, 1000000);
     await this.oddzLiquidityPoolManager
       .connect(this.signers.admin)
-      .addLiquidity(this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
+      .addLiquidity(this.accounts.admin, this.oddzEthUsdCallBS30Pool.address, utils.parseEther("50"));
     const pair = await getAssetPair(
       this.oddzAssetManager,
       this.signers.admin,
