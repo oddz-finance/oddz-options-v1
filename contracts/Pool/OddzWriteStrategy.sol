@@ -8,9 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
     IOddzLiquidityPool[] public pools;
     uint256[] public shares;
-    uint256 public liquidity;
-    // user => amount
-    mapping(address => uint256[]) public poolsLiquidity;
 
     constructor(IOddzLiquidityPool[] memory _pools, uint256[] memory _shares) {
         pools = _pools;

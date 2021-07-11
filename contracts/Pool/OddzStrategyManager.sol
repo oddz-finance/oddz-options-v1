@@ -61,6 +61,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         uint256 totalAmount;
         for (uint256 i = 0; i < pools.length; i++) {
             uint256 balance = pools[i].getBalance(msg.sender);
+            // allow remove for remaining pools instead of throwing exception
             if (balance > 0) {
                 poolManager.removeLiquidity(msg.sender, pools[i], balance);
             }
