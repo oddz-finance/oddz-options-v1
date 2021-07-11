@@ -41,8 +41,8 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     function addLiquidity(
         IOddzWriteStrategy _strategy,
         uint256 _amount,
-        uint256[] memory _shares
-    ) public validStrategy(_strategy) {
+        uint256[] memory _shares 
+    ) public override validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
         token.safeTransferFrom(msg.sender, address(this), _amount);
@@ -56,7 +56,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         emit AddedLiquidity(address(_strategy), msg.sender, _amount);
     }
 
-    function removeLiquidity(IOddzWriteStrategy _strategy) external validStrategy(_strategy) {
+    function removeLiquidity(IOddzWriteStrategy _strategy) external override validStrategy(_strategy) {
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
         uint256 totalAmount;
         for (uint256 i = 0; i < pools.length; i++) {
