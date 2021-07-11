@@ -41,7 +41,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     function addLiquidity(
         IOddzWriteStrategy _strategy,
         uint256 _amount,
-        uint256[] memory _shares 
+        uint256[] memory _shares
     ) public override validStrategy(_strategy) {
         uint256 totalAmount = 0;
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
