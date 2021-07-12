@@ -82,7 +82,6 @@ describe("Oddz Option Manager Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-        this.oddzPriceOracleManager.address,
       ])) as DexManager;
 
       this.oddzVolatility = (await deployContract(

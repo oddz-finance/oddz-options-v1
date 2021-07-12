@@ -211,7 +211,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
 
     await expect(
-      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("999")), DepositType.Transaction),
+      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("999")), DepositType.Transaction, 1),
     ).to.be.revertedWith("Administrator: amount is low for deposit");
   });
 
@@ -254,7 +254,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     // ideally should deposit from optionManager
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
     await expect(
-      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction),
+      oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction, 1),
     ).to.be.revertedWith("Swap Error: asset not added for swap");
   });
 
@@ -277,7 +277,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     await oddzToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
     // ideally should deposit from optionManager
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
-    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction);
+    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Transaction, 1);
     // check balance of maintenance facilitator
     expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(0);
   });
@@ -301,7 +301,7 @@ export function shouldBehaveLikeOddzAdministrator(): void {
 
     // ideally should deposit from optionManager
     await usdcToken.approve(this.oddzAdministrator.address, BigNumber.from(utils.parseEther("1000000")));
-    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Settlement);
+    await oddzAdministrator.deposit(BigNumber.from(utils.parseEther("1000")), DepositType.Settlement, 1);
     // check balance of maintenance facilitator
     expect(await usdcToken.balanceOf(this.accounts.admin1)).to.equal(BigNumber.from(utils.parseEther("100")));
     expect(await oddzToken.balanceOf(this.oddzSDK.address)).to.equal(BigNumber.from(utils.parseEther("50")));

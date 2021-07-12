@@ -85,7 +85,6 @@ describe("Oddz Administrator Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-        this.oddzPriceOracleManager.address,
       ])) as DexManager;
 
       this.mockOddzDex = (await deployContract(this.signers.admin, MockSwapArtifact, [

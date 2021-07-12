@@ -575,7 +575,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     /**
      * @notice transfer transaction fee to beneficiary
      */
-    function transferTxnFeeToBeneficiary(uint256 _minAmountsOut) external {
+    function transferTxnFeeToBeneficiary(uint256 _minAmountsOut) external onlyOwner(msg.sender) {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
@@ -586,7 +586,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     /**
      * @notice transfer settlement fee to beneficiary
      */
-    function transferSettlementFeeToBeneficiary(uint256 _minAmountsOut) external {
+    function transferSettlementFeeToBeneficiary(uint256 _minAmountsOut) external onlyOwner(msg.sender) {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 

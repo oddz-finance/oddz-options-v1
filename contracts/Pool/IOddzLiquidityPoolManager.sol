@@ -27,14 +27,6 @@ interface IOddzLiquidityPoolManager {
         IOddzOption.OptionType _type;
     }
 
-    struct OptionParams{
-        uint256 _id;
-        address _holder;
-        uint256 _profit;
-        bytes32 _primary;
-        bytes32 _strike;
-    }
-
     /**
      * @dev Pool transfer
      */

@@ -99,7 +99,6 @@ describe("Oddz Liquidity Pool Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-        this.oddzPriceOracleManager.address,
       ])) as DexManager;
 
       await this.dexManager.addExchange(

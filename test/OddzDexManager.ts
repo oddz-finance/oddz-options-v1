@@ -60,7 +60,6 @@ describe("Oddz Dex Manager Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
-        this.oddzPriceOracleManager.address,
       ])) as DexManager;
 
       await this.oddzPriceOracleManager.addAggregator(

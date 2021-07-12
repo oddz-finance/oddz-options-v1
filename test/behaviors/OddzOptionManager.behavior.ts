@@ -746,7 +746,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     expect(BigNumber.from(await oddzOptionManager.settlementFeeAggregate())).to.equal(
       BigNumber.from(utils.parseEther("1000")),
     );
-    await oddzOptionManager.transferSettlementFeeToBeneficiary();
+    await oddzOptionManager.transferSettlementFeeToBeneficiary(1);
     expect((await oddzOptionManager.settlementFeeAggregate()).toNumber()).to.equal(0);
   });
 
@@ -778,7 +778,7 @@ export function shouldBehaveLikeOddzOptionManager(): void {
       BigNumber.from(utils.parseEther("1271.409331")),
     );
 
-    await oddzOptionManager.transferTxnFeeToBeneficiary();
+    await oddzOptionManager.transferTxnFeeToBeneficiary(1);
     expect((await oddzOptionManager.txnFeeAggregate()).toNumber()).to.equal(0);
   });
 
@@ -1145,18 +1145,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
   it("should revert exercise UA with more than deadline limit", async function () {
     const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
     const deadline = 101;
-    const slippage = 1;
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
+    const minAmountsOut = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut)).to.be.revertedWith(
       "Deadline input is more than maximum limit allowed",
-    );
-  });
-
-  it("should revert exercise UA with more than slippage limit", async function () {
-    const oddzOptionManager = await this.oddzOptionManager.connect(this.signers.admin);
-    const deadline = 15;
-    const slippage = 501;
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith(
-      "Slippage input is more than maximum limit allowed",
     );
   });
 
@@ -1195,8 +1186,8 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     // execution day + 3
     await provider.send("evm_increaseTime", [getExpiry(3)]);
     const deadline = 15;
-    const slippage = 1;
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith("Option has expired");
+    const minAmountsOut = 1;
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut)).to.be.revertedWith("Option has expired");
 
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
@@ -1231,10 +1222,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
     const deadline = 15;
-    const slippage = 1;
-    await expect(oddzOptionManager.connect(this.signers.admin1).exerciseUA(0, deadline, slippage)).to.be.revertedWith(
-      "Invalid Caller",
-    );
+    const minAmountsOut = 1;
+    await expect(
+      oddzOptionManager.connect(this.signers.admin1).exerciseUA(0, deadline, minAmountsOut),
+    ).to.be.revertedWith("Invalid Caller");
   });
 
   it("should revert exercise for options not active", async function () {
@@ -1265,12 +1256,12 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
-    const slippage = 1;
+    const minAmountsOut = 1;
     await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
 
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut)).to.emit(oddzOptionManager, "Exercise");
 
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.be.revertedWith("Invalid state");
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut)).to.be.revertedWith("Invalid state");
   });
 
   it("should exercise UA", async function () {
@@ -1302,9 +1293,9 @@ export function shouldBehaveLikeOddzOptionManager(): void {
 
     await oddzPriceOracle.setUnderlyingPrice(305000000000);
     const deadline = 15;
-    const slippage = 1;
+    const minAmountsOut = 1;
     await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage))
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut))
       .to.emit(oddzOptionManager, "Exercise")
       .to.emit(this.dexManager, "Swapped")
       .withArgs(
@@ -1374,10 +1365,10 @@ export function shouldBehaveLikeOddzOptionManager(): void {
     await getPremiumWithSlippageAndBuy(this.oddzOptionManager, optionDetails, 0.05, this.accounts.admin, true);
     await oddzPriceOracle.setUnderlyingPrice(175000000000);
     const deadline = 15;
-    const slippage = 1;
+    const minAmountsOut = 1;
     await this.ethToken.transfer(this.mockOddzDex.address, BigNumber.from(utils.parseEther("1000000")));
 
-    await expect(oddzOptionManager.exerciseUA(0, deadline, slippage)).to.emit(oddzOptionManager, "Exercise");
+    await expect(oddzOptionManager.exerciseUA(0, deadline, minAmountsOut)).to.emit(oddzOptionManager, "Exercise");
     await provider.send("evm_snapshot", []);
     // execution day + 3
     await provider.send("evm_increaseTime", [getExpiry(3)]);

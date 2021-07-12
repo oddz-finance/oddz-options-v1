@@ -51,11 +51,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         _;
     }
 
-     modifier onlyManager(address _address) {
-        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
-        _;
-    }
-
     modifier onlyTimeLocker(address _address) {
         require(hasRole(TIMELOCKER_ROLE, _address), "caller has no access to the method");
         _;
@@ -99,7 +94,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     }
 
     function setManager(address _address) external {
-        require(_address != address(0), "Invalid manafer address");
+        require(_address != address(0), "Invalid manager address");
         grantRole(MANAGER_ROLE, _address);
     }
 
@@ -153,14 +148,10 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     }
 
     function deposit(
-        uint256 _amount, 
-        DepositType _depositType, 
+        uint256 _amount,
+        DepositType _depositType,
         uint256 _minAmountsOut
-        ) 
-        external 
-        override 
-        onlyManager(msg.sender)
-        {
+    ) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
@@ -182,15 +173,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap(
-            "USD", 
-            "ODDZ", 
-            exchange, 
-            address(this), 
-            _amount, 
-            _minAmountsOut, 
-            block.timestamp + deadline
-            );
+        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, _minAmountsOut, block.timestamp + deadline);
     }
 
     function distrbuteTxn(uint256 _totalAmount, uint256 _oddzShare) private {
