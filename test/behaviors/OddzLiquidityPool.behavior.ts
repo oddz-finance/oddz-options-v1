@@ -1508,15 +1508,56 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
   });
 
-  it.only("should be able to assign the contract address as the strategy manager if the contract is assigned as a strategy manager", async function () {
+  it("should be able to assign the contract address as the strategy manager if the contract is assigned as a strategy manager", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setStrategyManager(liquidityManager.address)).to.ok;
   });
 
-  it.only("should revert if we try to assign any wallet address as the strategy manager", async function () {
+  it("should revert if we try to assign any wallet address as the strategy manager", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setStrategyManager(this.accounts.admin)).to.be.revertedWith(
       "invalid strategy manager",
     );
   });
+
+  it("should revert if the liquidity amount provide is larger than the size of the liquidity pool" , async function() {
+      const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+      const amount1 = BigNumber.from(utils.parseEther("0.01"));
+      
+      const { } = await addAllPoolsWithLiquidity(
+        this.signers.admin,
+        this.oddzLiquidityPoolManager,
+        this.oddzDefaultPool.address,
+        amount1,
+      );
+  
+      const amount2 = BigNumber.from(utils.parseEther("0.1"));
+      await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, amount1);
+      await liquidityManager.setManager(this.mockOptionManager.address);
+
+      await expect(this.mockOptionManager
+        .connect(this.signers.admin1)
+        .lockWithCustomParams(0, "0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, amount2, 179000, utils.formatBytes32String("B_S"))).to.be.revertedWith("Amount is too large");
+      
+  });
+
+  it("should successfully be able to lock liquidity as low as 1 wei" , async function() {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const amount1 = BigNumber.from(utils.parseEther("10"));
+    
+    const { } = await addAllPoolsWithLiquidity(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+      this.oddzDefaultPool.address,
+      amount1,
+    );
+
+    const amount2 = BigNumber.from(utils.parseEther("50"));
+    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, amount2);
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    
+    await this.mockOptionManager
+      .connect(this.signers.admin1)
+      .lockWithCustomParams(0, "0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, 1, 179000, utils.formatBytes32String("B_S"));
+    });
 }
