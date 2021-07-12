@@ -177,6 +177,12 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         uint8[] calldata _settlementFeeRewards,
         uint8[] calldata _allotedRewards
     ) external onlyTimeLocker(msg.sender) {
+        require(
+            _tokens.length == _txnFeeRewards.length &&
+                _tokens.length == _settlementFeeRewards.length &&
+                _tokens.length == _allotedRewards.length,
+            "Staking: invalid input of rewards"
+        );
         uint8 totalTxnFee;
         uint8 totalSettlementFee;
         uint8 totalAllotedFee;
