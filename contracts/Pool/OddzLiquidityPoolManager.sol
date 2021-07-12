@@ -45,13 +45,13 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
     mapping(IOddzLiquidityPool => bool) public disabledPools;
 
     // user address -> date of transfer
-    mapping(address => uint256) public override lastPoolTransfer;
+    mapping(address => uint256) public lastPoolTransfer;
 
     /**
      * @dev Premium specific data definitions
      */
     uint256 public premiumLockupDuration = 14 days;
-    uint256 public override moveLockupDuration = 7 days;
+    uint256 public moveLockupDuration = 7 days;
 
     /**
      * @dev DEX manager
@@ -162,7 +162,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         _pool.addLiquidity(_amount, _provider);
 
         _mint(_provider, mint);
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        token.safeTransferFrom(_provider, address(this), _amount);
     }
 
     function removeLiquidity(
