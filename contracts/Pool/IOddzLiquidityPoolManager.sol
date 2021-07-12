@@ -39,18 +39,28 @@ interface IOddzLiquidityPoolManager {
 
     /**
      * @notice A provider supplies USD pegged stablecoin to the pool and receives oUSD tokens
+     * @param _provider Liquidity provider
      * @param _pool Liquidity pool
      * @param _amount Amount in USD
      * @return mint Amount of tokens minted
      */
-    function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external returns (uint256 mint);
+    function addLiquidity(
+        address _provider,
+        IOddzLiquidityPool _pool,
+        uint256 _amount
+    ) external returns (uint256 mint);
 
     /**
      * @notice Provider burns oUSD and receives USD from the pool
+     * @param _provider Liquidity provider
      * @param _pool Remove liquidity from a pool
      * @param _amount Amount of USD to receive
      */
-    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external;
+    function removeLiquidity(
+        address _provider,
+        IOddzLiquidityPool _pool,
+        uint256 _amount
+    ) external;
 
     /**
      * @notice called by Oddz call options to lock the funds
@@ -105,7 +115,8 @@ interface IOddzLiquidityPoolManager {
 
     /**
      * @notice Move liquidity between pools
+     * @param _provider Liquidity provider
      * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function move(PoolTransfer memory _poolTransfer) external;
+    function move(address _provider, PoolTransfer memory _poolTransfer) external;
 }
