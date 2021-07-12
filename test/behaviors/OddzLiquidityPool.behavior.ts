@@ -1447,7 +1447,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
   it("should revert invalid address used to set Timelocker", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
-    await expect(liquidityManager.setTimeLocker(constants.AddressZero)).to.be.revertedWith("Invalid timelocker address");
+    await expect(liquidityManager.setTimeLocker(constants.AddressZero)).to.be.revertedWith(
+      "Invalid timelocker address",
+    );
   });
 
   it("should be able to successfully remove Timelocker", async function () {
@@ -1479,7 +1481,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
     const fp = (await deployContract(this.signers.admin, OddzEthUsdCallBS1PoolArtifact, [])) as OddzEthUsdCallBS1Pool;
 
-    await expect(liquidityManager.addLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith("Invalid pool");
+    await expect(liquidityManager.addLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith(
+      "Invalid pool",
+    );
   });
 
   it("should revert if trying to withdraw liquidity from liquidity pool which is not exposed to any options", async function () {
@@ -1488,7 +1492,9 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
     const fp = (await deployContract(this.signers.admin, OddzEthUsdCallBS1PoolArtifact, [])) as OddzEthUsdCallBS1Pool;
 
-    await expect(liquidityManager.removeLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith("Invalid pool");
+    await expect(liquidityManager.removeLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith(
+      "Invalid pool",
+    );
   });
 
   it("should revert if premium is equal to 0 while withdrawing profits", async function () {
@@ -1502,15 +1508,15 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     );
   });
 
-  it.only("should be able to assign the contract address as the strategy manager if the contract is assigned as a strategy manager", async function() {
+  it.only("should be able to assign the contract address as the strategy manager if the contract is assigned as a strategy manager", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setStrategyManager(liquidityManager.address)).to.ok;
   });
 
-  it.only("should revert if we try to assign any wallet address as the strategy manager", async function() {
+  it.only("should revert if we try to assign any wallet address as the strategy manager", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await expect(liquidityManager.setStrategyManager(this.accounts.admin)).to.be.revertedWith(
-      "invalid strategy manager"
+      "invalid strategy manager",
     );
   });
 }
