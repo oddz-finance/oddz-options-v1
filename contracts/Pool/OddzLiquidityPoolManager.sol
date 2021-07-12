@@ -58,6 +58,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      */
     IDexManager public dexManager;
 
+    address public strategyManager;
+
     /**
      * @dev Access control specific data definitions
      */
@@ -92,6 +94,11 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
 
     modifier validMaxExpiration(uint256 _maxExpiration) {
         require(allowedMaxExpiration[_maxExpiration] == true, "LP Error: invalid maximum expiration");
+        _;
+    }
+
+    modifier validCaller(address _provider) {
+        require(msg.sender == _provider || msg.sender == strategyManager, "LP Error: invalid caller");
         _;
     }
 
@@ -140,31 +147,43 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         mapPeriod(30, 30);
     }
 
-    function addLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override returns (uint256 mint) {
+    function addLiquidity(
+        address _provider,
+        IOddzLiquidityPool _pool,
+        uint256 _amount
+    ) external override validCaller(_provider) returns (uint256 mint) {
         require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
         mint = _amount;
         require(mint > 0, "LP Error: Amount is too small");
 
-        uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
-        if (eligiblePremium > 0) token.safeTransfer(msg.sender, eligiblePremium);
+        uint256 eligiblePremium = _pool.collectPremium(_provider, premiumLockupDuration);
+        if (eligiblePremium > 0) token.safeTransfer(_provider, eligiblePremium);
 
-        _pool.addLiquidity(_amount, msg.sender);
+        _pool.addLiquidity(_amount, _provider);
 
-        _mint(msg.sender, mint);
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        _mint(_provider, mint);
+        token.safeTransferFrom(_provider, address(this), _amount);
     }
 
-    function removeLiquidity(IOddzLiquidityPool _pool, uint256 _amount) external override {
+    function removeLiquidity(
+        address _provider,
+        IOddzLiquidityPool _pool,
+        uint256 _amount
+    ) external override validCaller(_provider) {
         require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
-        require(_amount <= balanceOf(msg.sender), "LP Error: Amount exceeds oUSD balance");
+        require(_amount <= balanceOf(_provider), "LP Error: Amount exceeds oUSD balance");
 
-        uint256 eligiblePremium = _pool.collectPremium(msg.sender, premiumLockupDuration);
-        token.safeTransfer(msg.sender, _removeLiquidity(_pool, _amount, premiumLockupDuration) + eligiblePremium);
+        uint256 eligiblePremium = _pool.collectPremium(_provider, premiumLockupDuration);
+        token.safeTransfer(
+            _provider,
+            _removeLiquidity(_provider, _pool, _amount, premiumLockupDuration) + eligiblePremium
+        );
 
-        _burn(msg.sender, _amount);
+        _burn(_provider, _amount);
     }
 
     function _removeLiquidity(
+        address _provider,
         IOddzLiquidityPool _pool,
         uint256 _amount,
         uint256 premiumLockPeriod
@@ -176,7 +195,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         require(_amount * 10 <= validateBalance, "LP Error: Not enough funds in the pool. Please lower the amount.");
         require(_amount > 0, "LP Error: Amount is too small");
 
-        transferAmount = _pool.removeLiquidity(_amount, msg.sender, premiumLockPeriod);
+        transferAmount = _pool.removeLiquidity(_amount, _provider, premiumLockPeriod);
     }
 
     function lockLiquidity(
@@ -251,24 +270,24 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @notice Move liquidity between pools
      * @param _poolTransfer source and destination pools with amount of transfer
      */
-    function move(PoolTransfer memory _poolTransfer) external override {
+    function move(address _provider, PoolTransfer memory _poolTransfer) external override validCaller(_provider) {
         require(
-            lastPoolTransfer[msg.sender] == 0 || (lastPoolTransfer[msg.sender] + moveLockupDuration) < block.timestamp,
+            lastPoolTransfer[_provider] == 0 || (lastPoolTransfer[_provider] + moveLockupDuration) < block.timestamp,
             "LP Error: Pool transfer not allowed"
         );
-        lastPoolTransfer[msg.sender] = block.timestamp;
+        lastPoolTransfer[_provider] = block.timestamp;
         int256 totalTransfer = 0;
         for (uint256 i = 0; i < _poolTransfer._source.length; i++) {
             require(
                 (poolExposure[_poolTransfer._source[i]] > 0) || disabledPools[_poolTransfer._source[i]],
                 "LP Error: Invalid pool"
             );
-            _removeLiquidity(_poolTransfer._source[i], _poolTransfer._sAmount[i], moveLockupDuration);
+            _removeLiquidity(_provider, _poolTransfer._source[i], _poolTransfer._sAmount[i], moveLockupDuration);
             totalTransfer += int256(_poolTransfer._sAmount[i]);
         }
         for (uint256 i = 0; i < _poolTransfer._destination.length; i++) {
             require(poolExposure[_poolTransfer._destination[i]] > 0, "LP Error: Invalid pool");
-            _poolTransfer._destination[i].addLiquidity(_poolTransfer._dAmount[i], msg.sender);
+            _poolTransfer._destination[i].addLiquidity(_poolTransfer._dAmount[i], _provider);
             totalTransfer -= int256(_poolTransfer._dAmount[i]);
         }
         require(totalTransfer == 0, "LP Error: invalid transfer amount");
@@ -532,5 +551,10 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             "LP Error: invalid move lockup duration"
         );
         moveLockupDuration = _moveLockupDuration;
+    }
+
+    function setStrategyManager(address _strategyManager) public onlyOwner(msg.sender) {
+        require(_strategyManager.isContract(), "LP Error: invalid strategy manager");
+        strategyManager = _strategyManager;
     }
 }
