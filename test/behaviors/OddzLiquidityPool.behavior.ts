@@ -1429,4 +1429,88 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
       liquidityManager.addLiquidity(this.accounts.admin1, this.oddzDefaultPool.address, depositAmount),
     ).to.be.revertedWith("LP Error: invalid caller");
   });
+
+  it("should be able to successfully set Timelocker", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.setTimeLocker(this.mockOptionManager.address)).to.emit(
+      liquidityManager,
+      "RoleGranted",
+    );
+  });
+
+  it("should revert sender must be an admin to grant while set Timelocker", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.setTimeLocker(this.mockOptionManager.address)).to.be.revertedWith(
+      "sender must be an admin to grant",
+    );
+  });
+
+  it("should revert invalid address used to set Timelocker", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.setTimeLocker(constants.AddressZero)).to.be.revertedWith("Invalid timelocker address");
+  });
+
+  it("should be able to successfully remove Timelocker", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.setTimeLocker(this.accounts.admin1);
+    await expect(liquidityManager.removeTimeLocker(this.accounts.admin1)).to.emit(liquidityManager, "RoleRevoked");
+  });
+
+  it("should revert sender must be an admin to grant while remove Timelocker", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.removeTimeLocker(this.accounts.admin1)).to.be.revertedWith(
+      "sender must be an admin to revoke",
+    );
+  });
+
+  it("should revert if the method addAllowedMaxExpiration is not invoked by the owner", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin1);
+    await expect(liquidityManager.addAllowedMaxExpiration(10)).to.be.revertedWith("caller has no access to the method");
+  });
+
+  it("should revert if we don't have valid mapPeriod", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.mapPeriod(10, 11)).to.be.revertedWith("invalid maximum expiration");
+  });
+
+  it("should revert if the liquidity pool is not exposed to any options", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const amount = BigNumber.from(utils.parseEther("10000"));
+
+    const fp = (await deployContract(this.signers.admin, OddzEthUsdCallBS1PoolArtifact, [])) as OddzEthUsdCallBS1Pool;
+
+    await expect(liquidityManager.addLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith("Invalid pool");
+  });
+
+  it("should revert if trying to withdraw liquidity from liquidity pool which is not exposed to any options", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const amount = BigNumber.from(utils.parseEther("10000"));
+
+    const fp = (await deployContract(this.signers.admin, OddzEthUsdCallBS1PoolArtifact, [])) as OddzEthUsdCallBS1Pool;
+
+    await expect(liquidityManager.removeLiquidity(this.accounts.admin, fp.address, amount)).to.be.revertedWith("Invalid pool");
+  });
+
+  it("should revert if premium is equal to 0 while withdrawing profits", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const amount = BigNumber.from(utils.parseEther(this.transferTokenAmout));
+    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, amount);
+    await liquidityManager.setManager(this.mockOptionManager.address);
+
+    await expect(liquidityManager.withdrawProfits(this.oddzDefaultPool.address)).to.be.revertedWith(
+      "No premium allocated",
+    );
+  });
+
+  it.only("should be able to assign the contract address as the strategy manager if the contract is assigned as a strategy manager", async function() {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.setStrategyManager(liquidityManager.address)).to.ok;
+  });
+
+  it.only("should revert if we try to assign any wallet address as the strategy manager", async function() {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await expect(liquidityManager.setStrategyManager(this.accounts.admin)).to.be.revertedWith(
+      "invalid strategy manager"
+    );
+  });
 }
