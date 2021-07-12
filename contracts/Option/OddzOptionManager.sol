@@ -575,23 +575,23 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     /**
      * @notice transfer transaction fee to beneficiary
      */
-    function transferTxnFeeToBeneficiary(uint256 _assetPrice) external {
+    function transferTxnFeeToBeneficiary(uint256 _minAmountsOut) external {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction, _assetPrice);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction, _minAmountsOut);
     }
 
     /**
      * @notice transfer settlement fee to beneficiary
      */
-    function transferSettlementFeeToBeneficiary(uint256 _assetPrice) external {
+    function transferSettlementFeeToBeneficiary(uint256 _minAmountsOut) external {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement, _assetPrice);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement, _minAmountsOut);
     }
 
     /**
