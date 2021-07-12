@@ -39,11 +39,11 @@ contract MockOptionManager {
         uint256 _id,
         address _assetPair,
         IOddzOption.OptionType _type,
-        uint256 _amount, 
+        uint256 _amount,
         uint256 _expiration,
         bytes32 _model
     ) public {
-        IOddzLiquidityPoolManager.LiquidityParams memory liquidityParams = 
+        IOddzLiquidityPoolManager.LiquidityParams memory liquidityParams =
             IOddzLiquidityPoolManager.LiquidityParams(_amount, _expiration, _assetPair, _model, _type);
 
         pool.lockLiquidity(_id, liquidityParams, 10000000000);
