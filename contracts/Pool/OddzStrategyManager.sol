@@ -9,7 +9,6 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     using Address for address;
     using SafeERC20 for IERC20;
 
-    IERC20 public token;
     IOddzLiquidityPoolManager public poolManager;
 
     address public latestStrategy;
@@ -19,9 +18,8 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         _;
     }
 
-    constructor(IOddzLiquidityPoolManager _poolManager, IERC20 _token) {
+    constructor(IOddzLiquidityPoolManager _poolManager) {
         poolManager = _poolManager;
-        token = _token;
     }
 
     function createStrategy(
