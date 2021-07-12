@@ -102,6 +102,11 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         _;
     }
 
+    modifier tokenNotAdded(IERC20 _token) {
+        require(address(tokens[_token]._address) == address(0), "Staking: token already added");
+        _;
+    }
+
     modifier inactiveToken(IERC20 _token) {
         require(tokens[_token]._active == false, "Staking: token is already active");
         _;
@@ -245,8 +250,9 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         uint8 _txnFeeReward,
         uint8 _settlementFeeReward,
         uint8 _allotedReward
-    ) external onlyOwner(msg.sender) validDuration(_lockupDuration) {
+    ) external onlyOwner(msg.sender) validDuration(_lockupDuration) tokenNotAdded(_address) {
         require(address(_address).isContract(), "Staking: invalid token address");
+        require(address(_stakingContract).isContract(), "Staking: invalid staking contract address");
         tokens[_address] = Token(
             _address,
             _stakingContract,

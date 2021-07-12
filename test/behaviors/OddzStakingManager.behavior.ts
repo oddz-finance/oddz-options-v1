@@ -730,4 +730,19 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     expect((await oddzStakingManager.tokens(this.oddzToken.address))._allotedReward).to.equal(20);
     expect((await oddzStakingManager.tokens(this.oUsdToken.address))._allotedReward).to.equal(80);
   });
+
+  it("Should revert adding token more than once", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.addToken(
+        this.oddzToken.address,
+        this.oddzTokenStaking.address,
+        getExpiry(1),
+        getExpiry(1),
+        50,
+        70,
+        50,
+      ),
+    ).to.be.revertedWith("Staking: token already added");
+  });
 }
