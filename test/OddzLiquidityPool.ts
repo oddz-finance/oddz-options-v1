@@ -9,6 +9,8 @@ import {
   OddzAssetManager,
   MockOptionManager,
   MockOddzDex,
+  OddzPriceOracleManager,
+  MockOddzPriceOracle,
 } from "../typechain";
 import { shouldBehaveLikeOddzLiquidityPool } from "./behaviors/OddzLiquidityPool.behavior";
 import { MockProvider } from "ethereum-waffle";
@@ -19,6 +21,9 @@ import MockOddzDexArtifact from "../artifacts/contracts/Mocks/MockOddzDex.sol/Mo
 import MockOptionManagerArtifact from "../artifacts/contracts/Mocks/MockOptionManager.sol/MockOptionManager.json";
 import OddzAssetManagerArtifact from "../artifacts/contracts/Option/OddzAssetManager.sol/OddzAssetManager.json";
 import DexManagerArtifact from "../artifacts/contracts/Swap/DexManager.sol/DexManager.json";
+import OddzPriceOracleManagerArtifact from "../artifacts/contracts/Oracle/OddzPriceOracleManager.sol/OddzPriceOracleManager.json";
+import MockOddzPriceOracleArtifact from "../artifacts/contracts/Mocks/MockOddzPriceOracle.sol/MockOddzPriceOracle.json";
+
 import { BigNumber, utils } from "ethers";
 import { OptionType } from "../test-utils";
 
@@ -64,11 +69,37 @@ describe("Oddz Liquidity Pool Unit tests", function () {
 
       await this.oddzAssetManager.addAsset(utils.formatBytes32String("ETH"), ethToken.address, 8);
       await this.oddzAssetManager.addAsset(utils.formatBytes32String("USD"), this.usdcToken.address, 8);
+      this.oddzPriceOracle = (await deployContract(this.signers.admin, MockOddzPriceOracleArtifact, [
+        BigNumber.from(161200000000),
+      ])) as MockOddzPriceOracle;
+
+      this.oddzPriceOracleManager = (await deployContract(
+        this.signers.admin,
+        OddzPriceOracleManagerArtifact,
+        [],
+      )) as OddzPriceOracleManager;
+      await this.oddzPriceOracle.setManager(this.oddzPriceOracleManager.address);
+
+      await this.oddzPriceOracleManager.addAggregator(
+        utils.formatBytes32String("ETH"),
+        utils.formatBytes32String("USD"),
+        this.oddzPriceOracle.address,
+        this.oddzPriceOracle.address,
+      );
+      const hash1 = utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ["bytes32", "bytes32", "address"],
+          [utils.formatBytes32String("ETH"), utils.formatBytes32String("USD"), this.oddzPriceOracle.address],
+        ),
+      );
+
+      await this.oddzPriceOracleManager.setActiveAggregator(hash1);
 
       const mockOddzDex = (await deployContract(this.signers.admin, MockOddzDexArtifact, [])) as MockOddzDex;
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
+        this.oddzPriceOracleManager.address,
       ])) as DexManager;
 
       await this.dexManager.addExchange(

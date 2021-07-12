@@ -8,6 +8,7 @@ contract MockOddzDex is ISwapUnderlyingAsset {
         address _toToken,
         address _account,
         uint256 _amountIn,
+        uint256 _amountOutMin,
         uint256 _deadline,
         uint16 _slippage
     ) public pure override returns (uint256[] memory result) {

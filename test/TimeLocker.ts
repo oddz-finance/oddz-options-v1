@@ -63,6 +63,7 @@ describe("TimeLocker Unit tests", function () {
 
       this.dexManager = (await deployContract(this.signers.admin, DexManagerArtifact, [
         this.oddzAssetManager.address,
+        this.oddzAssetManager.address, // just for test
       ])) as DexManager;
 
       this.oddzStaking = (await deployContract(this.signers.admin, OddzStakingManagerArtifact, [
