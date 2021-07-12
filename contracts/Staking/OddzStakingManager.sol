@@ -250,7 +250,13 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         uint8 _txnFeeReward,
         uint8 _settlementFeeReward,
         uint8 _allotedReward
-    ) external onlyOwner(msg.sender) validDuration(_lockupDuration) tokenNotAdded(_address) {
+    )
+        external
+        onlyOwner(msg.sender)
+        validDuration(_lockupDuration)
+        validDuration(_rewardsLockupDuration)
+        tokenNotAdded(_address)
+    {
         require(address(_address).isContract(), "Staking: invalid token address");
         require(address(_stakingContract).isContract(), "Staking: invalid staking contract address");
         tokens[_address] = Token(

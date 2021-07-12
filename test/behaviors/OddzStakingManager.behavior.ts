@@ -745,4 +745,34 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       ),
     ).to.be.revertedWith("Staking: token already added");
   });
+
+  it("Should revert adding token for invalid lockup Duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.addToken(
+        oddzStakingManager.address,
+        this.oddzTokenStaking.address,
+        getExpiry(31),
+        getExpiry(1),
+        50,
+        70,
+        50,
+      ),
+    ).to.be.revertedWith("Staking: invalid staking duration");
+  });
+
+  it("Should revert adding token for invalid reward lockup Duration", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.addToken(
+        oddzStakingManager.address,
+        this.oddzTokenStaking.address,
+        getExpiry(1),
+        getExpiry(31),
+        50,
+        70,
+        50,
+      ),
+    ).to.be.revertedWith("Staking: invalid staking duration");
+  });
 }
