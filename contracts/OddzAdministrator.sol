@@ -14,6 +14,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     using SafeERC20 for IERC20;
 
     bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     IERC20Extented public usdcToken;
     IERC20 public oddzToken;
@@ -47,6 +48,11 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
+        _;
+    }
+
+     modifier onlyManager(address _address) {
+        require(hasRole(MANAGER_ROLE, _address), "caller has no access to the method");
         _;
     }
 
@@ -90,6 +96,15 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
 
     function removeTimeLocker(address _address) external {
         revokeRole(TIMELOCKER_ROLE, _address);
+    }
+
+    function setManager(address _address) external {
+        require(_address != address(0), "Invalid manafer address");
+        grantRole(MANAGER_ROLE, _address);
+    }
+
+    function removeManager(address _address) external {
+        revokeRole(MANAGER_ROLE, _address);
     }
 
     function changeGaslessFacilitator(address _gaslessFacilitator) external onlyOwner(msg.sender) {
@@ -137,7 +152,15 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) external override {
+    function deposit(
+        uint256 _amount, 
+        DepositType _depositType, 
+        uint256 _minAmountsOut
+        ) 
+        external 
+        override 
+        onlyManager(msg.sender)
+        {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
@@ -146,7 +169,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         else usdcAmount = (_amount * (settlementDistribution.gasless + settlementDistribution.maintainer)) / 100;
 
         uint256 oddzAmount = _amount - usdcAmount;
-        convertToOddz(oddzAmount);
+        convertToOddz(oddzAmount, _minAmountsOut);
 
         if (_depositType == DepositType.Transaction) distrbuteTxn(_amount, oddzAmount);
         else distrbuteSettlement(_amount, oddzAmount);
@@ -154,12 +177,20 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount) private {
+    function convertToOddz(uint256 _amount, uint256 _minAmountsOut) private {
         address exchange = dexManager.getExchange("ODDZ", "USD");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
+        dexManager.swap(
+            "USD", 
+            "ODDZ", 
+            exchange, 
+            address(this), 
+            _amount, 
+            _minAmountsOut, 
+            block.timestamp + deadline
+            );
     }
 
     function distrbuteTxn(uint256 _totalAmount, uint256 _oddzShare) private {

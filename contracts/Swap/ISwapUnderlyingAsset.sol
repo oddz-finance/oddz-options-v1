@@ -10,8 +10,6 @@ interface ISwapUnderlyingAsset {
      * @param _amountIn amount of fromTokens to swap from
      * @param _amountOutMin min amount of output tokens
      * @param _deadline deadline timestamp for txn to be valid
-     * @param _slippage slippage percentage
-
      */
     function swapTokensForUA(
         address _fromToken,
@@ -19,7 +17,6 @@ interface ISwapUnderlyingAsset {
         address _account,
         uint256 _amountIn,
         uint256 _amountOutMin,
-        uint256 _deadline,
-        uint16 _slippage
+        uint256 _deadline
     ) external returns (uint256[] memory swapResult);
 }

@@ -4,7 +4,6 @@ pragma solidity 0.8.3;
 import "./IDexManager.sol";
 import "./ISwapUnderlyingAsset.sol";
 import "../Option/IOddzAsset.sol";
-import "../Oracle/IOddzPriceOracleManager.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,7 +11,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract DexManager is AccessControl, IDexManager {
     using Address for address;
     IOddzAsset public assetManager;
-    IOddzPriceOracleManager public oracle;
 
     bytes32 public constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
 
@@ -71,9 +69,8 @@ contract DexManager is AccessControl, IDexManager {
         _;
     }
 
-    constructor(IOddzAsset _assetManger, IOddzPriceOracleManager _oracle) {
+    constructor(IOddzAsset _assetManger) {
         assetManager = _assetManger;
-        oracle = _oracle;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -140,7 +137,8 @@ contract DexManager is AccessControl, IDexManager {
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
-     * @param _slippage slippage percentage
+     * @param _minAmountsOut min output tokens
+
      */
 
     function swap(
@@ -150,12 +148,11 @@ contract DexManager is AccessControl, IDexManager {
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
-        uint16 _slippage
+        uint256 _minAmountsOut
     ) external override onlySwapper(msg.sender) {
         ISwapUnderlyingAsset exchange = activeExchange[_toToken][_fromToken];
         require(address(exchange) != address(0), "No exchange");
         require(address(exchange) == _exchange, "Invalid exchange");
-        (uint256 cp, uint8 decimal) = oracle.getUnderlyingPrice(_toToken, _fromToken);
 
         uint256[] memory swapResult =
             exchange.swapTokensForUA(
@@ -163,9 +160,8 @@ contract DexManager is AccessControl, IDexManager {
                 assetManager.getAssetAddressByName(_toToken),
                 _account,
                 _amountIn,
-                _amountIn / (cp / 10**decimal),
-                _deadline,
-                _slippage
+                _minAmountsOut,
+                _deadline
             );
 
         emit Swapped(_fromToken, _toToken, swapResult[0], swapResult[1]);

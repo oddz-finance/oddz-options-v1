@@ -12,7 +12,7 @@ interface IDexManager {
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
      * @param _deadline deadline timestamp for txn to be valid
-     * @param _slippage slippage percentage
+     * @param _minAmountsOut min amount tokens
      */
     function swap(
         bytes32 _fromToken,
@@ -21,6 +21,6 @@ interface IDexManager {
         address _account,
         uint256 _amountIn,
         uint256 _deadline,
-        uint16 _slippage
+        uint256 _minAmountsOut
     ) external;
 }

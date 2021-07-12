@@ -248,7 +248,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline,
-        uint16 _slippage
+        uint16 _minAmountsOut
     ) public override onlyManager(msg.sender) validLiquidty(_id) {
         (, uint256 transferAmount) = _updateAndFetchLockedLiquidity(_id, _account, _amount);
         address exchange = dexManager.getExchange(_underlying, _strike);
@@ -262,7 +262,7 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
             _account,
             transferAmount,
             block.timestamp + _deadline,
-            _slippage
+            _minAmountsOut
         );
     }
 

@@ -27,6 +27,14 @@ interface IOddzLiquidityPoolManager {
         IOddzOption.OptionType _type;
     }
 
+    struct OptionParams{
+        uint256 _id;
+        address _holder;
+        uint256 _profit;
+        bytes32 _primary;
+        bytes32 _strike;
+    }
+
     /**
      * @dev Pool transfer
      */
@@ -101,7 +109,7 @@ interface IOddzLiquidityPoolManager {
      * @param _underlying underlying asset name
      * @param _strike strike asset name
      * @param _deadline deadline until which txn does not revert
-     * @param _slippage Slippage percentage
+     * @param _minAmountsOut min output tokens
      */
     function sendUA(
         uint256 _id,
@@ -110,7 +118,7 @@ interface IOddzLiquidityPoolManager {
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline,
-        uint16 _slippage
+        uint16 _minAmountsOut
     ) external;
 
     /**
