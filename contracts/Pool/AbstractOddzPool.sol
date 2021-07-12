@@ -215,32 +215,45 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         // premium calculation should not include current day
         uint256 count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
         rewards = liquidityProvider[_provider]._premiumAllocated;
-        PremiumPool memory pd;
         for (uint256 i = 0; i < count; i++) {
-            uint256 dActiveLiquidity = daysActiveLiquidity[startDate + (i * 1 days)];
-            require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
-            pd = premiumDayPool[startDate + (i * 1 days)];
-            uint256 tReward = pd._collected + pd._surplus;
+            (rewards, isNegative) = _getUserPremiumPerDay(startDate + (i * 1 days), rewards, isNegative, _provider);
+        }
+    }
 
-            if (liquidityProvider[_provider]._isNegativePremium) {
-                if (pd._exercised + rewards > tReward)
-                    rewards += (((pd._exercised - tReward) * liquidityProvider[_provider]._amount) / dActiveLiquidity);
-                else {
-                    rewards =
-                        (((tReward - pd._exercised) * liquidityProvider[_provider]._amount) / dActiveLiquidity) -
-                        rewards;
-                    isNegative = false;
-                }
-            } else {
-                if (pd._exercised > tReward + rewards) {
-                    rewards =
-                        (((pd._exercised - tReward) * liquidityProvider[_provider]._amount) / dActiveLiquidity) -
-                        rewards;
-                    isNegative = true;
-                } else
-                    rewards += (((tReward - pd._exercised) * liquidityProvider[_provider]._amount) / dActiveLiquidity);
+    function _getUserPremiumPerDay(
+        uint256 _date,
+        uint256 _rewards,
+        bool _isNegative,
+        address _provider
+    ) private view returns (uint256, bool) {
+        uint256 dActiveLiquidity = daysActiveLiquidity[_date];
+        require(dActiveLiquidity > 0, "LP Error: invalid day active liquidity");
+        PremiumPool memory pd = premiumDayPool[_date];
+        uint256 newReward;
+        bool isNegativeReward;
+        if (pd._exercised > (pd._collected + pd._surplus)) {
+            newReward = pd._exercised - (pd._collected + pd._surplus);
+            isNegativeReward = true;
+        } else newReward = pd._collected + pd._surplus - pd._exercised;
+
+        newReward = (newReward * liquidityProvider[_provider]._amount) / dActiveLiquidity;
+
+        if (liquidityProvider[_provider]._isNegativePremium) {
+            if (isNegativeReward) _rewards += newReward;
+            else if (_rewards > newReward) _rewards -= newReward;
+            else {
+                _rewards = newReward - _rewards;
+                _isNegative = false;
+            }
+        } else {
+            if (!isNegativeReward) _rewards += newReward;
+            else if (_rewards >= newReward) _rewards -= newReward;
+            else {
+                _rewards = newReward - _rewards;
+                _isNegative = true;
             }
         }
+        return (_rewards, _isNegative);
     }
 
     /**
