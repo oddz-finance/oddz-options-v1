@@ -153,7 +153,7 @@ abstract contract AbstractTokenStaking is Ownable, IOddzTokenStaking {
      * @param _staker Address of the staker
      * @param _amount Amount to burn and transfer
      */
-    function _unstake(address _staker, uint256 _amount) internal {
+    function _unstake(address _staker, uint256 _amount) internal onlyOwner {
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         _allocateStakerRewards(_staker, date);
         // subtract amount from existing stake and reset date and last claimed

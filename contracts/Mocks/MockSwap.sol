@@ -65,8 +65,8 @@ contract MockSwap is ISwapUnderlyingAsset, AccessControl {
         address _toToken,
         address _account,
         uint256 _amountIn,
-        uint256 _deadline,
-        uint16 _slippage
+        uint256 _amountOutMin,
+        uint256 _deadline
     ) public override onlyManager(msg.sender) returns (uint256[] memory result) {
         result = new uint256[](2);
         require(assets[_toToken] != "", "Swap Error: asset not added for swap");

@@ -48,11 +48,6 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     uint32 public maxDeadline;
 
     /**
-     * @dev Max Slippage
-     */
-    uint16 public maxSlippage = 500;
-
-    /**
      * @dev SDK contract address
      */
     IOddzSDK public sdk;
@@ -394,15 +389,14 @@ contract OddzOptionManager is IOddzOption, AccessControl {
      * @notice Used for physical settlement excerise for an active option
      * @param _optionId Option id
      * @param _deadline Deadline until which txn does not revert
-     * @param _slippage Slippage percentage
+     * @param _minAmountOut Min output tokens
      */
     function exerciseUA(
         uint256 _optionId,
         uint32 _deadline,
-        uint16 _slippage
+        uint16 _minAmountOut
     ) external override {
         require(_deadline <= maxDeadline, "Deadline input is more than maximum limit allowed");
-        require(_slippage <= maxSlippage, "Slippage input is more than maximum limit allowed");
         Option storage option = options[_optionId];
         require(option.expiration >= block.timestamp, "Option has expired");
         require(option.holder == msg.sender, "Invalid Caller");
@@ -411,7 +405,8 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         option.state = State.Exercised;
         (uint256 profit, uint256 settlementFee) = _getProfit(_optionId);
         IOddzAsset.AssetPair memory pair = assetManager.getPair(option.pair);
-        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _slippage);
+
+        pool.sendUA(_optionId, option.holder, profit, pair._primary, pair._strike, _deadline, _minAmountOut);
 
         emit Exercise(_optionId, profit, settlementFee, ExcerciseType.Physical);
     }
@@ -575,23 +570,23 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     /**
      * @notice transfer transaction fee to beneficiary
      */
-    function transferTxnFeeToBeneficiary() external {
+    function transferTxnFeeToBeneficiary(uint256 _minAmountsOut) external onlyOwner(msg.sender) {
         uint256 txnFee = txnFeeAggregate;
         txnFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction);
+        administrator.deposit(txnFee, IOddzAdministrator.DepositType.Transaction, _minAmountsOut);
     }
 
     /**
      * @notice transfer settlement fee to beneficiary
      */
-    function transferSettlementFeeToBeneficiary() external {
+    function transferSettlementFeeToBeneficiary(uint256 _minAmountsOut) external onlyOwner(msg.sender) {
         uint256 settlementFee = settlementFeeAggregate;
         settlementFeeAggregate = 0;
 
         require(address(administrator) != address(0), "invalid administrator address");
-        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement);
+        administrator.deposit(settlementFee, IOddzAdministrator.DepositType.Settlement, _minAmountsOut);
     }
 
     /**

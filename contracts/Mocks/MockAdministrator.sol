@@ -13,7 +13,11 @@ contract MockAdministrator is IOddzAdministrator {
         token = _token;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) external override {
+    function deposit(
+        uint256 _amount,
+        DepositType _depositType,
+        uint256 _minAmountsOut
+    ) external override {
         token.safeTransferFrom(msg.sender, address(this), _amount);
         emit Deposit(msg.sender, _depositType, _amount);
     }

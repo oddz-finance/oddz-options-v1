@@ -43,7 +43,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
      */
     IDexManager public dexManager;
     uint256 public deadline = 1 minutes;
-    uint16 public slippage = 1;
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
@@ -113,11 +112,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         deadline = _deadline;
     }
 
-    function updateSlippage(uint16 _slippage) external onlyOwner(msg.sender) {
-        require(_slippage > 0 && _slippage <= 1000, "Administrator: invalid slippage");
-        slippage = _slippage;
-    }
-
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyTimeLocker(msg.sender) {
         require(
             (_txnDP.developer + _txnDP.gasless + _txnDP.maintainer + _txnDP.staker) == 100,
@@ -137,7 +131,11 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         settlementDistribution = _settlementDP;
     }
 
-    function deposit(uint256 _amount, DepositType _depositType) external override {
+    function deposit(
+        uint256 _amount,
+        DepositType _depositType,
+        uint256 _minAmountsOut
+    ) external override {
         require(_amount >= minimumAmount, "Administrator: amount is low for deposit");
 
         uint256 usdcAmount;
@@ -146,7 +144,7 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         else usdcAmount = (_amount * (settlementDistribution.gasless + settlementDistribution.maintainer)) / 100;
 
         uint256 oddzAmount = _amount - usdcAmount;
-        convertToOddz(oddzAmount);
+        convertToOddz(oddzAmount, _minAmountsOut);
 
         if (_depositType == DepositType.Transaction) distrbuteTxn(_amount, oddzAmount);
         else distrbuteSettlement(_amount, oddzAmount);
@@ -154,12 +152,12 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
         emit Deposit(msg.sender, _depositType, _amount);
     }
 
-    function convertToOddz(uint256 _amount) private {
+    function convertToOddz(uint256 _amount, uint256 _minAmountsOut) private {
         address exchange = dexManager.getExchange("ODDZ", "USD");
         // Transfer Funds
         usdcToken.safeTransferFrom(msg.sender, exchange, _amount);
         // block.timestamp + deadline --> deadline from the current block
-        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, block.timestamp + deadline, slippage);
+        dexManager.swap("USD", "ODDZ", exchange, address(this), _amount, _minAmountsOut, block.timestamp + deadline);
     }
 
     function distrbuteTxn(uint256 _totalAmount, uint256 _oddzShare) private {
