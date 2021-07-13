@@ -111,22 +111,6 @@ export function shouldBehaveLikeOddzAdministrator(): void {
     expect(await oddzAdministrator.deadline()).to.equal(30 * 60);
   });
 
-  it("should revert update slippage for non owner", async function () {
-    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
-    await expect(oddzAdministrator.updateSlippage(60)).to.be.revertedWith("revert caller has no access to the method");
-  });
-
-  it("should revert update slippage for invalid value", async function () {
-    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
-    await expect(oddzAdministrator.updateSlippage(1001)).to.be.revertedWith("Administrator: invalid slippage");
-  });
-
-  it("should update slippage", async function () {
-    const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin);
-    await oddzAdministrator.updateSlippage(1000);
-    expect(await oddzAdministrator.slippage()).to.equal(1000);
-  });
-
   it("should revert update txn distribution for non owner", async function () {
     const oddzAdministrator = await this.oddzAdministrator.connect(this.signers.admin1);
     const distribution: DistributionPercentage = {

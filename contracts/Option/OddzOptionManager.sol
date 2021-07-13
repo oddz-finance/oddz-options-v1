@@ -48,11 +48,6 @@ contract OddzOptionManager is IOddzOption, AccessControl {
     uint32 public maxDeadline;
 
     /**
-     * @dev Max Slippage
-     */
-    uint16 public maxSlippage = 500;
-
-    /**
      * @dev SDK contract address
      */
     IOddzSDK public sdk;

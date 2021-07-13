@@ -43,7 +43,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
      */
     IDexManager public dexManager;
     uint256 public deadline = 1 minutes;
-    uint16 public slippage = 1;
 
     modifier onlyOwner(address _address) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _address), "caller has no access to the method");
@@ -111,11 +110,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     function updateDeadline(uint256 _deadline) external onlyOwner(msg.sender) {
         require(_deadline >= 1 minutes && _deadline <= 30 minutes, "Administrator: invalid deadline");
         deadline = _deadline;
-    }
-
-    function updateSlippage(uint16 _slippage) external onlyOwner(msg.sender) {
-        require(_slippage > 0 && _slippage <= 1000, "Administrator: invalid slippage");
-        slippage = _slippage;
     }
 
     function updateTxnDistribution(DistributionPercentage memory _txnDP) external onlyTimeLocker(msg.sender) {
