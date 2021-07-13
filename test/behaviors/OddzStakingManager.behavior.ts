@@ -663,6 +663,18 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     ).to.be.revertedWith("revert caller has no access to the method");
   });
 
+  it("Should revert setting reward percentages for invalid arrays", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.setRewardPercentages(
+        [this.oddzToken.address, this.oUsdToken.address],
+        [70],
+        [60, 40],
+        [20, 80],
+      ),
+    ).to.be.revertedWith("Staking: invalid input of rewards");
+  });
+
   it("Should revert setting rewards reward percentages for invalid token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(
@@ -774,5 +786,20 @@ export function shouldBehaveLikeOddzStakingManager(): void {
         50,
       ),
     ).to.be.revertedWith("Staking: invalid staking duration");
+  });
+
+  it("Should revert adding token for invalid staking contract", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.addToken(
+        oddzStakingManager.address,
+        this.accounts.admin,
+        getExpiry(1),
+        getExpiry(1),
+        50,
+        70,
+        50,
+      ),
+    ).to.be.revertedWith("Staking: invalid staking contract address");
   });
 }

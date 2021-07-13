@@ -14,7 +14,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
     using SafeERC20 for IERC20;
 
     bytes32 public constant TIMELOCKER_ROLE = keccak256("TIMELOCKER_ROLE");
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     IERC20Extented public usdcToken;
     IERC20 public oddzToken;
@@ -91,15 +90,6 @@ contract OddzAdministrator is IOddzAdministrator, AccessControl {
 
     function removeTimeLocker(address _address) external {
         revokeRole(TIMELOCKER_ROLE, _address);
-    }
-
-    function setManager(address _address) external {
-        require(_address != address(0), "Invalid manager address");
-        grantRole(MANAGER_ROLE, _address);
-    }
-
-    function removeManager(address _address) external {
-        revokeRole(MANAGER_ROLE, _address);
     }
 
     function changeGaslessFacilitator(address _gaslessFacilitator) external onlyOwner(msg.sender) {
