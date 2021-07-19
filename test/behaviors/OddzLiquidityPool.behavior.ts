@@ -1663,7 +1663,7 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
-  
+
   it("should successfully get the balance of the liquidity provider", async function () {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     await liquidityManager.addLiquidity(
@@ -1675,5 +1675,29 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
 
     const amount = await this.oddzDefaultPool.connect(this.signers.admin).getBalance(this.accounts.admin);
     expect(amount).to.equal(1000000000);
+  });
+
+  it("should be able to successfully remove the liquidity", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    await liquidityManager.removeLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("0.000001")),
+    );
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
 }
