@@ -1663,4 +1663,17 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
+  
+  it("should successfully get the balance of the liquidity provider", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("0.000000001")),
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+
+    const amount = await this.oddzDefaultPool.connect(this.signers.admin).getBalance(this.accounts.admin);
+    expect(amount).to.equal(1000000000);
+  });
 }
