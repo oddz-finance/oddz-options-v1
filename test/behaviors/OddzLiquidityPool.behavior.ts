@@ -1576,4 +1576,91 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
         utils.formatBytes32String("B_S"),
       );
   });
+
+  it("should distribute the negative reward to the LPs", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+
+    // First loss to the LPool.
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+
+    // Second loss to the LPool.
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 1)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    const { rewards, isNegative } = await this.oddzDefaultPool
+      .connect(this.signers.admin)
+      .getPremium(this.accounts.admin);
+
+    expect(rewards).to.equal("1980000000000");
+    expect(isNegative).to.equal(true);
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
+
+  it("should revert with invalid day active liquidity if we try to query for wrong day liquidity", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+
+    // First loss to the LPool.
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+
+    // Second loss to the LPool.
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 1)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    // third loss to the LPool.
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 2)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    await expect(this.oddzDefaultPool.connect(this.signers.admin).getPremium(this.accounts.admin)).to.be.revertedWith(
+      "invalid day active liquidity",
+    );
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
 }
