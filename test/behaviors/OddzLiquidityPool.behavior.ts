@@ -1816,4 +1816,46 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
   });
+
+  it("should revert if try to withdraw profits when negative premium is generated", async function () {
+    const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
+    const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+    );
+    await liquidityManager.setManager(this.mockOptionManager.address);
+    await expect(mockOptionManager.send(this.accounts.admin, 10000000000000, 0)).to.emit(this.oddzDefaultPool, "Loss");
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(2)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(2));
+
+    await expect(
+      liquidityManager.removeLiquidity(
+        this.accounts.admin,
+        this.oddzDefaultPool.address,
+        BigNumber.from(utils.parseEther(this.transferTokenAmout)),
+      ),
+    ).to.be.revertedWith("LP Error: Not enough funds in the pool. Please lower the amount.");
+
+    const { rewards, isNegative } = await this.oddzDefaultPool
+      .connect(this.signers.admin)
+      .getPremium(this.accounts.admin);
+
+    expect(rewards).to.equal("990000000000");
+    expect(isNegative).to.equal(true);
+
+    await provider.send("evm_snapshot", []);
+    await provider.send("evm_increaseTime", [getExpiry(14)]);
+    await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(14));
+
+    await expect(liquidityManager.withdrawProfits(this.oddzDefaultPool.address)).to.be.revertedWith(
+      "No premium allocated",
+    );
+
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+    await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
+  });
 }
