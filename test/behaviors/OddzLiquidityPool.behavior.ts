@@ -1705,7 +1705,11 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
 
-    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, BigNumber.from(utils.parseEther("1000000")));
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("1000000")),
+    );
 
     await liquidityManager.setManager(this.mockOptionManager.address);
 
@@ -1732,8 +1736,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await mockOptionManager.unlock(2);
     await expect(mockOptionManager.send(this.accounts.admin, 2000000, 4)).to.emit(this.oddzDefaultPool, "Profit");
     await expect(mockOptionManager.send(this.accounts.admin, 2000000, 5)).to.emit(this.oddzDefaultPool, "Profit");
-    
-    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, BigNumber.from(utils.parseEther("500000")));
+
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("500000")),
+    );
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(1)]);
@@ -1753,8 +1761,12 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     const liquidityManager = await this.oddzLiquidityPoolManager.connect(this.signers.admin);
     const mockOptionManager = await this.mockOptionManager.connect(this.signers.admin);
 
-    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, BigNumber.from(utils.parseEther("5000")));
-    
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("5000")),
+    );
+
     await liquidityManager.setManager(this.mockOptionManager.address);
 
     await provider.send("evm_snapshot", []);
@@ -1772,27 +1784,34 @@ export function shouldBehaveLikeOddzLiquidityPool(): void {
     await expect(mockOptionManager.send(this.accounts.admin, 1000000000, 7)).to.emit(this.oddzDefaultPool, "Profit");
     await expect(mockOptionManager.send(this.accounts.admin, 1000000000, 8)).to.emit(this.oddzDefaultPool, "Profit");
     await expect(mockOptionManager.send(this.accounts.admin, 1000000000, 9)).to.emit(this.oddzDefaultPool, "Profit");
-    
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(1)]);
 
     await this.oddzDefaultPool.connect(this.signers.admin).getDaysActiveLiquidity(addDaysAndGetSeconds(1));
 
-    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, BigNumber.from(utils.parseEther("500000")));
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("500000")),
+    );
 
     await expect(mockOptionManager.send(this.accounts.admin, 100000000000, 10)).to.emit(this.oddzDefaultPool, "Loss");
 
     await provider.send("evm_snapshot", []);
     await provider.send("evm_increaseTime", [getExpiry(1)]);
 
-    await liquidityManager.addLiquidity(this.accounts.admin, this.oddzDefaultPool.address, BigNumber.from(utils.parseEther("500000")));
+    await liquidityManager.addLiquidity(
+      this.accounts.admin,
+      this.oddzDefaultPool.address,
+      BigNumber.from(utils.parseEther("500000")),
+    );
 
     const { rewards, isNegative } = await this.oddzDefaultPool.getPremium(this.accounts.admin);
 
     expect(rewards).to.equal("0");
     expect(isNegative).to.equal(false);
-    
+
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
     await provider.send("evm_revert", [utils.hexStripZeros(utils.hexlify(addSnapshotCount()))]);
