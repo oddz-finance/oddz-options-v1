@@ -92,6 +92,15 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     expect(provider._amount).to.equal(liquidity.mul(60).div(100));
   });
 
+  it("should revert create strategy for invalid pools", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    const liquidity = BigNumber.from(utils.parseEther("1000"));
+
+    await expect(
+      oddzStrategyManager.createStrategy([this.accounts.admin, this.accounts.admin1], [60, 40], liquidity),
+    ).to.be.revertedWith("Strategy Error: Invalid pool");
+  });
+
   it("should add liquidity to the existing strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
