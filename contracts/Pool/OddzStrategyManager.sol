@@ -69,6 +69,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             poolManager.removeLiquidity(msg.sender, pools[i], poolsLiquidity[i]);
             totalAmount += poolsLiquidity[i];
         }
+        _strategy.removeLiquidity(msg.sender);
 
         emit RemovedLiquidity(address(_strategy), msg.sender, totalAmount);
     }

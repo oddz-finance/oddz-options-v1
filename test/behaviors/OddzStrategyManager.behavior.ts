@@ -318,4 +318,60 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       "SM Error: one or more pools have less liquidity",
     );
   });
+  it("should revert remove liquidity from the invalid contract", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await expect(oddzStrategyManager.removeLiquidity(this.accounts.admin)).to.be.revertedWith(
+      "SM Error: strategy is not contract address",
+    );
+  });
+  it("should change strategy for multiple pools", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    const liquidity = BigNumber.from(utils.parseEther("1000"));
+
+    await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+    );
+
+    await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
+      [60, 40],
+      liquidity,
+    );
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
+    const oldStrategy = await oddzStrategyManager.latestStrategy();
+
+    const liquidity1 = BigNumber.from(utils.parseEther("10000"));
+    await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
+
+    await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
+      [60, 40],
+      liquidity1,
+    );
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
+    const newStrategy = await oddzStrategyManager.latestStrategy();
+
+    await this.usdcToken.transfer(this.accounts.admin1, liquidity);
+    await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
+
+    await expect(
+      this.oddzLiquidityPoolManager
+        .connect(this.signers.admin1)
+        .addLiquidity(this.accounts.admin1, oddzDefaultPool.address, liquidity),
+    ).to.emit(oddzDefaultPool, "AddLiquidity");
+    await expect(
+      this.oddzLiquidityPoolManager.removeLiquidity(
+        this.accounts.admin,
+        oddzDefaultPool.address,
+        BigNumber.from(utils.parseEther("1000")),
+      ),
+    ).to.emit(oddzDefaultPool, "RemoveLiquidity");
+
+    await expect(oddzStrategyManager.changeStrategy(oldStrategy, newStrategy)).to.emit(
+      oddzStrategyManager,
+      "ChangedStrategy",
+    );
+  });
 }
