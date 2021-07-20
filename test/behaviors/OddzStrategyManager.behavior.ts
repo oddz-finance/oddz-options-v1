@@ -4,8 +4,9 @@ import { getExpiry, OptionType, PoolTransfer, addSnapshotCount } from "../../tes
 import { waffle } from "hardhat";
 import OddzDefaultPoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
 import OddzEthUsdCallBS1PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS1Pool.json";
+import OddzEthUsdCallBS2PoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzEthUsdCallBS2Pool.json";
 
-import { OddzDefaultPool, OddzEthUsdCallBS1Pool } from "../../typechain";
+import { OddzDefaultPool, OddzEthUsdCallBS1Pool, OddzEthUsdCallBS2Pool } from "../../typechain";
 
 const { deployContract, provider } = waffle;
 
@@ -16,9 +17,15 @@ const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) 
     OddzEthUsdCallBS1PoolArtifact,
     [],
   )) as OddzEthUsdCallBS1Pool;
+  const oddzEthUsdCallBS2Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS2PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS2Pool;
 
   await oddzDefaultPool.transferOwnership(oddzLiquidityPoolManager.address);
   await oddzEthUsdCallBS1Pool.transferOwnership(oddzLiquidityPoolManager.address);
+  await oddzEthUsdCallBS2Pool.transferOwnership(oddzLiquidityPoolManager.address);
 
   // ETH Call
   await oddzLiquidityPoolManager
@@ -26,6 +33,7 @@ const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) 
     .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
       oddzDefaultPool.address,
       oddzEthUsdCallBS1Pool.address,
+      oddzEthUsdCallBS2Pool.address,
     ]);
   await oddzLiquidityPoolManager
     .connect(admin)
@@ -51,6 +59,7 @@ const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) 
   return {
     oddzDefaultPool: oddzDefaultPool,
     oddzEthUsdCallBS1Pool: oddzEthUsdCallBS1Pool,
+    oddzEthUsdCallBS2Pool: oddzEthUsdCallBS2Pool,
   };
 };
 
@@ -338,16 +347,12 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity = BigNumber.from(utils.parseEther("1000"));
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool, oddzEthUsdCallBS2Pool } = await addPoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
 
-    await oddzStrategyManager.createStrategy(
-      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-      [60, 40],
-      liquidity,
-    );
+    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], liquidity);
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
     const oldStrategy = await oddzStrategyManager.latestStrategy();
 
@@ -355,7 +360,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
 
     await oddzStrategyManager.createStrategy(
-      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
+      [oddzEthUsdCallBS1Pool.address, oddzEthUsdCallBS2Pool.address],
       [60, 40],
       liquidity1,
     );
@@ -365,18 +370,12 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     await this.usdcToken.transfer(this.accounts.admin1, liquidity);
     await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
 
-    await expect(
-      this.oddzLiquidityPoolManager
+    await this.oddzLiquidityPoolManager
+      .connect(this.signers.admin1)
+      .addLiquidity(this.accounts.admin1, oddzDefaultPool.address, liquidity.div(2)),
+      await this.oddzLiquidityPoolManager
         .connect(this.signers.admin1)
-        .addLiquidity(this.accounts.admin1, oddzDefaultPool.address, liquidity),
-    ).to.emit(oddzDefaultPool, "AddLiquidity");
-    await expect(
-      this.oddzLiquidityPoolManager.removeLiquidity(
-        this.accounts.admin,
-        oddzDefaultPool.address,
-        BigNumber.from(utils.parseEther("1000")),
-      ),
-    ).to.emit(oddzDefaultPool, "RemoveLiquidity");
+        .addLiquidity(this.accounts.admin1, oddzEthUsdCallBS2Pool.address, liquidity.div(2));
 
     await expect(oddzStrategyManager.changeStrategy(oldStrategy, newStrategy)).to.emit(
       oddzStrategyManager,
