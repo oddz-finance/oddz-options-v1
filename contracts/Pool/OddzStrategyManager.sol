@@ -15,11 +15,19 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
 
     modifier validStrategy(IOddzWriteStrategy _strategy) {
         require(address(_strategy).isContract(), "SM Error: strategy is not contract address");
+        _validPools(_strategy);
         _;
     }
 
     constructor(IOddzLiquidityPoolManager _poolManager) {
         poolManager = _poolManager;
+    }
+
+    function _validPools(IOddzWriteStrategy _strategy) private view {
+        IOddzLiquidityPool[] memory pools = _strategy.getPools();
+        for (uint256 i = 0; i < pools.length; i++) {
+            require(poolManager.poolExposure(pools[i]) > 0, "Strategy Error: Invalid pool");
+        }
     }
 
     function createStrategy(
