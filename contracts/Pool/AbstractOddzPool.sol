@@ -215,6 +215,7 @@ abstract contract AbstractOddzPool is Ownable, IOddzLiquidityPool {
         // premium calculation should not include current day
         uint256 count = (DateTimeLibrary.getPresentDayTimestamp() - startDate) / 1 days;
         rewards = liquidityProvider[_provider]._premiumAllocated;
+        isNegative = liquidityProvider[_provider]._isNegativePremium;
         for (uint256 i = 0; i < count; i++) {
             (rewards, isNegative) = _getUserPremiumPerDay(startDate + (i * 1 days), rewards, isNegative, _provider);
         }
