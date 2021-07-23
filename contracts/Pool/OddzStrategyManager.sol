@@ -139,6 +139,9 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             IOddzLiquidityPoolManager.PoolTransfer(oldPools, _new.getPools(), oldBalances, newBalances);
         poolManager.move(msg.sender, poolTransfer);
 
+        _old.removeLiquidity(msg.sender);
+        _new.addLiquidity(msg.sender, liquidity);
+
         emit ChangedStrategy(address(_old), address(_new), msg.sender);
     }
 }
