@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, utils, ContractTransaction, ContractReceipt } from "ethers";
 import { getExpiry, OptionType, PoolTransfer, addSnapshotCount } from "../../test-utils";
 import { waffle } from "hardhat";
 import OddzDefaultPoolArtifact from "../../artifacts/contracts/Pool/OddzPools.sol/OddzDefaultPool.json";
@@ -170,15 +170,21 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
+    const tx: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address, oddzEthUsdCallBS2Pool.address],
       [60, 30, 10],
       liquidity,
     );
+    let strategy: any;
+
+    const receipt: ContractReceipt = await tx.wait();
+    receipt.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        strategy = data.args._strategy;
+      }
+    });
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const strategy = await oddzStrategyManager.latestStrategy();
-
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
     await expect(oddzStrategyManager.addLiquidity(strategy, liquidity)).to.emit(oddzStrategyManager, "AddedLiquidity");
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.mul(2));
@@ -195,14 +201,22 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
+
+    const tx: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
       [60, 40],
       liquidity,
     );
+    let strategy: any;
+
+    const receipt: ContractReceipt = await tx.wait();
+    receipt.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        strategy = data.args._strategy;
+      }
+    });
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const strategy = await oddzStrategyManager.latestStrategy();
     await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity.div(2))).to.emit(
       oddzStrategyManager,
       "RemovedLiquidity",
@@ -218,14 +232,21 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
+    const tx: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
       [60, 40],
       liquidity,
     );
+    let strategy: any;
+
+    const receipt: ContractReceipt = await tx.wait();
+    receipt.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        strategy = data.args._strategy;
+      }
+    });
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const strategy = await oddzStrategyManager.latestStrategy();
 
     await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity.add(1))).to.be.revertedWith(
       "SM Error: Amount too large",
@@ -240,14 +261,21 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
+    const tx: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
       [60, 40],
       liquidity,
     );
+    let strategy: any;
+
+    const receipt: ContractReceipt = await tx.wait();
+    receipt.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        strategy = data.args._strategy;
+      }
+    });
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const strategy = await oddzStrategyManager.latestStrategy();
 
     await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity)).to.be.revertedWith(
       "LP Error: Not enough funds in the pool. Please lower the amount",
@@ -262,14 +290,21 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy(
+    const tx: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
       [60, 40],
       liquidity,
     );
+    let strategy: any;
+
+    const receipt: ContractReceipt = await tx.wait();
+    receipt.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        strategy = data.args._strategy;
+      }
+    });
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const strategy = await oddzStrategyManager.latestStrategy();
     await this.usdcToken.transfer(this.accounts.admin1, liquidity);
 
     await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
@@ -300,9 +335,21 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], liquidity);
+    const tx1: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address],
+      [100],
+      liquidity,
+    );
+    let oldStrategy: any;
+
+    const receipt1: ContractReceipt = await tx1.wait();
+    receipt1.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        oldStrategy = data.args._strategy;
+      }
+    });
+
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const oldStrategy = await oddzStrategyManager.latestStrategy();
 
     await provider.send("evm_snapshot", []);
     // execution day + 7
@@ -310,9 +357,20 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity1 = BigNumber.from(utils.parseEther("10000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
 
-    await oddzStrategyManager.createStrategy([oddzEthUsdCallBS1Pool.address], [100], liquidity1);
+    const tx2: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzEthUsdCallBS1Pool.address],
+      [100],
+      liquidity1,
+    );
+    let newStrategy: any;
+
+    const receipt2: ContractReceipt = await tx2.wait();
+    receipt2.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        newStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
-    const newStrategy = await oddzStrategyManager.latestStrategy();
 
     await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
     await this.usdcToken.transfer(this.accounts.admin1, liquidity);
@@ -337,16 +395,38 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], liquidity);
+    const tx1: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address],
+      [100],
+      liquidity,
+    );
+    let oldStrategy: any;
+
+    const receipt1: ContractReceipt = await tx1.wait();
+    receipt1.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        oldStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const oldStrategy = await oddzStrategyManager.latestStrategy();
 
     const liquidity1 = BigNumber.from(utils.parseEther("10000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
 
-    await oddzStrategyManager.createStrategy([oddzEthUsdCallBS1Pool.address], [100], liquidity1);
+    const tx2: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzEthUsdCallBS1Pool.address],
+      [100],
+      liquidity1,
+    );
+    let newStrategy: any;
+
+    const receipt2: ContractReceipt = await tx2.wait();
+    receipt2.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        newStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
-    const newStrategy = await oddzStrategyManager.latestStrategy();
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
 
@@ -376,16 +456,38 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
-    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], liquidity);
+    const tx1: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address],
+      [100],
+      liquidity,
+    );
+    let oldStrategy: any;
+
+    const receipt1: ContractReceipt = await tx1.wait();
+    receipt1.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        oldStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const oldStrategy = await oddzStrategyManager.latestStrategy();
 
     const liquidity1 = BigNumber.from(utils.parseEther("10000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
 
-    await oddzStrategyManager.createStrategy([oddzEthUsdCallBS1Pool.address], [100], liquidity1);
+    const tx2: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzEthUsdCallBS1Pool.address],
+      [100],
+      liquidity1,
+    );
+    let newStrategy: any;
+
+    const receipt2: ContractReceipt = await tx2.wait();
+    receipt2.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        newStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
-    const newStrategy = await oddzStrategyManager.latestStrategy();
 
     await this.usdcToken.transfer(this.accounts.admin1, liquidity);
     await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
@@ -411,7 +513,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     await expect(
       oddzStrategyManager.removeLiquidity(this.accounts.admin, BigNumber.from(utils.parseEther("1000"))),
-    ).to.be.revertedWith("SM Error: strategy is not contract address");
+    ).to.be.revertedWith("SM Error: invalid strategy");
   });
   it("should change strategy for multiple pools", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
@@ -423,20 +525,38 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       this.oddzLiquidityPoolManager,
     );
 
-    await oddzStrategyManager.createStrategy([oddzDefaultPool.address], [100], liquidity);
+    const tx1: ContractTransaction = await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address],
+      [100],
+      liquidity,
+    );
+    let oldStrategy: any;
+
+    const receipt1: ContractReceipt = await tx1.wait();
+    receipt1.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        oldStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    const oldStrategy = await oddzStrategyManager.latestStrategy();
 
     const liquidity1 = BigNumber.from(utils.parseEther("10000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity1);
 
-    await oddzStrategyManager.createStrategy(
+    const tx2: ContractTransaction = await oddzStrategyManager.createStrategy(
       [oddzEthUsdCallBS1Pool.address, oddzEthUsdCallBS2Pool.address],
       [60, 40],
       liquidity1,
     );
+    let newStrategy: any;
+
+    const receipt2: ContractReceipt = await tx2.wait();
+    receipt2.events?.filter((data: any) => {
+      if (data.event == "CreatedStrategy") {
+        newStrategy = data.args._strategy;
+      }
+    });
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.add(liquidity1));
-    const newStrategy = await oddzStrategyManager.latestStrategy();
 
     await this.usdcToken.transfer(this.accounts.admin1, liquidity);
     await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
