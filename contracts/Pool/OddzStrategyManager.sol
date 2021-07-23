@@ -48,38 +48,46 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         uint256[] memory shares = _strategy.getShares();
         uint256 count;
         uint256 amountDistributed;
-        uint256[] memory liquidityShare = new uint256[](pools.length);
         for (uint256 i = 0; i < pools.length; i++) {
             uint256 amountToDistribute;
             count++;
             if (count == pools.length) {
-                // distribute remaining liquidity to last pool
+                // remove remaining liquidity from last pool
                 amountToDistribute = _amount - amountDistributed;
             } else {
                 amountToDistribute = (_amount * shares[i]) / 100;
             }
-            liquidityShare[i] = amountToDistribute;
             amountDistributed += amountToDistribute;
             poolManager.addLiquidity(msg.sender, pools[i], amountToDistribute);
         }
-        _strategy.addLiquidity(msg.sender, liquidityShare);
+        _strategy.addLiquidity(msg.sender, _amount);
 
         emit AddedLiquidity(address(_strategy), msg.sender, _amount);
     }
 
     function removeLiquidity(IOddzWriteStrategy _strategy) external override validStrategy(_strategy) {
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
-        uint256[] memory poolsLiquidity = _strategy.getPoolsLiquidity(msg.sender);
-        uint256 totalAmount;
+        uint256[] memory shares = _strategy.getShares();
+        uint256 liquidity = _strategy.userLiquidity(msg.sender);
+        uint256 liquidityRemoved;
+        uint256 count;
         for (uint256 i = 0; i < pools.length; i++) {
             uint256 balance = pools[i].getBalance(msg.sender);
-            require(balance >= poolsLiquidity[i], "SM Error: one or more pools have less liquidity");
-            poolManager.removeLiquidity(msg.sender, pools[i], poolsLiquidity[i]);
-            totalAmount += poolsLiquidity[i];
+            uint256 amountToRemove;
+            count++;
+            if (count == pools.length) {
+                // remove remaining liquidity from last pool
+                amountToRemove = liquidity - liquidityRemoved;
+            } else {
+                amountToRemove = (liquidity * shares[i]) / 100;
+            }
+            require(balance >= amountToRemove, "SM Error: one or more pools have less liquidity");
+            poolManager.removeLiquidity(msg.sender, pools[i], amountToRemove);
+            liquidityRemoved += amountToRemove;
         }
         _strategy.removeLiquidity(msg.sender);
 
-        emit RemovedLiquidity(address(_strategy), msg.sender, totalAmount);
+        emit RemovedLiquidity(address(_strategy), msg.sender, liquidity);
     }
 
     function changeStrategy(IOddzWriteStrategy _old, IOddzWriteStrategy _new)
@@ -88,33 +96,46 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         validStrategy(_old)
         validStrategy(_new)
     {
-        uint256 totalAmount;
         IOddzLiquidityPool[] memory oldPools = _old.getPools();
-        uint256[] memory poolsLiquidity = _old.getPoolsLiquidity(msg.sender);
+        uint256[] memory oldShares = _old.getShares();
+        uint256 liquidity = _old.userLiquidity(msg.sender);
+        uint256[] memory oldBalances = new uint256[](oldPools.length);
+
+        uint256 liquidityRemoved;
+        uint256 count;
         for (uint256 i = 0; i < oldPools.length; i++) {
             uint256 balance = oldPools[i].getBalance(msg.sender);
-            require(balance >= poolsLiquidity[i], "SM Error: one or more pools have less liquidity");
-            totalAmount += poolsLiquidity[i];
+            uint256 amountToRemove;
+            count++;
+            if (count == oldPools.length) {
+                // distribute remaining liquidity to last pool
+                amountToRemove = liquidity - liquidityRemoved;
+            } else {
+                amountToRemove = (liquidity * oldShares[i]) / 100;
+            }
+            require(balance >= amountToRemove, "SM Error: one or more pools have less liquidity");
+            oldBalances[i] = amountToRemove;
+            liquidityRemoved += amountToRemove;
         }
         uint256[] memory newPoolsShares = _new.getShares();
         uint256[] memory newBalances = new uint256[](newPoolsShares.length);
-        uint256 count = 0;
+        count = 0;
         uint256 amountDistributed;
         for (uint256 i = 0; i < newPoolsShares.length; i++) {
             uint256 amountToDistribute;
             count++;
             if (count == newPoolsShares.length) {
                 // distribute remaining liquidity to last pool
-                amountToDistribute = totalAmount - amountDistributed;
+                amountToDistribute = liquidity - amountDistributed;
             } else {
-                amountToDistribute = (totalAmount * newPoolsShares[i]) / 100;
+                amountToDistribute = (liquidity * newPoolsShares[i]) / 100;
             }
             newBalances[i] = amountToDistribute;
             amountDistributed += amountToDistribute;
         }
 
         IOddzLiquidityPoolManager.PoolTransfer memory poolTransfer =
-            IOddzLiquidityPoolManager.PoolTransfer(oldPools, _new.getPools(), poolsLiquidity, newBalances);
+            IOddzLiquidityPoolManager.PoolTransfer(oldPools, _new.getPools(), oldBalances, newBalances);
         poolManager.move(msg.sender, poolTransfer);
 
         emit ChangedStrategy(address(_old), address(_new), msg.sender);

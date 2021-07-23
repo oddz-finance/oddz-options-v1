@@ -8,9 +8,9 @@ interface IOddzWriteStrategy {
 
     function getShares() external view returns (uint256[] memory);
 
-    function getPoolsLiquidity(address _provider) external view returns (uint256[] memory);
+    function userLiquidity(address _provider) external view returns (uint256);
 
-    function addLiquidity(address _provider, uint256[] memory _shares) external;
+    function addLiquidity(address _provider, uint256 _liquidity) external;
 
     function removeLiquidity(address _provider) external;
 }

@@ -110,7 +110,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     ).to.be.revertedWith("Strategy Error: Invalid pool");
   });
 
-  it("should add liquidity to the existing strategy", async function () {
+  it.only("should add liquidity to the existing strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
@@ -120,7 +120,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
     await oddzStrategyManager.createStrategy(
       [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
-      [60, 40],
+      [60, 30, 10],
       liquidity,
     );
 
