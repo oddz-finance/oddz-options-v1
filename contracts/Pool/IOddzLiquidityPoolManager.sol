@@ -101,7 +101,7 @@ interface IOddzLiquidityPoolManager {
      * @param _underlying underlying asset name
      * @param _strike strike asset name
      * @param _deadline deadline until which txn does not revert
-     * @param _slippage Slippage percentage
+     * @param _minAmountsOut min output tokens
      */
     function sendUA(
         uint256 _id,
@@ -110,7 +110,7 @@ interface IOddzLiquidityPoolManager {
         bytes32 _underlying,
         bytes32 _strike,
         uint32 _deadline,
-        uint16 _slippage
+        uint16 _minAmountsOut
     ) external;
 
     /**
@@ -120,5 +120,9 @@ interface IOddzLiquidityPoolManager {
      */
     function move(address _provider, PoolTransfer memory _poolTransfer) external;
 
+    /**
+     * @notice Get validity of pool
+     * @param _pool address of pool
+     */
     function poolExposure(IOddzLiquidityPool _pool) external view returns (uint256);
 }

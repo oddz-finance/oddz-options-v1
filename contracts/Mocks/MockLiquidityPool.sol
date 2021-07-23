@@ -14,7 +14,7 @@ contract MockLiquidityPool {
         address _exchange,
         address _account
     ) public {
-        dexManager.swap(_fromToken, _toToken, _exchange, _account, 100, 1000000, 1);
+        dexManager.swap(_fromToken, _toToken, _exchange, _account, 100, 1000000, 100);
     }
 
     function getExchange(bytes32 _fromToken, bytes32 _toToken) public view returns (address exchange) {

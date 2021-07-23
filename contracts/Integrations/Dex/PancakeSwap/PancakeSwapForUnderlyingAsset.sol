@@ -22,8 +22,8 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
      * @param _toToken address of the asset to swap to
      * @param _account account to send the swapped tokens to
      * @param _amountIn amount of fromTokens to swap from
+     * @param _amountOutMin min amount of output tokens
      * @param _deadline deadline timestamp for txn to be valid
-     * @param _slippage Slippage percentage
      */
 
     function swapTokensForUA(
@@ -31,18 +31,14 @@ contract PancakeSwapForUnderlyingAsset is Ownable, ISwapUnderlyingAsset {
         address _toToken,
         address _account,
         uint256 _amountIn,
-        uint256 _deadline,
-        uint16 _slippage
+        uint256 _amountOutMin,
+        uint256 _deadline
     ) public override onlyOwner returns (uint256[] memory result) {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
         ERC20(_fromToken).safeApprove(address(pancakeSwap), _amountIn);
-        // gets amount of output tokens for input tokens
-        uint256[] memory amounts = pancakeSwap.getAmountsOut(_amountIn, path);
-        // /10000 --> slippage% decimals restricted to 2 (2.55)
-        uint256 amountOutMin = amounts[amounts.length - 1] - (amounts[amounts.length - 1] * _slippage) / 10000;
-        result = pancakeSwap.swapExactTokensForTokens(_amountIn, amountOutMin, path, address(this), _deadline);
+        result = pancakeSwap.swapExactTokensForTokens(_amountIn, _amountOutMin, path, address(this), _deadline);
         // converting address to address payable
         ERC20(address(uint160(_toToken))).safeTransfer(_account, result[1]);
     }
