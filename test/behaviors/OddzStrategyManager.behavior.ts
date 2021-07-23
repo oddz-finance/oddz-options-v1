@@ -10,7 +10,7 @@ import { OddzDefaultPool, OddzEthUsdCallBS1Pool, OddzEthUsdCallBS2Pool } from ".
 
 const { deployContract, provider } = waffle;
 
-const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) => {
+const addMorePoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) => {
   const oddzDefaultPool = (await deployContract(admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
   const oddzEthUsdCallBS1Pool = (await deployContract(
     admin,
@@ -63,6 +63,51 @@ const addPoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) 
   };
 };
 
+const add2PoolsWithLiquidity = async (admin: any, oddzLiquidityPoolManager: any) => {
+  const oddzDefaultPool = (await deployContract(admin, OddzDefaultPoolArtifact, [])) as OddzDefaultPool;
+  const oddzEthUsdCallBS1Pool = (await deployContract(
+    admin,
+    OddzEthUsdCallBS1PoolArtifact,
+    [],
+  )) as OddzEthUsdCallBS1Pool;
+
+  await oddzDefaultPool.transferOwnership(oddzLiquidityPoolManager.address);
+  await oddzEthUsdCallBS1Pool.transferOwnership(oddzLiquidityPoolManager.address);
+
+  // ETH Call
+  await oddzLiquidityPoolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 1, [
+      oddzDefaultPool.address,
+      oddzEthUsdCallBS1Pool.address,
+    ]);
+  await oddzLiquidityPoolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 2, [
+      oddzDefaultPool.address,
+    ]);
+  await oddzLiquidityPoolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 7, [
+      oddzDefaultPool.address,
+    ]);
+  await oddzLiquidityPoolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 14, [
+      oddzDefaultPool.address,
+    ]);
+  await oddzLiquidityPoolManager
+    .connect(admin)
+    .mapPool("0xfcb06d25357ef01726861b30b0b83e51482db417", OptionType.Call, utils.formatBytes32String("B_S"), 30, [
+      oddzDefaultPool.address,
+    ]);
+
+  return {
+    oddzDefaultPool: oddzDefaultPool,
+    oddzEthUsdCallBS1Pool: oddzEthUsdCallBS1Pool,
+  };
+};
+
 const getPoolTransferStruct = (source: any[], destination: any[], sAmount: BigNumber[], dAmount: BigNumber[]) => {
   const poolTransfer: PoolTransfer = {
     _source: source,
@@ -93,7 +138,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -121,7 +166,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool, oddzEthUsdCallBS2Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool, oddzEthUsdCallBS2Pool } = await addMorePoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -146,7 +191,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -172,7 +217,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -194,7 +239,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -232,7 +277,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -269,7 +314,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity = BigNumber.from(utils.parseEther("1000"));
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -308,7 +353,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity = BigNumber.from(utils.parseEther("1000"));
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
@@ -354,7 +399,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     const liquidity = BigNumber.from(utils.parseEther("1000"));
 
     await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
-    const { oddzDefaultPool, oddzEthUsdCallBS1Pool, oddzEthUsdCallBS2Pool } = await addPoolsWithLiquidity(
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool, oddzEthUsdCallBS2Pool } = await addMorePoolsWithLiquidity(
       this.signers.admin,
       this.oddzLiquidityPoolManager,
     );
