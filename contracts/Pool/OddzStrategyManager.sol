@@ -35,6 +35,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         uint256[] memory _percentageShares,
         uint256 _amount
     ) external override {
+        require(_pools.length == _percentageShares.length, "SM Error: invalid array input");
         require(_pools.length > 0, "SM Error: no pool selected for strategy");
         IOddzWriteStrategy strategy = IOddzWriteStrategy(new OddzWriteStrategy(_pools, _percentageShares));
         addLiquidity(strategy, _amount);

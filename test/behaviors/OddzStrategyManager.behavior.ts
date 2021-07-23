@@ -82,6 +82,13 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     ).to.be.revertedWith("SM Error: no pool selected for strategy");
   });
 
+  it("should revert create strategy for invalid input array", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    await expect(
+      oddzStrategyManager.createStrategy([this.accounts.admin], [], BigNumber.from(utils.parseEther("1000"))),
+    ).to.be.revertedWith("SM Error: invalid array input");
+  });
+
   it("should create strategy", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
     const liquidity = BigNumber.from(utils.parseEther("1000"));
