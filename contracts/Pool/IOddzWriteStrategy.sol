@@ -12,5 +12,5 @@ interface IOddzWriteStrategy {
 
     function addLiquidity(address _provider, uint256 _liquidity) external;
 
-    function removeLiquidity(address _provider) external;
+    function removeLiquidity(address _provider, uint256 _liquidity) external;
 }

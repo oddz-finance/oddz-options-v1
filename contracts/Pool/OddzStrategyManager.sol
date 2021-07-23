@@ -66,10 +66,10 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         emit AddedLiquidity(address(_strategy), msg.sender, _amount);
     }
 
-    function removeLiquidity(IOddzWriteStrategy _strategy) external override validStrategy(_strategy) {
+    function removeLiquidity(IOddzWriteStrategy _strategy, uint256 _amount) external override validStrategy(_strategy) {
+        require(_amount <= _strategy.userLiquidity(msg.sender), "SM Error: Amount too large");
         IOddzLiquidityPool[] memory pools = _strategy.getPools();
         uint256[] memory shares = _strategy.getShares();
-        uint256 liquidity = _strategy.userLiquidity(msg.sender);
         uint256 liquidityRemoved;
         uint256 count;
         for (uint256 i = 0; i < pools.length; i++) {
@@ -78,17 +78,17 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             count++;
             if (count == pools.length) {
                 // remove remaining liquidity from last pool
-                amountToRemove = liquidity - liquidityRemoved;
+                amountToRemove = _amount - liquidityRemoved;
             } else {
-                amountToRemove = (liquidity * shares[i]) / 100;
+                amountToRemove = (_amount * shares[i]) / 100;
             }
             require(balance >= amountToRemove, "SM Error: one or more pools have less liquidity");
             poolManager.removeLiquidity(msg.sender, pools[i], amountToRemove);
             liquidityRemoved += amountToRemove;
         }
-        _strategy.removeLiquidity(msg.sender);
+        _strategy.removeLiquidity(msg.sender, _amount);
 
-        emit RemovedLiquidity(address(_strategy), msg.sender, liquidity);
+        emit RemovedLiquidity(address(_strategy), msg.sender, _amount);
     }
 
     function changeStrategy(IOddzWriteStrategy _old, IOddzWriteStrategy _new)
@@ -139,7 +139,7 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
             IOddzLiquidityPoolManager.PoolTransfer(oldPools, _new.getPools(), oldBalances, newBalances);
         poolManager.move(msg.sender, poolTransfer);
 
-        _old.removeLiquidity(msg.sender);
+        _old.removeLiquidity(msg.sender, liquidity);
         _new.addLiquidity(msg.sender, liquidity);
 
         emit ChangedStrategy(address(_old), address(_new), msg.sender);

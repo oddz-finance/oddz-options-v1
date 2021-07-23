@@ -202,15 +202,34 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     );
 
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
-    await this.usdcToken.connect(this.signers.admin1).approve(this.oddzLiquidityPoolManager.address, liquidity);
     const strategy = await oddzStrategyManager.latestStrategy();
-    await this.usdcToken.transfer(this.accounts.admin1, liquidity);
-    await expect(oddzStrategyManager.connect(this.signers.admin1).addLiquidity(strategy, liquidity)).to.emit(
+    await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity.div(2))).to.emit(
       oddzStrategyManager,
-      "AddedLiquidity",
+      "RemovedLiquidity",
     );
-    await expect(oddzStrategyManager.removeLiquidity(strategy)).to.emit(oddzStrategyManager, "RemovedLiquidity");
+    expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity.div(2));
+  });
+
+  it("should remove liquidity from the existing strategy for amount greater than balance", async function () {
+    const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
+    const liquidity = BigNumber.from(utils.parseEther("1000"));
+    await this.usdcToken.approve(this.oddzLiquidityPoolManager.address, liquidity);
+    const { oddzDefaultPool, oddzEthUsdCallBS1Pool } = await add2PoolsWithLiquidity(
+      this.signers.admin,
+      this.oddzLiquidityPoolManager,
+    );
+    await oddzStrategyManager.createStrategy(
+      [oddzDefaultPool.address, oddzEthUsdCallBS1Pool.address],
+      [60, 40],
+      liquidity,
+    );
+
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
+    const strategy = await oddzStrategyManager.latestStrategy();
+
+    await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity.add(1))).to.be.revertedWith(
+      "SM Error: Amount too large",
+    );
   });
 
   it("should revert remove liquidity from the existing strategy to maintain the pool balance", async function () {
@@ -230,7 +249,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
     expect(await this.usdcToken.balanceOf(this.oddzLiquidityPoolManager.address)).to.equal(liquidity);
     const strategy = await oddzStrategyManager.latestStrategy();
 
-    await expect(oddzStrategyManager.removeLiquidity(strategy)).to.be.revertedWith(
+    await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity)).to.be.revertedWith(
       "LP Error: Not enough funds in the pool. Please lower the amount",
     );
   });
@@ -268,7 +287,7 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
       ),
     ).to.emit(oddzDefaultPool, "RemoveLiquidity");
 
-    await expect(oddzStrategyManager.removeLiquidity(strategy)).to.be.revertedWith(
+    await expect(oddzStrategyManager.removeLiquidity(strategy, liquidity)).to.be.revertedWith(
       "SM Error: one or more pools have less liquidity",
     );
   });
@@ -390,9 +409,9 @@ export function shouldBehaveLikeOddzStrategyManager(): void {
   });
   it("should revert remove liquidity from the invalid contract", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);
-    await expect(oddzStrategyManager.removeLiquidity(this.accounts.admin)).to.be.revertedWith(
-      "SM Error: strategy is not contract address",
-    );
+    await expect(
+      oddzStrategyManager.removeLiquidity(this.accounts.admin, BigNumber.from(utils.parseEther("1000"))),
+    ).to.be.revertedWith("SM Error: strategy is not contract address");
   });
   it("should change strategy for multiple pools", async function () {
     const oddzStrategyManager = await this.oddzStrategyManager.connect(this.signers.admin);

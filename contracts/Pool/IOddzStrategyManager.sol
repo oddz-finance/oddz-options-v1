@@ -20,5 +20,5 @@ interface IOddzStrategyManager {
 
     function addLiquidity(IOddzWriteStrategy _strategy, uint256 _amount) external;
 
-    function removeLiquidity(IOddzWriteStrategy _strategy) external;
+    function removeLiquidity(IOddzWriteStrategy _strategy, uint256 _amount) external;
 }

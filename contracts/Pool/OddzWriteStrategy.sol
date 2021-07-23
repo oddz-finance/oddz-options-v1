@@ -29,7 +29,7 @@ contract OddzWriteStrategy is IOddzWriteStrategy, Ownable {
         userLiquidity[_provider] += _liquidity;
     }
 
-    function removeLiquidity(address _provider) external override onlyOwner {
-        userLiquidity[_provider] = 0;
+    function removeLiquidity(address _provider, uint256 _liquidity) external override onlyOwner {
+        userLiquidity[_provider] -= _liquidity;
     }
 }
