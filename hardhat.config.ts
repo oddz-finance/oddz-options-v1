@@ -10,7 +10,6 @@ import "./tasks/clean";
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-typechain";
 import "solidity-coverage";
-import "hardhat-gas-reporter";
 
 const chainIds = {
   ganache: 1337,
