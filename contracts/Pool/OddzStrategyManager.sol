@@ -2,13 +2,8 @@
 pragma solidity 0.8.3;
 
 import "./IOddzStrategyManager.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 
 contract OddzStrategyManager is IOddzStrategyManager, Ownable {
-    using Address for address;
-    using SafeERC20 for IERC20;
-
     IOddzLiquidityPoolManager public poolManager;
 
     mapping(IOddzWriteStrategy => bool) public strategies;
@@ -69,11 +64,13 @@ contract OddzStrategyManager is IOddzStrategyManager, Ownable {
         uint256[] memory shares = _strategy.getShares();
         uint256 liquidityRemoved;
         for (uint256 i = 0; i < pools.length; i++) {
-            uint256 balance = pools[i].getBalance(msg.sender);
             uint256 amountToRemove;
             if (i == pools.length - 1) amountToRemove = _amount - liquidityRemoved;
             else amountToRemove = (_amount * shares[i]) / 100;
-            require(balance >= amountToRemove, "SM Error: one or more pools have less liquidity");
+            require(
+                pools[i].getBalance(msg.sender) >= amountToRemove,
+                "SM Error: one or more pools have less liquidity"
+            );
             poolManager.removeLiquidity(msg.sender, pools[i], amountToRemove);
             liquidityRemoved += amountToRemove;
         }
