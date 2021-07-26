@@ -298,6 +298,8 @@ contract OddzLiquidityPoolManager is AccessControl, IOddzLiquidityPoolManager, E
      * @param _pool liquidity pool address
      */
     function withdrawProfits(IOddzLiquidityPool _pool) external {
+        require(poolExposure[_pool] > 0, "LP Error: Invalid pool");
+
         uint256 premium = _pool.collectPremium(msg.sender, premiumLockupDuration);
         require(premium > 0, "LP Error: No premium allocated");
 
