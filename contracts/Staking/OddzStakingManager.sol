@@ -181,7 +181,7 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         uint8[] calldata _txnFeeRewards,
         uint8[] calldata _settlementFeeRewards,
         uint8[] calldata _allotedRewards
-    ) external onlyTimeLocker(msg.sender) {
+    ) public onlyTimeLocker(msg.sender) {
         require(
             _tokens.length == _txnFeeRewards.length &&
                 _tokens.length == _settlementFeeRewards.length &&
@@ -210,8 +210,15 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
      * @notice Deactivate token
      * @param _token token address
      */
-    function deactivateToken(IERC20 _token) external onlyTimeLocker(msg.sender) validToken(_token) {
+    function deactivateToken(
+        IERC20 _token,
+        IERC20[] calldata _tokens,
+        uint8[] calldata _txnFeeRewards,
+        uint8[] calldata _settlementFeeRewards,
+        uint8[] calldata _allotedRewards
+    ) external onlyTimeLocker(msg.sender) validToken(_token) {
         tokens[_token]._active = false;
+        setRewardPercentages(_tokens, _txnFeeRewards, _settlementFeeRewards, _allotedRewards);
         emit TokenDeactivate(address(_token));
     }
 
