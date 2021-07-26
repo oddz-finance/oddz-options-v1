@@ -34,6 +34,19 @@ export function shouldBehaveLikeOddzStakingManager(): void {
     ).to.be.revertedWith("token is not active");
   });
 
+  it("Should revert deactivate if token is included in reward allocation", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.deactivateToken(
+        this.oddzToken.address,
+        [this.oddzToken.address, this.oUsdToken.address],
+        [50, 50],
+        [80, 20],
+        [70, 30],
+      ),
+    ).to.be.revertedWith("Staking: token is not active");
+  });
+
   it("Should revert deactivate for invalid reward distribution", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
     await expect(
