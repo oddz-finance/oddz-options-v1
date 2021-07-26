@@ -6,7 +6,6 @@ import OddzTokenStakingArtifact from "../artifacts/contracts/Staking/OddzTokenSt
 import OUsdTokenStakingArtifact from "../artifacts/contracts/Staking/OUsdTokenStaking.sol/OUsdTokenStaking.json";
 import MockTokenStakingArtifact from "../artifacts/contracts/Mocks/MockTokenStaking.sol/MockTokenStaking.json";
 import MockERC20Artifact from "../artifacts/contracts/Mocks/MockERC20.sol/MockERC20.json";
-
 import { Accounts, Signers } from "../types";
 import { MockProvider } from "ethereum-waffle";
 const { deployContract } = waffle;
