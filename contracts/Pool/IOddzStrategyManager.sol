@@ -2,7 +2,7 @@
 pragma solidity 0.8.3;
 
 import "./IOddzLiquidityPoolManager.sol";
-import "./OddzWriteStrategy.sol";
+import "./IOddzWriteStrategy.sol";
 
 interface IOddzStrategyManager {
     event CreatedStrategy(address indexed _strategy, address indexed _user);

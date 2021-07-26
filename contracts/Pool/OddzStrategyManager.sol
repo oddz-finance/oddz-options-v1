@@ -2,6 +2,7 @@
 pragma solidity 0.8.3;
 
 import "./IOddzStrategyManager.sol";
+import "./OddzWriteStrategy.sol";
 
 contract OddzStrategyManager is IOddzStrategyManager, Ownable {
     IOddzLiquidityPoolManager public poolManager;
