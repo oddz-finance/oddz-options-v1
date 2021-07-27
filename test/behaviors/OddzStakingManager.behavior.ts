@@ -14,23 +14,44 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
   it("Should revert deactivate for non owner", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin1);
-    await expect(oddzStakingManager.deactivateToken(this.oddzToken.address)).to.be.revertedWith(
-      "revert caller has no access to the method",
-    );
+    await expect(
+      oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]),
+    ).to.be.revertedWith("revert caller has no access to the method");
   });
 
   it("Should successfully deactivate the token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
-    await expect(oddzStakingManager.deactivateToken(this.oddzToken.address)).to.emit(
-      oddzStakingManager,
-      "TokenDeactivate",
-    );
+    await expect(
+      oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]),
+    ).to.emit(oddzStakingManager, "TokenDeactivate");
   });
 
   it("Should revert deactivate which is already deactivated", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
-    await oddzStakingManager.deactivateToken(this.oddzToken.address);
-    await expect(oddzStakingManager.deactivateToken(this.oddzToken.address)).to.be.revertedWith("token is not active");
+    await oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]);
+    await expect(
+      oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]),
+    ).to.be.revertedWith("token is not active");
+  });
+
+  it("Should revert deactivate if token is included in reward allocation", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.deactivateToken(
+        this.oddzToken.address,
+        [this.oddzToken.address, this.oUsdToken.address],
+        [50, 50],
+        [80, 20],
+        [70, 30],
+      ),
+    ).to.be.revertedWith("Staking: token is not active");
+  });
+
+  it("Should revert deactivate for invalid reward distribution", async function () {
+    const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
+    await expect(
+      oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [90], [100]),
+    ).to.be.revertedWith("Staking: invalid reward percentages");
   });
 
   it("Should revert activate for non owner", async function () {
@@ -42,7 +63,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
   it("Should successfully activate token", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
-    await oddzStakingManager.deactivateToken(this.oddzToken.address);
+    await oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]);
     await expect(oddzStakingManager.activateToken(this.oddzToken.address)).to.emit(oddzStakingManager, "TokenActivate");
   });
 
@@ -125,7 +146,7 @@ export function shouldBehaveLikeOddzStakingManager(): void {
 
   it("Should revert staking for invalid token address", async function () {
     const oddzStakingManager = await this.oddzStakingManager.connect(this.signers.admin);
-    await oddzStakingManager.deactivateToken(this.oddzToken.address);
+    await oddzStakingManager.deactivateToken(this.oddzToken.address, [this.oUsdToken.address], [100], [100], [100]);
     await expect(
       oddzStakingManager.stake(this.oddzToken.address, BigNumber.from(utils.parseEther("10"))),
     ).to.be.revertedWith("token is not active");
