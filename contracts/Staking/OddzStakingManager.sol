@@ -294,7 +294,10 @@ contract OddzStakingManager is AccessControl, IOddzStakingManager {
         validToken(_token)
         validStaker(_token, msg.sender)
     {
-        require(_amount <= tokens[_token]._stakingContract.balance(msg.sender), "Staking: Amount is too large");
+        require(
+            _amount <= IERC20(address(tokens[_token]._stakingContract)).balanceOf(msg.sender),
+            "Staking: Amount is too large"
+        );
 
         uint256 date = DateTimeLibrary.getPresentDayTimestamp();
         require(

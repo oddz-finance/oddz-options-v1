@@ -2,7 +2,6 @@
 pragma solidity 0.8.3;
 
 import "./AbstractTokenStaking.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz USD Staking Token", "soUSD") {
@@ -27,7 +26,7 @@ contract OUsdTokenStaking is AbstractTokenStaking, ERC20("Oddz USD Staking Token
         IERC20(token).safeTransfer(_staker, _amount);
     }
 
-    function balance(address _address) external view override returns (uint256 bal) {
-        bal = balanceOf(_address);
+    function balanceOf(address _address) public view override returns (uint256 bal) {
+        bal = staker[_address]._amount;
     }
 }
