@@ -435,7 +435,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         uint256 minAmount = optionTransferMap[_optionId];
         require(minAmount > 0, "Option not enabled for transfer");
         require(option.state == State.Active, "Invalid state");
-        require(option.holder != msg.sender, "Self option transfer is not allowed");
+        require(option.holder != msg.sender && option.holder != _newOwner, "Self option transfer is not allowed");
 
         // once transfer initiated update option tranfer map
         delete optionTransferMap[_optionId];
