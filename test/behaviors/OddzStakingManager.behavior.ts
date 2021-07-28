@@ -172,7 +172,9 @@ export function shouldBehaveLikeOddzStakingManager(): void {
       oddzStakingManager,
       "Stake",
     );
-    expect(await this.oddzTokenStaking.balance(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("10")));
+    await this.oddzTokenStaking.transfer(this.accounts.admin1, BigNumber.from(utils.parseEther("5")));
+    expect(await this.oddzTokenStaking.balanceOf(this.accounts.admin1)).to.equal(0);
+    expect(await this.oddzTokenStaking.balanceOf(this.accounts.admin)).to.equal(BigNumber.from(utils.parseEther("10")));
   });
 
   it("Should revert deposit without any approved allowance", async function () {

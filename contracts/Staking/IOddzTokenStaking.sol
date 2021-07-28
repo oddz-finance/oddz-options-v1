@@ -21,13 +21,6 @@ interface IOddzTokenStaking {
     function unstake(address _staker, uint256 _amount) external;
 
     /**
-     * @notice balane of tokens for the staker
-     * @param _staker Address of the staker
-     * @return bal balance of the staker
-     */
-    function balance(address _staker) external view returns (uint256 bal);
-
-    /**
      * @notice Allocates rewards to staker
      * @param _amount Amount of ODDZ token allocated
      */
