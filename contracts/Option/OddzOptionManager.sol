@@ -426,7 +426,7 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         emit OptionTransferEnabled(_optionId, _minAmount);
     }
 
-    function optionTransfer(uint256 _optionId) external {
+    function optionTransfer(uint256 _optionId, address _newOwner) external {
         Option storage option = options[_optionId];
         require(
             option.expiration > (block.timestamp + assetManager.getMinPeriod(option.pair)),
@@ -435,12 +435,12 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         uint256 minAmount = optionTransferMap[_optionId];
         require(minAmount > 0, "Option not enabled for transfer");
         require(option.state == State.Active, "Invalid state");
-        require(option.holder != msg.sender, "Self option transfer is not allowed");
+        require(option.holder != msg.sender && option.holder != _newOwner, "Self option transfer is not allowed");
 
         // once transfer initiated update option tranfer map
         delete optionTransferMap[_optionId];
 
-        uint256 transferFee = _getTransactionFee(minAmount, msg.sender);
+        uint256 transferFee = _getTransactionFee(minAmount, _newOwner);
         txnFeeAggregate += transferFee;
 
         _validateOptionAmount(token.allowance(msg.sender, address(this)), minAmount + transferFee);
@@ -449,9 +449,9 @@ contract OddzOptionManager is IOddzOption, AccessControl {
         token.safeTransferFrom(msg.sender, address(this), transferFee);
 
         address oldHolder = option.holder;
-        option.holder = msg.sender;
+        option.holder = _newOwner;
 
-        emit OptionTransfer(_optionId, oldHolder, msg.sender, minAmount, transferFee);
+        emit OptionTransfer(_optionId, oldHolder, _newOwner, minAmount, transferFee);
     }
 
     /**
