@@ -26,6 +26,10 @@ contract MockOddzVolatility is IOddzVolatilityOracle {
         decimals = _decimals;
     }
 
+    function setDelay(uint256 _delay) public {
+        delayInSeconds = _delay;
+    }
+
     function setPairContract(
         bytes32 _underlying,
         bytes32 _strike,
